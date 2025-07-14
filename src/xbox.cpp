@@ -32,9 +32,7 @@ inline uint16_t uint16(uint8_t r, uint8_t l) {
 }
 
 constexpr uint8_t mask(int bit) {
-  uint8_t mask = 1;
-  mask <<= bit;
-  return mask;
+  return uint8_t(1) << bit;
 }
 
 inline bool button(uint8_t byte, int bit) {

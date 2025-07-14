@@ -1,0 +1,54 @@
+name: CI
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        example:
+          - examples/BasicUsage
+          - examples/UsageInLoop
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pip
+          ~/.platformio/.cache
+        key: ${{ runner.os }}-pio
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    - name: Install PlatformIO Core
+      run: |
+        python -m pip install --upgrade pip
+        pip install --upgrade platformio
+    - name: Build PlatformIO example
+      run: |
+        cat > platformio.ini << EOF
+          [env]
+          platform = espressif32
+          framework = arduino
+
+          [env:esp32dev]
+          board = esp32dev
+
+          [env:esp32s3]
+          board = esp32-s3-devkitm-1
+
+          [env:esp32c3]
+          board = esp32-c3-devkitm-1
+
+          [env:esp32c6]
+          board = esp32-c6-devkitm-1
+          platform = https://github.com/pioarduino/platform-espressif32/releases/download/stable/platform-espressif32.zip
+        EOF
+        pio ci -c platformio.ini -l .
+      env:
+        PLATFORMIO_CI_SRC: ${{ matrix.example }}

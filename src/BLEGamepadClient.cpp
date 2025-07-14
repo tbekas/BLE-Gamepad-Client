@@ -160,8 +160,8 @@ Controller& BLEGamepadClient::_getOrCreateController(NimBLEAddress address) {
   }
 
   BLEGC_LOGD("Creating a new controller instance, address: %s", std::string(address).c_str());
-  auto& ctrl = _controllers.emplace_back(address);
-  return ctrl;
+  _controllers.emplace_back(address);
+  return _controllers.back();
 }
 
 void BLEGamepadClient::_clientStatusConsumerFn(void* pvParameters) {
