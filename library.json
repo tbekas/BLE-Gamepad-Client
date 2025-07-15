@@ -20,5 +20,11 @@
   "headers": "BLEGamepadClient.h",
   "dependencies": {
     "h2zero/NimBLE-Arduino": "^2.3.2"
+  },
+  "export": {
+    "exclude": [
+      ".git",
+      ".github/"
+    ]
   }
 }
