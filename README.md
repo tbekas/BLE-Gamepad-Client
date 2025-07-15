@@ -44,7 +44,11 @@ pio run -t upload -t monitor
 
 # Supported gamepads
 
-## Xbox Wireless Controller (model 1914)
+## Xbox One Wireless Controller (model 1708)
+Pairing instructions are the same as for model 1914. If controller is not pairing, you probably need to
+update the firmware to version 5.x using [these instructions](https://support.xbox.com/en-US/help/hardware-network/controller/update-xbox-wireless-controller). 
+
+## Xbox Series S/X Wireless Controller (model 1914)
 Pairing instructions:
 * Turn on your controller by pressing the Xbox button.
 * Press and hold the controller’s Pair button for 3 seconds, then release.

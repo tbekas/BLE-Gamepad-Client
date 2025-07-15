@@ -263,14 +263,14 @@ BLEGamepadClient::BLEGamepadClient()
  * @param maxConnected Limits the number of connected controllers. If used in conjunction with
  * `autoScanEnabled = true`, it also acts as the desired number of controllers to connect to. This means scanning will
  * continue until `maxConnected` controllers are connected. Default is 1.
- * @param deleteBonds If true, all data related to previously bonded devices is deleted.
+ * @param deleteBonds If true, all data related to previously bonded devices is deleted. Default is false.
  * @return True if GamepadClient instance was successfully initialized, false otherwise.
  *
  *  Example usage:
  * @code{cpp}
  * void setup(void) {
- *   // start scanning and continue until 2 controllers are connected
- *   GamepadClient.begin(true, 2);
+ *   // delete all bonded devices and start scanning until two controllers are connected
+ *   GamepadClient.begin(true, 2, true);
  * }
  * @endcode
  */
