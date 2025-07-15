@@ -21,12 +21,12 @@ class Signal {
  public:
   struct Store {
     T event;
-    uint8_t* data;
-    size_t length;
+    uint8_t* data{};
+    size_t length{};
     std::bitset<FLAG_COUNT> flags;
   };
 
-  Signal(NimBLEAddress address);
+  explicit Signal(NimBLEAddress address);
   ~Signal() = default;
 
   T& read();
@@ -48,7 +48,7 @@ class Signal {
   NimBLEUUID _serviceUUID;
   NimBLEUUID _characteristicUUID;
   NimBLERemoteCharacteristic* _findCharacteristic(SignalConfig<T>& config);
-  NimBLERemoteCharacteristic* _getCharacteristic();
+  NimBLERemoteCharacteristic* _getCharacteristic() const;
 
   TaskHandle_t _callConsumerTask;
   SemaphoreHandle_t _storeMutex;
@@ -56,12 +56,15 @@ class Signal {
 };
 
 template <typename T>
-Signal<T>::Signal(NimBLEAddress address) : _address(address) {
-  _initialized = false;
-  _parser = [](uint8_t data[], size_t len) { return T(); };
-  _consumer = [](T val) {};
-  _hasSubscription = false;
-  _store = {T(), new uint8_t[0], 0, std::bitset<FLAG_COUNT>()};
+Signal<T>::Signal(const NimBLEAddress address)
+    : _initialized(false),
+      _consumer([](T) {}),
+      _hasSubscription(false),
+      _parser([](uint8_t[], size_t) { return T(); }),
+      _address(address),
+      _callConsumerTask(nullptr),
+      _storeMutex(nullptr),
+      _store({T(), new uint8_t[0], 0, std::bitset<FLAG_COUNT>()}) {
   _store.flags[FLAG_PARSED_IDX] = true;
 }
 
@@ -150,7 +153,7 @@ NimBLERemoteCharacteristic* Signal<T>::_findCharacteristic(SignalConfig<T>& conf
 }
 
 template <typename T>
-NimBLERemoteCharacteristic* Signal<T>::_getCharacteristic() {
+NimBLERemoteCharacteristic* Signal<T>::_getCharacteristic() const {
   auto pClient = BLEDevice::getClientByPeerAddress(_address);
   if (!pClient) {
     BLEGC_LOGE("BLE client not found, address: %s", std::string(_address).c_str());
@@ -204,7 +207,7 @@ bool Signal<T>::deinit(bool disconnected) {
 
 template <typename T>
 void Signal<T>::_callConsumerFn(void* pvParameters) {
-  Signal<T>* self = (Signal<T>*)pvParameters;
+  auto* self = (Signal<T>*)pvParameters;
 
   while (true) {
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);

@@ -11,8 +11,7 @@ class Utils {
     std::string::size_type pos = str.find('\n');
     if (pos != std::string::npos) {
       return str.substr(0, pos);
-    } else {
-      return str;
     }
+    return str;
   }
 };

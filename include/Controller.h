@@ -1,34 +1,32 @@
 #pragma once
 
-#include <functional>
-#include <stdint.h>
 #include <NimBLEAddress.h>
 #include <NimBLERemoteCharacteristic.h>
-#include "Signal.hpp"
-#include "ControlsEvent.h"
 #include "BatteryEvent.h"
 #include "ControllerConfig.h"
+#include "ControlsEvent.h"
+#include "Signal.hpp"
+
+using ControlsSignal = Signal<ControlsEvent>;
+using BatterySignal = Signal<BatteryEvent>;
 
 class Controller {
   public:
-    Controller(NimBLEAddress address);
+    explicit Controller(NimBLEAddress address);
     ~Controller() = default;
 
-    NimBLEAddress getAddress();
+    NimBLEAddress getAddress() const;
     Signal<ControlsEvent>& controls();
     Signal<BatteryEvent>& battery();
-    bool isConnected();
-    bool isInitialized();
+    bool isConnected() const;
+    bool isInitialized() const;
 
     bool init(ControllerConfig& config);
     bool deinit(bool disconnected);
 
   private:
-    template<typename T>
-    NimBLERemoteCharacteristic* _findCharacteristic(SignalConfig<T>& config);
-
     bool _initialized;
     NimBLEAddress _address;
-    Signal<ControlsEvent> _controlsSignal;
-    Signal<BatteryEvent> _batterySignal;
+    ControlsSignal _controlsSignal;
+    BatterySignal _batterySignal;
 };

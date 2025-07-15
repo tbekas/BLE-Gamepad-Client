@@ -6,20 +6,18 @@
 
 template <typename T>
 struct SignalConfig {
-  SignalConfig() : parser(), serviceUUID(), characteristicUUID() {}
+  SignalConfig() : parser() {}
   Parser<T> parser;
   NimBLEUUID serviceUUID;
   NimBLEUUID characteristicUUID;
 
   bool isEnabled() const {
-    return std::string(serviceUUID).size() > 0;
+    return !std::string(serviceUUID).empty();
   }
 
-  bool isDisabled() const {
-    return !isEnabled();
-  }
+  bool isDisabled() const { return !isEnabled(); }
 
-  operator std::string() const;
+  explicit operator std::string() const;
 };
 
 template <typename T>

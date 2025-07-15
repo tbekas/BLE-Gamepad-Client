@@ -2,8 +2,8 @@
 
 #include <NimBLEDevice.h>
 #include <deque>
-#include <map>
 #include <list>
+#include <map>
 #include "Controller.h"
 #include "ControllerConfig.h"
 
@@ -25,7 +25,7 @@ class BLEGamepadClient {
 
   /* proxy methods below */
 
-  bool deleteAllBonds();
+  static bool deleteAllBonds();
   bool startScan(uint32_t durationMs);
   bool stopScan();
 

@@ -9,7 +9,8 @@ struct ControlsEvent : BaseEvent {
    *
    * This is a visual representation of the coordinate system used. The `o` represents the stick position when there is
    * no deflection.
-   * ```text
+   *
+   * @verbatim
    *  1.0    /‾‾‾‾‾‾‾\
    *        /         \
    *  0.5  /           \
@@ -20,7 +21,7 @@ struct ControlsEvent : BaseEvent {
    *        \         /
    * -1.0    \_______/
    *     -1.0   0.0   1.0
-   * ```
+   * @endverbatim
    */
   float lx, ly, rx, ry;
 

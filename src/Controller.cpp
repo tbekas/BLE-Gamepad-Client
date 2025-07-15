@@ -14,28 +14,26 @@
 #include "Signal.hpp"
 #include "Utils.h"
 
-Controller::Controller(NimBLEAddress address) : _controlsSignal(address), _batterySignal(address) {
-  _initialized = false;
-  _address = address;
-}
+Controller::Controller(const NimBLEAddress address)
+    : _initialized(false), _address(address), _controlsSignal(address), _batterySignal(address) {}
 
-NimBLEAddress Controller::getAddress() {
+NimBLEAddress Controller::getAddress() const {
   return _address;
 }
 
-Signal<ControlsEvent>& Controller::controls() {
+ControlsSignal& Controller::controls() {
   return _controlsSignal;
 }
 
-Signal<BatteryEvent>& Controller::battery() {
+BatterySignal& Controller::battery() {
   return _batterySignal;
 }
 
-bool Controller::isInitialized() {
+bool Controller::isInitialized() const {
   return _initialized;
 }
 
-bool Controller::isConnected() {
+bool Controller::isConnected() const {
   // initialization is kept in sync with client connect/client disconnect events
   return _initialized;
 }

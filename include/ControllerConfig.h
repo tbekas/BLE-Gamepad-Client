@@ -11,15 +11,14 @@ using ControlsConfig = SignalConfig<ControlsEvent>;
 using BatteryConfig = SignalConfig<BatteryEvent>;
 
 struct ControllerConfig {
- public:
-  ControllerConfig() : deviceName(""), controlsConfig(), batteryConfig() {}
+  ControllerConfig() = default;
 
   void setControlsConfig(NimBLEUUID serviceUUID, Parser<ControlsEvent> parser);
   void setControlsConfig(NimBLEUUID serviceUUID, NimBLEUUID characteristicUUID, Parser<ControlsEvent> parser);
   void setBatteryConfig(NimBLEUUID serviceUUID, Parser<BatteryEvent> parser);
   void setBatteryConfig(NimBLEUUID serviceUUID, NimBLEUUID characteristicUUID, Parser<BatteryEvent> parser);
 
-  std::string deviceName;
-  ControlsConfig controlsConfig;
-  BatteryConfig batteryConfig;
+  std::string deviceName{};
+  ControlsConfig controlsConfig{};
+  BatteryConfig batteryConfig{};
 };
