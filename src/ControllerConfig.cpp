@@ -1,6 +1,5 @@
-#include <NimBLEUUID.h>
-#include <string>
 #include "ControllerConfig.h"
+#include <NimBLEUUID.h>
 #include "BatteryEvent.h"
 #include "ControlsEvent.h"
 #include "Parser.h"
@@ -12,8 +11,8 @@ void ControllerConfig::setControlsConfig(NimBLEUUID serviceUUID, Parser<Controls
 }
 
 void ControllerConfig::setControlsConfig(NimBLEUUID serviceUUID,
-                                               NimBLEUUID characteristicUUID,
-                                               Parser<ControlsEvent> parser) {
+                                         NimBLEUUID characteristicUUID,
+                                         Parser<ControlsEvent> parser) {
   controlsConfig.serviceUUID = serviceUUID;
   controlsConfig.characteristicUUID = characteristicUUID;
   controlsConfig.parser = parser;
@@ -25,8 +24,8 @@ void ControllerConfig::setBatteryConfig(NimBLEUUID serviceUUID, Parser<BatteryEv
 }
 
 void ControllerConfig::setBatteryConfig(NimBLEUUID serviceUUID,
-                                              NimBLEUUID characteristicUUID,
-                                              Parser<BatteryEvent> parser) {
+                                        NimBLEUUID characteristicUUID,
+                                        Parser<BatteryEvent> parser) {
   batteryConfig.serviceUUID = serviceUUID;
   batteryConfig.characteristicUUID = characteristicUUID;
   batteryConfig.parser = parser;

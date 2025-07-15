@@ -1,18 +1,7 @@
 #include "Controller.h"
 #include <NimBLEAddress.h>
-#include <NimBLEClient.h>
-#include <NimBLEDevice.h>
-#include <NimBLERemoteCharacteristic.h>
-#include <NimBLERemoteService.h>
-#include <NimBLEUUID.h>
-#include <stdint.h>
-#include <functional>
-#include "BatteryEvent.h"
 #include "ControllerConfig.h"
-#include "ControlsEvent.h"
-#include "Logger.h"
-#include "Signal.hpp"
-#include "Utils.h"
+#include "InputSignal.hpp"
 
 Controller::Controller(const NimBLEAddress address)
     : _initialized(false), _address(address), _controlsSignal(address), _batterySignal(address) {}

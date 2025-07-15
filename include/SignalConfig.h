@@ -11,9 +11,7 @@ struct SignalConfig {
   NimBLEUUID serviceUUID;
   NimBLEUUID characteristicUUID;
 
-  bool isEnabled() const {
-    return !std::string(serviceUUID).empty();
-  }
+  bool isEnabled() const { return !std::string(serviceUUID).empty(); }
 
   bool isDisabled() const { return !isEnabled(); }
 

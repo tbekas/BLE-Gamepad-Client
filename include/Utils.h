@@ -14,4 +14,56 @@ class Utils {
     }
     return str;
   }
+
+  using BLECharacteristicFilter = std::function<bool(NimBLERemoteCharacteristic*)>;
+
+  static NimBLERemoteCharacteristic* findCharacteristic(
+      const NimBLEAddress address,
+      const NimBLEUUID serviceUUID,
+      const NimBLEUUID characteristicUUID = NimBLEUUID(),
+      const BLECharacteristicFilter& filter = [](NimBLERemoteCharacteristic*) { return true; }) {
+
+    auto pBleClient = NimBLEDevice::getClientByPeerAddress(address);
+    if (!pBleClient) {
+      BLEGC_LOGE("BLE client not found, address %s", std::string(address).c_str());
+      return nullptr;
+    }
+
+    auto pService = pBleClient->getService(serviceUUID);
+    if (!pService) {
+      BLEGC_LOGE("Service not found, serviceUUID: %s", std::string(serviceUUID).c_str());
+      return nullptr;
+    }
+
+    if (!std::string(characteristicUUID).empty()) {
+      auto pChar = pService->getCharacteristic(characteristicUUID);
+      if (!pChar) {
+        BLEGC_LOGE("Characteristic not found, characteristicUUID: %s", std::string(characteristicUUID).c_str());
+        return nullptr;
+      }
+
+      if (!filter(pChar)) {
+        BLEGC_LOGE("Characteristic found, but it cant't notify. %s", Utils::remoteCharToStr(pChar).c_str());
+        return nullptr;
+      }
+
+      return pChar;
+    }
+
+    BLEGC_LOGD("Looking for any characteristic that can notify");
+
+    // lookup any characteristic that can notify
+    for (auto pChar : pService->getCharacteristics(true)) {
+      if (!filter(pChar)) {
+        BLEGC_LOGD("Skipping characteristic that can't notify. %s", Utils::remoteCharToStr(pChar).c_str());
+        continue;
+      }
+      BLEGC_LOGD("Found characteristic that can notify. %s", Utils::remoteCharToStr(pChar).c_str());
+      return pChar;
+    }
+
+    BLEGC_LOGE("Unable to find any characteristic that can notify");
+
+    return nullptr;
+  }
 };

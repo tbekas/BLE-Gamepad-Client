@@ -1,8 +1,8 @@
 #pragma once
 
-#include <vector>
-#include <functional>
 #include <stdint.h>
+#include <functional>
+#include <vector>
 
-template<class T>
+template <class T>
 using Parser = std::function<T(uint8_t data[], size_t len)>;

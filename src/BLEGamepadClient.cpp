@@ -247,16 +247,14 @@ void BLEGamepadClient::_autoScanCheck() {
 }
 
 BLEGamepadClient::BLEGamepadClient()
-    :
-      _initialized(false),
+    : _initialized(false),
       _autoScanEnabled(false),
       _maxConnected(0),
       _clientStatusQueue(nullptr),
       _clientStatusConsumerTask(nullptr),
       _connectionSlots(nullptr),
       _onConnected([](Controller&) {}),
-      _onDisconnected([](Controller&) {}) {
-}
+      _onDisconnected([](Controller&) {}) {}
 
 /**
  * @brief Initializes a GamepadClient instance.
@@ -265,6 +263,7 @@ BLEGamepadClient::BLEGamepadClient()
  * @param maxConnected Limits the number of connected controllers. If used in conjunction with
  * `autoScanEnabled = true`, it also acts as the desired number of controllers to connect to. This means scanning will
  * continue until `maxConnected` controllers are connected. Default is 1.
+ * @param deleteBonds If true, all data related to previously bonded devices is deleted.
  * @return True if GamepadClient instance was successfully initialized, false otherwise.
  *
  *  Example usage:
@@ -275,7 +274,7 @@ BLEGamepadClient::BLEGamepadClient()
  * }
  * @endcode
  */
-bool BLEGamepadClient::begin(bool autoScanEnabled, int maxConnected) {
+bool BLEGamepadClient::begin(bool autoScanEnabled, int maxConnected, bool deleteBonds) {
   if (_initialized) {
     return false;
   }
@@ -298,6 +297,10 @@ bool BLEGamepadClient::begin(bool autoScanEnabled, int maxConnected) {
   NimBLEDevice::setPower(3);                                 /** +3db */
   NimBLEDevice::setSecurityAuth(true, true, true);           /** bonding, MITM protection, BLE secure connections */
   NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT); /** no screen, no keyboard */
+
+  if (deleteBonds) {
+    NimBLEDevice::deleteAllBonds();
+  }
 
   if (_autoScanEnabled) {
     NimBLEScan* pScan = NimBLEDevice::getScan();
@@ -427,14 +430,6 @@ bool BLEGamepadClient::addConfig(const ControllerConfig& config) {
 
   _configs.push_front(config);
   return true;
-}
-
-/**
- * @brief Deletes all bonding information. Proxy for `NimBLEDevice::deleteAllBonds()`.
- * @returns True if successful.
- */
-bool BLEGamepadClient::deleteAllBonds() {
-  return NimBLEDevice::deleteAllBonds();
 }
 
 /**

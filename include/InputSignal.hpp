@@ -2,7 +2,6 @@
 
 #include <NimBLEDevice.h>
 #include <NimBLERemoteCharacteristic.h>
-#include <NimBLERemoteService.h>
 #include <bitset>
 #include <functional>
 #include "Logger.h"
@@ -17,7 +16,7 @@
 template <typename T>
 using Consumer = std::function<void(T& value)>;
 template <typename T>
-class Signal {
+class InputSignal {
  public:
   struct Store {
     T event;
@@ -26,8 +25,8 @@ class Signal {
     std::bitset<FLAG_COUNT> flags;
   };
 
-  explicit Signal(NimBLEAddress address);
-  ~Signal() = default;
+  explicit InputSignal(NimBLEAddress address);
+  ~InputSignal() = default;
 
   T& read();
   bool isUpdated() const;
@@ -47,16 +46,13 @@ class Signal {
   NimBLEAddress _address;
   NimBLEUUID _serviceUUID;
   NimBLEUUID _characteristicUUID;
-  NimBLERemoteCharacteristic* _findCharacteristic(SignalConfig<T>& config);
-  NimBLERemoteCharacteristic* _getCharacteristic() const;
-
   TaskHandle_t _callConsumerTask;
   SemaphoreHandle_t _storeMutex;
   Store _store;
 };
 
 template <typename T>
-Signal<T>::Signal(const NimBLEAddress address)
+InputSignal<T>::InputSignal(const NimBLEAddress address)
     : _initialized(false),
       _consumer([](T) {}),
       _hasSubscription(false),
@@ -64,12 +60,12 @@ Signal<T>::Signal(const NimBLEAddress address)
       _address(address),
       _callConsumerTask(nullptr),
       _storeMutex(nullptr),
-      _store({T(), new uint8_t[0], 0, std::bitset<FLAG_COUNT>()}) {
+	  _store() {
   _store.flags[FLAG_PARSED_IDX] = true;
 }
 
 template <typename T>
-bool Signal<T>::init(SignalConfig<T>& config) {
+bool InputSignal<T>::init(SignalConfig<T>& config) {
   if (_initialized) {
     return false;
   }
@@ -81,19 +77,20 @@ bool Signal<T>::init(SignalConfig<T>& config) {
   configASSERT(_callConsumerTask);
 
   _parser = config.parser;
-  auto pChar = _findCharacteristic(config);
+  auto pChar = Utils::findCharacteristic(_address, config.serviceUUID, config.characteristicUUID,
+                                         [](NimBLERemoteCharacteristic* c) { return c->canNotify(); });
   if (!pChar) {
     return false;
   }
   _serviceUUID = pChar->getRemoteService()->getUUID();
   _characteristicUUID = pChar->getUUID();
 
-  auto handlerFn = std::bind(&Signal<T>::_handleNotify, this, std::placeholders::_1, std::placeholders::_2,
+  auto handlerFn = std::bind(&InputSignal<T>::_handleNotify, this, std::placeholders::_1, std::placeholders::_2,
                              std::placeholders::_3, std::placeholders::_4);
 
   BLEGC_LOGD("Subscribing to notifications. %s", Utils::remoteCharToStr(pChar).c_str());
 
-  if (!pChar->subscribe(true, handlerFn, false)) {
+  if (!pChar->subscribe(true, handlerFn, true)) {
     BLEGC_LOGE("Failed to subscribe to notifications. %s", Utils::remoteCharToStr(pChar).c_str());
     return false;
   }
@@ -105,85 +102,14 @@ bool Signal<T>::init(SignalConfig<T>& config) {
 }
 
 template <typename T>
-NimBLERemoteCharacteristic* Signal<T>::_findCharacteristic(SignalConfig<T>& config) {
-  BLEGC_LOGD("Finding a characteristic, config: %s", std::string(config).c_str());
-
-  auto pBleClient = NimBLEDevice::getClientByPeerAddress(_address);
-  if (!pBleClient) {
-    BLEGC_LOGE("BLE client not found, address %s", std::string(_address).c_str());
-    return nullptr;
-  }
-
-  auto pService = pBleClient->getService(config.serviceUUID);
-  if (!pService) {
-    BLEGC_LOGE("Service not found, serviceUUID: %s", std::string(config.serviceUUID).c_str());
-    return nullptr;
-  }
-
-  if (!std::string(config.characteristicUUID).empty()) {
-    auto pChar = pService->getCharacteristic(config.characteristicUUID);
-    if (!pChar) {
-      BLEGC_LOGE("Characteristic not found, characteristicUUID: %s", std::string(config.characteristicUUID).c_str());
-      return nullptr;
-    }
-
-    if (!pChar->canNotify()) {
-      BLEGC_LOGE("Characteristic found, but it cant't notify. %s", Utils::remoteCharToStr(pChar).c_str());
-      return nullptr;
-    }
-
-    return pChar;
-  }
-
-  BLEGC_LOGD("Looking for any characteristic that can notify");
-
-  // lookup any characteristic that can notify
-  for (auto pChar : pService->getCharacteristics(true)) {
-    if (!pChar->canNotify()) {
-      BLEGC_LOGD("Skipping characteristic that can't notify. %s", Utils::remoteCharToStr(pChar).c_str());
-      continue;
-    }
-    BLEGC_LOGD("Found characteristic that can notify. %s", Utils::remoteCharToStr(pChar).c_str());
-    return pChar;
-  }
-
-  BLEGC_LOGE("Unable to find any characteristic that can notify");
-
-  return nullptr;
-}
-
-template <typename T>
-NimBLERemoteCharacteristic* Signal<T>::_getCharacteristic() const {
-  auto pClient = BLEDevice::getClientByPeerAddress(_address);
-  if (!pClient) {
-    BLEGC_LOGE("BLE client not found, address: %s", std::string(_address).c_str());
-    return nullptr;
-  }
-
-  auto pService = pClient->getService(_serviceUUID);
-  if (!pService) {
-    BLEGC_LOGE("Service not found, serviceUUID: %s", std::string(_serviceUUID).c_str());
-    return nullptr;
-  }
-
-  auto pChar = pService->getCharacteristic(_characteristicUUID);
-  if (!pChar) {
-    BLEGC_LOGE("Characteristic not found, characteristicUUID: %s", std::string(_characteristicUUID).c_str());
-    return nullptr;
-  }
-
-  return pChar;
-}
-
-template <typename T>
-bool Signal<T>::deinit(bool disconnected) {
+bool InputSignal<T>::deinit(bool disconnected) {
   if (!_initialized) {
     return false;
   }
 
   bool result = true;
   if (!disconnected) {
-    auto pChar = _getCharacteristic();
+    auto pChar = Utils::findCharacteristic(_address, _serviceUUID, _characteristicUUID);
     if (pChar) {
       if (!pChar->unsubscribe()) {
         BLEGC_LOGW("Failed to unsubscribe from notifications. %s", Utils::remoteCharToStr(pChar).c_str());
@@ -194,10 +120,10 @@ bool Signal<T>::deinit(bool disconnected) {
     }
   }
 
-  if (_callConsumerTask != NULL) {
+  if (_callConsumerTask != nullptr) {
     vTaskDelete(_callConsumerTask);
   }
-  if (_storeMutex != NULL) {
+  if (_storeMutex != nullptr) {
     vSemaphoreDelete(_storeMutex);
   }
 
@@ -206,8 +132,8 @@ bool Signal<T>::deinit(bool disconnected) {
 }
 
 template <typename T>
-void Signal<T>::_callConsumerFn(void* pvParameters) {
-  auto* self = (Signal<T>*)pvParameters;
+void InputSignal<T>::_callConsumerFn(void* pvParameters) {
+  auto* self = (InputSignal<T>*)pvParameters;
 
   while (true) {
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
@@ -216,10 +142,10 @@ void Signal<T>::_callConsumerFn(void* pvParameters) {
 }
 
 template <typename T>
-void Signal<T>::_handleNotify(NimBLERemoteCharacteristic* pRemoteCharacteristic,
-                              uint8_t* pData,
-                              size_t length,
-                              bool isNotify) {
+void InputSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pRemoteCharacteristic,
+                                      uint8_t* pData,
+                                      size_t length,
+                                      bool isNotify) {
   BLEGC_LOGD("Received a notification. %s", Utils::remoteCharToStr(pRemoteCharacteristic).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
@@ -245,7 +171,7 @@ void Signal<T>::_handleNotify(NimBLERemoteCharacteristic* pRemoteCharacteristic,
 }
 
 template <typename T>
-T& Signal<T>::read() {
+T& InputSignal<T>::read() {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   if (!_store.flags[FLAG_PARSED_IDX]) {
     _store.event = _parser(_store.data, _store.length);
@@ -263,17 +189,17 @@ T& Signal<T>::read() {
 }
 
 template <typename T>
-bool Signal<T>::isUpdated() const {
+bool InputSignal<T>::isUpdated() const {
   return _store.flags[FLAG_UPDATED_IDX];
 }
 
 template <typename T>
-void Signal<T>::subscribe(const Consumer<T>& onUpdate) {
+void InputSignal<T>::subscribe(const Consumer<T>& onUpdate) {
   _consumer = onUpdate;
   _hasSubscription = true;
 }
 
 template <typename T>
-bool Signal<T>::isInitialized() const {
+bool InputSignal<T>::isInitialized() const {
   return _initialized;
 }

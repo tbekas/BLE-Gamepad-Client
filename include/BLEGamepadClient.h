@@ -14,7 +14,7 @@ class BLEGamepadClient {
  public:
   BLEGamepadClient();
 
-  bool begin(bool autoScanEnabled = true, int maxConnected = 1);
+  bool begin(bool autoScanEnabled = true, int maxConnected = 1, bool deleteBonds = false);
   bool end();
 
   std::list<Controller>& getControllers();
@@ -24,8 +24,6 @@ class BLEGamepadClient {
   bool addConfig(const ControllerConfig& config);
 
   /* proxy methods below */
-
-  static bool deleteAllBonds();
   bool startScan(uint32_t durationMs);
   bool stopScan();
 

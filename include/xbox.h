@@ -2,5 +2,5 @@
 
 #include "ControllerConfig.h"
 namespace xbox {
-  ControllerConfig controllerConfig();
+ControllerConfig controllerConfig();
 }
