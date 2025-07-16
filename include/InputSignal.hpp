@@ -11,7 +11,7 @@
 
 #define FLAG_COUNT 2
 #define FLAG_UPDATED_IDX 0
-#define FLAG_DECODED_IDX 1
+#define FLAG_DECODE_ATTEMPT_IDX 1
 
 template <typename T>
 using Consumer = std::function<void(T& value)>;
@@ -62,7 +62,7 @@ InputSignal<T>::InputSignal(const NimBLEAddress address)
       _callConsumerTask(nullptr),
       _storeMutex(nullptr),
 	  _store() {
-  _store.flags[FLAG_DECODED_IDX] = true;
+  _store.flags[FLAG_DECODE_ATTEMPT_IDX] = true;
 }
 
 template <typename T>
@@ -153,26 +153,24 @@ void InputSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pRemoteCharacteri
                                       bool isNotify) {
   BLEGC_LOGD("Received a notification. %s", Utils::remoteCharToStr(pRemoteCharacteristic).c_str());
 
-  if (_store.capacity < length) {
-    delete[] _store.pBuffer;
-    _store.pBuffer = new uint8_t[length];
-    _store.capacity = length;
-  }
-
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  std::memcpy(_store.pBuffer, pData, length);
-  _store.used = length;
-
   if (_hasSubscription) {
-    auto result = _decoder(_store.event, _store.pBuffer, _store.used);
+    auto result = _decoder(_store.event, pData, length);
     _store.event.controllerAddress = _address;
-    _store.flags[FLAG_DECODED_IDX] = result;
+    _store.flags[FLAG_DECODE_ATTEMPT_IDX] = true;
     _store.flags[FLAG_UPDATED_IDX] = result;
     if (result) {
       xTaskNotifyGive(_callConsumerTask);
     }
   } else {
-    _store.flags[FLAG_DECODED_IDX] = false;
+    if (_store.capacity < length) {
+      delete[] _store.pBuffer;
+      _store.pBuffer = new uint8_t[length];
+      _store.capacity = length;
+    }
+    std::memcpy(_store.pBuffer, pData, length);
+    _store.used = length;
+    _store.flags[FLAG_DECODE_ATTEMPT_IDX] = false;
     _store.flags[FLAG_UPDATED_IDX] = true;
   }
   configASSERT(xSemaphoreGive(_storeMutex));
@@ -181,15 +179,13 @@ void InputSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pRemoteCharacteri
 template <typename T>
 T& InputSignal<T>::read() {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  if (!_store.flags[FLAG_DECODED_IDX]) {
+  if (!_store.flags[FLAG_DECODE_ATTEMPT_IDX]) {
     auto result = _decoder(_store.event, _store.pBuffer, _store.used);
     _store.event.controllerAddress = _address;
-    _store.flags[FLAG_DECODED_IDX] = result;
+    _store.flags[FLAG_DECODE_ATTEMPT_IDX] = true;
   }
 
-  if (_store.flags[FLAG_UPDATED_IDX]) {
-    _store.flags[FLAG_UPDATED_IDX] = false;
-  }
+  _store.flags[FLAG_UPDATED_IDX] = false;
 
   T& val = _store.event;
   configASSERT(xSemaphoreGive(_storeMutex));
