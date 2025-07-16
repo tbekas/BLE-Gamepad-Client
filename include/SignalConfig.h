@@ -2,12 +2,13 @@
 
 #include <NimBLEUUID.h>
 #include <string>
-#include "Parser.h"
+#include "SignalCoder.h"
 
 template <typename T>
 struct SignalConfig {
-  SignalConfig() : parser() {}
-  Parser<T> parser;
+  SignalConfig() : decoder(), payloadLen(0) {}
+  SignalDecoder<T> decoder;
+  size_t payloadLen;
   NimBLEUUID serviceUUID;
   NimBLEUUID characteristicUUID;
 
@@ -20,5 +21,6 @@ struct SignalConfig {
 
 template <typename T>
 SignalConfig<T>::operator std::string() const {
-  return "serviceUUID: " + std::string(serviceUUID) + ", characteristicUUID: " + std::string(characteristicUUID);
+  return "serviceUUID: " + std::string(serviceUUID) + ", characteristicUUID: " + std::string(characteristicUUID) +
+         ", payloadLen: " + std::to_string(payloadLen);
 }

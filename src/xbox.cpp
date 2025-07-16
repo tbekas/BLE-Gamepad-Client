@@ -5,12 +5,15 @@
 #include "Logger.h"
 
 namespace xbox {
-const NimBLEUUID deviceInfoServiceUUID((uint16_t)0x180a);
-const NimBLEUUID batteryServiceUUID((uint16_t)0x180f);
-const NimBLEUUID hidServiceUUID((uint16_t)0x1812);
 
-const uint16_t axisMax = 0xffff;
-const uint16_t triggerMax = 0x3ff;
+const NimBLEUUID hidServiceUUID((uint16_t)0x1812);
+const NimBLEUUID batteryServiceUUID((uint16_t)0x180f);
+
+constexpr size_t hidPayloadLen = 16;
+constexpr size_t batteryPayloadLen = 16;
+
+constexpr uint16_t axisMax = 0xffff;
+constexpr uint16_t triggerMax = 0x3ff;
 
 inline float axisX(uint16_t val) {
   return ((2.0f * val) / axisMax) - 1.0f;
@@ -44,12 +47,10 @@ inline void printBits(uint8_t byte, int label) {
   BLEGC_LOGI("Byte %d: %s", label, bits.to_string().c_str());
 }
 
-ControlsEvent parseControlsData(uint8_t pData[], size_t length) {
-  ControlsEvent e;
-
-  if (length != 16) {
+bool decodeControlsData(ControlsEvent& e, uint8_t pData[], size_t length) {
+  if (length != hidPayloadLen) {
     BLEGC_LOGE("Expected 16 bytes, was %d bytes", length);
-    return e;
+    return false;
   }
 
   e.lx = axisX(uint16(pData[0], pData[1]));
@@ -93,27 +94,28 @@ ControlsEvent parseControlsData(uint8_t pData[], size_t length) {
   uint8_t btns3 = pData[15];
   e.share = button(btns3, 0);
 
-  return e;
+  return true;
 }
 
-BatteryEvent parseBatteryData(uint8_t pData[], size_t length) {
-  BatteryEvent e;
-
+bool decodeBatteryData(BatteryEvent& e, uint8_t pData[], size_t length) {
   if (length != 1) {
     BLEGC_LOGE("Expected 1 byte, was %d bytes", length);
-    return e;
+    return false;
   }
 
   e.level = (0.01f * pData[0]);
-
-  return e;
+  return true;
 }
 
 ControllerConfig controllerConfig() {
   ControllerConfig config;
   config.deviceName = "Xbox Wireless Controller";
-  config.setControlsConfig(hidServiceUUID, parseControlsData);
-  config.setBatteryConfig(batteryServiceUUID, parseBatteryData);
+  config.controls.serviceUUID = hidServiceUUID;
+  config.controls.decoder = decodeControlsData;
+  config.controls.payloadLen = hidPayloadLen;
+  config.battery.serviceUUID = batteryServiceUUID;
+  config.battery.decoder = decodeBatteryData;
+  config.battery.payloadLen = batteryPayloadLen;
   return config;
 }
 }  // namespace xbox

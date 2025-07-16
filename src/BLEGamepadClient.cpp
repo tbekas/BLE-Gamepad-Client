@@ -96,14 +96,14 @@ class ScanCallbacks : public NimBLEScanCallbacks {
         continue;
       }
 
-      if (config.controlsConfig.isEnabled() &&
-          pAdvertisedDevice->isAdvertisingService(config.controlsConfig.serviceUUID)) {
+      if (config.controls.isEnabled() &&
+          pAdvertisedDevice->isAdvertisingService(config.controls.serviceUUID)) {
         configMatch[i] = true;
         continue;
       }
 
-      if (config.batteryConfig.isEnabled() &&
-          pAdvertisedDevice->isAdvertisingService(config.batteryConfig.serviceUUID)) {
+      if (config.battery.isEnabled() &&
+          pAdvertisedDevice->isAdvertisingService(config.battery.serviceUUID)) {
         configMatch[i] = true;
         continue;
       }
@@ -410,7 +410,7 @@ void BLEGamepadClient::setDisconnectedCallback(const ControllerCallback& onContr
 
 /**
  * @brief Registers a configuration for a new controller type. The configuration is used to set up a connection and to
- * parse raw data coming from the controller.
+ * decode raw data coming from the controller.
  * @param config Configuration to be registered.
  * @return True if successful.
  */
@@ -423,7 +423,7 @@ bool BLEGamepadClient::addConfig(const ControllerConfig& config) {
     BLEGC_LOGE("Failed to add config. Reached maximum number of configs: %d", _configs.size());
     return false;
   }
-  if (config.controlsConfig.isDisabled() && config.batteryConfig.isDisabled()) {
+  if (config.controls.isDisabled() && config.battery.isDisabled()) {
     BLEGC_LOGE("Invalid config, at least one of `controlsConfig` and `batteryConfig` has to be enabled");
     return false;
   }

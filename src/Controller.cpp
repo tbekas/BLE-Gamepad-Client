@@ -32,14 +32,14 @@ bool Controller::init(ControllerConfig& config) {
     return false;
   }
 
-  if (config.controlsConfig.isEnabled()) {
-    if (!_controlsSignal.init(config.controlsConfig)) {
+  if (config.controls.isEnabled()) {
+    if (!_controlsSignal.init(config.controls)) {
       return false;
     }
   }
 
-  if (config.batteryConfig.isEnabled()) {
-    if (!_batterySignal.init(config.batteryConfig)) {
+  if (config.battery.isEnabled()) {
+    if (!_batterySignal.init(config.battery)) {
       if (_controlsSignal.isInitialized()) {
         _controlsSignal.deinit(false);
       }

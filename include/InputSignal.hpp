@@ -5,13 +5,13 @@
 #include <bitset>
 #include <functional>
 #include "Logger.h"
-#include "Parser.h"
+#include "SignalCoder.h"
 #include "SignalConfig.h"
 #include "Utils.h"
 
 #define FLAG_COUNT 2
 #define FLAG_UPDATED_IDX 0
-#define FLAG_PARSED_IDX 1
+#define FLAG_DECODED_IDX 1
 
 template <typename T>
 using Consumer = std::function<void(T& value)>;
@@ -20,8 +20,9 @@ class InputSignal {
  public:
   struct Store {
     T event;
-    uint8_t* data{};
-    size_t length{};
+    uint8_t* pBuffer{};
+    size_t used{};
+    size_t capacity{};
     std::bitset<FLAG_COUNT> flags;
   };
 
@@ -42,7 +43,7 @@ class InputSignal {
   Consumer<T> _consumer;
   bool _hasSubscription;
   void _handleNotify(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify);
-  Parser<T> _parser;
+  SignalDecoder<T> _decoder;
   NimBLEAddress _address;
   NimBLEUUID _serviceUUID;
   NimBLEUUID _characteristicUUID;
@@ -54,14 +55,14 @@ class InputSignal {
 template <typename T>
 InputSignal<T>::InputSignal(const NimBLEAddress address)
     : _initialized(false),
-      _consumer([](T) {}),
+      _consumer([](T&) {}),
       _hasSubscription(false),
-      _parser([](uint8_t[], size_t) { return T(); }),
+      _decoder([](T&, uint8_t[], size_t) { return true; }),
       _address(address),
       _callConsumerTask(nullptr),
       _storeMutex(nullptr),
 	  _store() {
-  _store.flags[FLAG_PARSED_IDX] = true;
+  _store.flags[FLAG_DECODED_IDX] = true;
 }
 
 template <typename T>
@@ -76,7 +77,9 @@ bool InputSignal<T>::init(SignalConfig<T>& config) {
   xTaskCreate(_callConsumerFn, "_bleConnectionMsgConsumerTask", 10000, this, 0, &_callConsumerTask);
   configASSERT(_callConsumerTask);
 
-  _parser = config.parser;
+  _decoder = config.decoder;
+  _store.pBuffer = new uint8_t[config.payloadLen];
+  _store.capacity = config.payloadLen;
   auto pChar = Utils::findCharacteristic(_address, config.serviceUUID, config.characteristicUUID,
                                          [](NimBLERemoteCharacteristic* c) { return c->canNotify(); });
   if (!pChar) {
@@ -120,6 +123,8 @@ bool InputSignal<T>::deinit(bool disconnected) {
     }
   }
 
+  delete[] _store.pBuffer;
+
   if (_callConsumerTask != nullptr) {
     vTaskDelete(_callConsumerTask);
   }
@@ -148,23 +153,26 @@ void InputSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pRemoteCharacteri
                                       bool isNotify) {
   BLEGC_LOGD("Received a notification. %s", Utils::remoteCharToStr(pRemoteCharacteristic).c_str());
 
-  configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  if (_store.length != length) {
-    delete[] _store.data;
-    _store.length = length;
-    _store.data = new uint8_t[_store.length];
+  if (_store.capacity < length) {
+    delete[] _store.pBuffer;
+    _store.pBuffer = new uint8_t[length];
+    _store.capacity = length;
   }
 
-  std::memcpy(_store.data, pData, _store.length);
+  configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
+  std::memcpy(_store.pBuffer, pData, length);
+  _store.used = length;
 
   if (_hasSubscription) {
-    _store.event = _parser(_store.data, _store.length);
+    auto result = _decoder(_store.event, _store.pBuffer, _store.used);
     _store.event.controllerAddress = _address;
-    _store.flags[FLAG_PARSED_IDX] = true;
-    _store.flags[FLAG_UPDATED_IDX] = true;
-    xTaskNotifyGive(_callConsumerTask);
+    _store.flags[FLAG_DECODED_IDX] = result;
+    _store.flags[FLAG_UPDATED_IDX] = result;
+    if (result) {
+      xTaskNotifyGive(_callConsumerTask);
+    }
   } else {
-    _store.flags[FLAG_PARSED_IDX] = false;
+    _store.flags[FLAG_DECODED_IDX] = false;
     _store.flags[FLAG_UPDATED_IDX] = true;
   }
   configASSERT(xSemaphoreGive(_storeMutex));
@@ -173,10 +181,10 @@ void InputSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pRemoteCharacteri
 template <typename T>
 T& InputSignal<T>::read() {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  if (!_store.flags[FLAG_PARSED_IDX]) {
-    _store.event = _parser(_store.data, _store.length);
+  if (!_store.flags[FLAG_DECODED_IDX]) {
+    auto result = _decoder(_store.event, _store.pBuffer, _store.used);
     _store.event.controllerAddress = _address;
-    _store.flags[FLAG_PARSED_IDX] = true;
+    _store.flags[FLAG_DECODED_IDX] = result;
   }
 
   if (_store.flags[FLAG_UPDATED_IDX]) {
