@@ -4,10 +4,10 @@
 #include "BatteryEvent.h"
 #include "ControllerConfig.h"
 #include "ControlsEvent.h"
-#include "InputSignal.hpp"
+#include "IncomingSignal.hpp"
 
-using ControlsSignal = InputSignal<ControlsEvent>;
-using BatterySignal = InputSignal<BatteryEvent>;
+using ControlsSignal = IncomingSignal<ControlsEvent>;
+using BatterySignal = IncomingSignal<BatteryEvent>;
 
 class Controller {
  public:
@@ -15,8 +15,8 @@ class Controller {
   ~Controller() = default;
 
   NimBLEAddress getAddress() const;
-  InputSignal<ControlsEvent>& controls();
-  InputSignal<BatteryEvent>& battery();
+  IncomingSignal<ControlsEvent>& controls();
+  IncomingSignal<BatteryEvent>& battery();
   bool isConnected() const;
   bool isInitialized() const;
 

@@ -1,7 +1,7 @@
 #include "Controller.h"
 #include <NimBLEAddress.h>
 #include "ControllerConfig.h"
-#include "InputSignal.hpp"
+#include "IncomingSignal.hpp"
 
 Controller::Controller(const NimBLEAddress address)
     : _initialized(false), _address(address), _controlsSignal(address), _batterySignal(address) {}

@@ -5,8 +5,8 @@
 #include "ControlsEvent.h"
 #include "SignalConfig.h"
 
-using ControlsConfig = SignalConfig<ControlsEvent>;
-using BatteryConfig = SignalConfig<BatteryEvent>;
+using ControlsConfig = IncomingSignalConfig<ControlsEvent>;
+using BatteryConfig = IncomingSignalConfig<BatteryEvent>;
 
 struct ControllerConfig {
   ControllerConfig() = default;

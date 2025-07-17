@@ -4,11 +4,8 @@
 #include <string>
 #include "SignalCoder.h"
 
-template <typename T>
 struct SignalConfig {
-  SignalConfig() : decoder(), payloadLen(0) {}
-  SignalDecoder<T> decoder;
-  size_t payloadLen;
+  size_t payloadLen{};
   NimBLEUUID serviceUUID;
   NimBLEUUID characteristicUUID;
 
@@ -19,8 +16,17 @@ struct SignalConfig {
   explicit operator std::string() const;
 };
 
-template <typename T>
-SignalConfig<T>::operator std::string() const {
+inline SignalConfig::operator std::string() const {
   return "serviceUUID: " + std::string(serviceUUID) + ", characteristicUUID: " + std::string(characteristicUUID) +
          ", payloadLen: " + std::to_string(payloadLen);
 }
+
+template <typename T>
+struct IncomingSignalConfig : SignalConfig {
+  SignalDecoder<T> decoder;
+};
+
+template <typename T>
+struct OutgoingSignalConfig : SignalConfig {
+  SignalEncoder<T> encoder;
+};

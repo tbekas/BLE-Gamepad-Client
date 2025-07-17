@@ -16,7 +16,7 @@
 template <typename T>
 using Consumer = std::function<void(T& value)>;
 template <typename T>
-class InputSignal {
+class IncomingSignal {
  public:
   struct Store {
     T event;
@@ -26,15 +26,15 @@ class InputSignal {
     std::bitset<FLAG_COUNT> flags;
   };
 
-  explicit InputSignal(NimBLEAddress address);
-  ~InputSignal() = default;
+  explicit IncomingSignal(NimBLEAddress address);
+  ~IncomingSignal() = default;
 
   T& read();
   bool isUpdated() const;
   bool isInitialized() const;
   void subscribe(const Consumer<T>& onUpdate);
 
-  bool init(SignalConfig<T>& config);
+  bool init(IncomingSignalConfig<T>& config);
   bool deinit(bool disconnected);
 
  private:
@@ -53,7 +53,7 @@ class InputSignal {
 };
 
 template <typename T>
-InputSignal<T>::InputSignal(const NimBLEAddress address)
+IncomingSignal<T>::IncomingSignal(const NimBLEAddress address)
     : _initialized(false),
       _consumer([](T&) {}),
       _hasSubscription(false),
@@ -66,7 +66,7 @@ InputSignal<T>::InputSignal(const NimBLEAddress address)
 }
 
 template <typename T>
-bool InputSignal<T>::init(SignalConfig<T>& config) {
+bool IncomingSignal<T>::init(IncomingSignalConfig<T>& config) {
   if (_initialized) {
     return false;
   }
@@ -74,7 +74,7 @@ bool InputSignal<T>::init(SignalConfig<T>& config) {
   _storeMutex = xSemaphoreCreateMutex();
   configASSERT(_storeMutex);
   configASSERT(xSemaphoreGive(_storeMutex));
-  xTaskCreate(_callConsumerFn, "_bleConnectionMsgConsumerTask", 10000, this, 0, &_callConsumerTask);
+  xTaskCreate(_callConsumerFn, "_callConsumerFn", 10000, this, 0, &_callConsumerTask);
   configASSERT(_callConsumerTask);
 
   _decoder = config.decoder;
@@ -88,7 +88,7 @@ bool InputSignal<T>::init(SignalConfig<T>& config) {
   _serviceUUID = pChar->getRemoteService()->getUUID();
   _characteristicUUID = pChar->getUUID();
 
-  auto handlerFn = std::bind(&InputSignal<T>::_handleNotify, this, std::placeholders::_1, std::placeholders::_2,
+  auto handlerFn = std::bind(&IncomingSignal<T>::_handleNotify, this, std::placeholders::_1, std::placeholders::_2,
                              std::placeholders::_3, std::placeholders::_4);
 
   BLEGC_LOGD("Subscribing to notifications. %s", Utils::remoteCharToStr(pChar).c_str());
@@ -105,7 +105,7 @@ bool InputSignal<T>::init(SignalConfig<T>& config) {
 }
 
 template <typename T>
-bool InputSignal<T>::deinit(bool disconnected) {
+bool IncomingSignal<T>::deinit(bool disconnected) {
   if (!_initialized) {
     return false;
   }
@@ -137,8 +137,8 @@ bool InputSignal<T>::deinit(bool disconnected) {
 }
 
 template <typename T>
-void InputSignal<T>::_callConsumerFn(void* pvParameters) {
-  auto* self = (InputSignal<T>*)pvParameters;
+void IncomingSignal<T>::_callConsumerFn(void* pvParameters) {
+  auto* self = (IncomingSignal<T>*)pvParameters;
 
   while (true) {
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
@@ -147,7 +147,7 @@ void InputSignal<T>::_callConsumerFn(void* pvParameters) {
 }
 
 template <typename T>
-void InputSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pRemoteCharacteristic,
+void IncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pRemoteCharacteristic,
                                       uint8_t* pData,
                                       size_t length,
                                       bool isNotify) {
@@ -177,7 +177,7 @@ void InputSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pRemoteCharacteri
 }
 
 template <typename T>
-T& InputSignal<T>::read() {
+T& IncomingSignal<T>::read() {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   if (!_store.flags[FLAG_DECODE_ATTEMPT_IDX]) {
     auto result = _decoder(_store.event, _store.pBuffer, _store.used);
@@ -193,17 +193,17 @@ T& InputSignal<T>::read() {
 }
 
 template <typename T>
-bool InputSignal<T>::isUpdated() const {
+bool IncomingSignal<T>::isUpdated() const {
   return _store.flags[FLAG_UPDATED_IDX];
 }
 
 template <typename T>
-void InputSignal<T>::subscribe(const Consumer<T>& onUpdate) {
+void IncomingSignal<T>::subscribe(const Consumer<T>& onUpdate) {
   _consumer = onUpdate;
   _hasSubscription = true;
 }
 
 template <typename T>
-bool InputSignal<T>::isInitialized() const {
+bool IncomingSignal<T>::isInitialized() const {
   return _initialized;
 }
