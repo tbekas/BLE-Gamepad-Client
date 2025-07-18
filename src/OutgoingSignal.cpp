@@ -11,16 +11,17 @@
 constexpr size_t maxCapacity = 1024;
 
 template <typename T>
-OutgoingSignal<T>::OutgoingSignal(NimBLEAddress address)
+OutgoingSignal<T>::OutgoingSignal(const NimBLEAddress address)
     : _initialized(false),
       _encoder([](const T&, uint8_t[], size_t) { return static_cast<size_t>(0); }),
       _address(address),
+      _pChar(nullptr),
       _sendDataTask(nullptr),
       _storeMutex(nullptr) {}
 
 template <typename T>
 void OutgoingSignal<T>::_sendDataFn(void* pvParameters) {
-  auto* self = (OutgoingSignal<T>*)pvParameters;
+  auto* self = static_cast<OutgoingSignal*>(pvParameters);
 
   while (true) {
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
@@ -32,7 +33,7 @@ void OutgoingSignal<T>::_sendDataFn(void* pvParameters) {
     self->_store.pBuffer = tmp;
 
     auto used = self->_store.used;
-    auto encodeSuccess = self->_store.used > 0 && self->_store.used < self->_store.capacity;
+    auto encodeSuccess = self->_store.used > 0 && self->_store.used <= self->_store.capacity;
     configASSERT(xSemaphoreGive(self->_storeMutex));
 
     if (!encodeSuccess) {
@@ -65,10 +66,12 @@ void OutgoingSignal<T>::write(const T& value) {
     _store.capacity = min(_store.capacity * 2, maxCapacity);
     _store.pBuffer = new uint8_t[_store.capacity];
     _store.pSendBuffer = new uint8_t[_store.capacity];
+    BLEGC_LOGD("Encode loop");
   }
 
   _store.used = used;
-  auto encodeSuccess = _store.used > 0 && _store.used < _store.capacity;
+  BLEGC_LOGD("used: %d, capacity: %d", _store.used, _store.capacity);
+  auto encodeSuccess = _store.used > 0 && _store.used <= _store.capacity;
   configASSERT(xSemaphoreGive(_storeMutex));
 
   if (!encodeSuccess) {
@@ -85,7 +88,7 @@ bool OutgoingSignal<T>::init(OutgoingSignalConfig<T>& config) {
     return false;
   }
 
-  _store.capacity = config.bufferLen > 0 ? config.bufferLen : 1;
+  _store.capacity = config.bufferLen > 0 ? config.bufferLen : 8;
   _store.pBuffer = new uint8_t[_store.capacity];
   _store.pSendBuffer = new uint8_t[_store.capacity];
 

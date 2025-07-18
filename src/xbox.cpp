@@ -148,9 +148,10 @@ ControllerConfig controllerConfig() {
   config.battery.serviceUUID = batteryServiceUUID;
   config.battery.decoder = decodeBatteryData;
   config.vibrations.serviceUUID = hidServiceUUID;
-  // config.vibrations.characteristicUUID = NimBLEUUID(static_cast<uint16_t>(0x2a4d));
   config.vibrations.encoder = encodeVibrationsCommand;
   config.vibrations.bufferLen = vibrationsPayloadLen;
+
+  // config.vibrations.characteristicUUID = NimBLEUUID(static_cast<uint16_t>(0x2a4d));
   return config;
 }
 }  // namespace xbox

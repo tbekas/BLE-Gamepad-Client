@@ -1,6 +1,6 @@
 #pragma once
 
-#include <NimBLERemoteCharacteristic.h>
+#include <NimBLEDevice.h>
 #include <string>
 
 class Utils {
@@ -13,6 +13,19 @@ class Utils {
       return str.substr(0, pos);
     }
     return str;
+  }
+
+  static bool discoverAttributes(const NimBLEAddress address) {
+    auto pClient = BLEDevice::getClientByPeerAddress(address);
+    if (!pClient) {
+      BLEGC_LOGE("BLE client not found, address %s", std::string(address).c_str());
+      return false;
+    }
+    if (!pClient->discoverAttributes()) {
+      BLEGC_LOGE("Failed to discover attributes, address %s", std::string(address).c_str());
+      return false;
+    }
+    return true;
   }
 
   using BLECharacteristicFilter = std::function<bool(NimBLERemoteCharacteristic*)>;
@@ -52,7 +65,7 @@ class Utils {
 
     BLEGC_LOGD("Characteristics in a service %s", std::string(serviceUUID).c_str());
 
-    for (auto pChar : pService->getCharacteristics(true)) {
+    for (auto pChar : pService->getCharacteristics(false)) {
       BLEGC_LOGD("A characteristic: %s", Utils::remoteCharToStr(pChar).c_str());
     }
 

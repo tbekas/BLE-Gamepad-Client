@@ -125,6 +125,7 @@ void IncomingSignal<T>::read(T& out) {
   }
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
+  BLEGC_LOGD("Reading a value");
   _store.updated = false;
   out = _store.event;
   configASSERT(xSemaphoreGive(_storeMutex));

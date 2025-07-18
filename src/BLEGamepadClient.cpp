@@ -107,6 +107,12 @@ class ScanCallbacks : public NimBLEScanCallbacks {
         configMatch[i] = true;
         continue;
       }
+
+      if (config.vibrations.isEnabled() &&
+          pAdvertisedDevice->isAdvertisingService(config.vibrations.serviceUUID)) {
+        configMatch[i] = true;
+        continue;
+      }
     }
 
     if (configMatch.none()) {
@@ -116,9 +122,9 @@ class ScanCallbacks : public NimBLEScanCallbacks {
 
     GamepadClient._configMatch[pAdvertisedDevice->getAddress()] = configMatch.to_ulong();
 
-    auto pClient = NimBLEDevice::getDisconnectedClient();
+    auto pClient = NimBLEDevice::getClientByPeerAddress(pAdvertisedDevice->getAddress());
     if (pClient) {
-      pClient->setPeerAddress(pAdvertisedDevice->getAddress());
+      BLEGC_LOGD("Reusing existing client for a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
     } else {
       pClient = NimBLEDevice::createClient(pAdvertisedDevice->getAddress());
       if (!pClient) {
@@ -127,19 +133,18 @@ class ScanCallbacks : public NimBLEScanCallbacks {
         return;
       }
       pClient->setConnectTimeout(connTimeoutMs);
+      pClient->setClientCallbacks(&clientCallbacks, false);
     }
 
-    pClient->setClientCallbacks(&clientCallbacks, false);
-
-    if (xSemaphoreTake(GamepadClient._connectionSlots, (TickType_t)0) != pdTRUE) {
+    if (xSemaphoreTake(GamepadClient._connectionSlots, 0) != pdTRUE) {
       BLEGC_LOGD("No connections slots left");
       return;
     }
 
-    BLEGC_LOGI("Attempting to connect to a device, address: %s", std::string(pAdvertisedDevice->getAddress()).c_str());
+    BLEGC_LOGI("Attempting to connect to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
 
     if (!pClient->connect(true, true, false)) {
-      BLEGC_LOGE("Failed to initiate connection, address: %s", std::string(pAdvertisedDevice->getAddress()).c_str());
+      BLEGC_LOGE("Failed to initiate connection, address: %s", std::string(pClient->getPeerAddress()).c_str());
       NimBLEDevice::deleteClient(pClient);
       if (xSemaphoreGive(GamepadClient._connectionSlots) != pdTRUE) {
         BLEGC_LOGE("Failed to release connection slot");

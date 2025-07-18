@@ -2,6 +2,7 @@
 #include <NimBLEAddress.h>
 #include "ControllerConfig.h"
 #include "IncomingSignal.h"
+#include "Utils.h"
 
 Controller::Controller(const NimBLEAddress address)
     : _initialized(false),
@@ -37,6 +38,10 @@ bool Controller::isConnected() const {
 
 bool Controller::init(ControllerConfig& config) {
   if (_initialized) {
+    return false;
+  }
+
+  if (!Utils::discoverAttributes(_address)) {
     return false;
   }
 
