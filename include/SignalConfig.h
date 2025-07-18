@@ -5,7 +5,6 @@
 #include "SignalCoder.h"
 
 struct SignalConfig {
-  size_t payloadLen{};
   NimBLEUUID serviceUUID;
   NimBLEUUID characteristicUUID;
 
@@ -17,8 +16,7 @@ struct SignalConfig {
 };
 
 inline SignalConfig::operator std::string() const {
-  return "serviceUUID: " + std::string(serviceUUID) + ", characteristicUUID: " + std::string(characteristicUUID) +
-         ", payloadLen: " + std::to_string(payloadLen);
+  return "serviceUUID: " + std::string(serviceUUID) + ", characteristicUUID: " + std::string(characteristicUUID);
 }
 
 template <typename T>
@@ -29,4 +27,8 @@ struct IncomingSignalConfig : SignalConfig {
 template <typename T>
 struct OutgoingSignalConfig : SignalConfig {
   SignalEncoder<T> encoder;
+
+  /// @brief Optional. Specifies the size of the buffer for the encoded payload. Leave undefined if the encoded size
+  /// varies depending on the input.
+  size_t bufferLen{};
 };

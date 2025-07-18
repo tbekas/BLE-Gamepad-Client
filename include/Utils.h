@@ -43,22 +43,26 @@ class Utils {
       }
 
       if (!filter(pChar)) {
-        BLEGC_LOGE("Characteristic found, but it cant't notify. %s", Utils::remoteCharToStr(pChar).c_str());
+        BLEGC_LOGE("Characteristic found, but it doesn't meet criteria. %s", Utils::remoteCharToStr(pChar).c_str());
         return nullptr;
       }
 
       return pChar;
     }
 
-    BLEGC_LOGD("Looking for any characteristic that can notify");
+    BLEGC_LOGD("Characteristics in a service %s", std::string(serviceUUID).c_str());
+
+    for (auto pChar : pService->getCharacteristics(true)) {
+      BLEGC_LOGD("A characteristic: %s", Utils::remoteCharToStr(pChar).c_str());
+    }
 
     // lookup any characteristic that can notify
-    for (auto pChar : pService->getCharacteristics(true)) {
+    for (auto pChar : pService->getCharacteristics(false)) {
       if (!filter(pChar)) {
-        BLEGC_LOGD("Skipping characteristic that can't notify. %s", Utils::remoteCharToStr(pChar).c_str());
+        BLEGC_LOGD("Skipping characteristic that doesn't meet criteria. %s", Utils::remoteCharToStr(pChar).c_str());
         continue;
       }
-      BLEGC_LOGD("Found characteristic that can notify. %s", Utils::remoteCharToStr(pChar).c_str());
+      BLEGC_LOGD("Found characteristic that meet criteria. %s", Utils::remoteCharToStr(pChar).c_str());
       return pChar;
     }
 

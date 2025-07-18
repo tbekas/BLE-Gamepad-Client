@@ -1,10 +1,14 @@
 #include "Controller.h"
 #include <NimBLEAddress.h>
 #include "ControllerConfig.h"
-#include "IncomingSignal.hpp"
+#include "IncomingSignal.h"
 
 Controller::Controller(const NimBLEAddress address)
-    : _initialized(false), _address(address), _controlsSignal(address), _batterySignal(address) {}
+    : _initialized(false),
+      _address(address),
+      _controlsSignal(address),
+      _batterySignal(address),
+      _vibrationsSignal(address) {}
 
 NimBLEAddress Controller::getAddress() const {
   return _address;
@@ -16,6 +20,10 @@ ControlsSignal& Controller::controls() {
 
 BatterySignal& Controller::battery() {
   return _batterySignal;
+}
+
+VibrationsSignal& Controller::vibrations() {
+  return _vibrationsSignal;
 }
 
 bool Controller::isInitialized() const {
@@ -47,6 +55,18 @@ bool Controller::init(ControllerConfig& config) {
     }
   }
 
+  if (config.vibrations.isEnabled()) {
+    if (!_vibrationsSignal.init(config.vibrations)) {
+      if (_batterySignal.isInitialized()) {
+        _batterySignal.deinit(false);
+      }
+      if (_controlsSignal.isInitialized()) {
+        _controlsSignal.deinit(false);
+      }
+      return false;
+    }
+  }
+
   _initialized = true;
   return true;
 }
@@ -58,8 +78,9 @@ bool Controller::deinit(bool disconnected) {
   bool result = true;
 
   // order of operands on the && matters here
-  result = _controlsSignal.deinit(disconnected) && result;
+  result = _vibrationsSignal.deinit(disconnected) && result;
   result = _batterySignal.deinit(disconnected) && result;
+  result = _controlsSignal.deinit(disconnected) && result;
 
   _initialized = false;
   return result;
