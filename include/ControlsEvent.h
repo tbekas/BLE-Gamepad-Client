@@ -70,14 +70,14 @@ struct ControlsEvent : BaseEvent {
   float rightTrigger;
 
   /// @brief Share button.
-  bool shareButton;
+  bool share;
 
   /// @brief Menu button, also known as start button.
-  bool menuButton;
+  bool menu;
 
   /// @brief View button, also known as back button.
-  bool viewButton;
+  bool view;
 
   /// @brief Xbox button, also known as guide button.
-  bool xboxButton;
+  bool xbox;
 };

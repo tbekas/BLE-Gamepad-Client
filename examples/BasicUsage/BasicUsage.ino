@@ -2,7 +2,8 @@
 #include <BLEGamepadClient.h>
 
 void onUpdate(ControlsEvent& e) {
-  Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n", e.lx, e.ly, e.rx, e.ry);
+  Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
+    e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);
 }
 
 void onConnected(Controller& controller) {
@@ -11,8 +12,8 @@ void onConnected(Controller& controller) {
 
 void setup(void) {
   Serial.begin(115200);
-  GamepadClient.setConnectedCallback(onConnected);
-  GamepadClient.begin();
+  BLEGamepadClient.setConnectedCallback(onConnected);
+  BLEGamepadClient.begin();
 }
 
 void loop() {

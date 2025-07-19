@@ -276,8 +276,8 @@ BLEGamepadClient_::BLEGamepadClient_()
  *  Example usage:
  * @code{cpp}
  * void setup(void) {
- *   // delete all bonded devices and start scanning until two controllers are connected
- *   GamepadClient.begin(true, 2, true);
+ *   // start scanning until two controllers are connected
+ *   BLEGamepadClient.begin(true, 2);
  * }
  * @endcode
  */
@@ -374,7 +374,7 @@ bool BLEGamepadClient_::end() {
  * Example usage:
  * @code{cpp}
  * void loop() {
- *   for (auto& ctrl : GamepadClient.getControllers()) {
+ *   for (auto& ctrl : BLEGamepadClient.getControllers()) {
  *     auto connStr = ctrl.isConnected() ? "connected" : "disconnected";
  *     Serial.printf("Controller is %s\n", connStr);
  *   }

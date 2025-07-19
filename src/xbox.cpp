@@ -86,14 +86,14 @@ size_t decodeControlsData(ControlsEvent& e, uint8_t payload[], size_t payloadLen
   e.rightBumper = decodeButton(byte13, 7);
 
   uint8_t byte14 = payload[14];
-  e.viewButton = decodeButton(byte14, 2);
-  e.menuButton = decodeButton(byte14, 3);
-  e.xboxButton = decodeButton(byte14, 4);
+  e.view = decodeButton(byte14, 2);
+  e.menu = decodeButton(byte14, 3);
+  e.xbox = decodeButton(byte14, 4);
   e.leftStickButton = decodeButton(byte14, 5);
   e.rightStickButton = decodeButton(byte14, 6);
 
   uint8_t byte15 = payload[15];
-  e.shareButton = decodeButton(byte15, 0);
+  e.share = decodeButton(byte15, 0);
 
   return controlsPayloadLen;
 }
@@ -116,6 +116,10 @@ inline uint8_t encodeMotorPower(float power) {
   return static_cast<uint8_t>(max(min(power, 1.0f), 0.0f) * 100.0f);
 }
 
+inline uint8_t encodeDuration(uint32_t durationMs) {
+  return static_cast<uint8_t>(min(durationMs, uint32_t(2550)) / 10);
+}
+
 size_t encodeVibrationsCommand(const VibrationsCommand& c, uint8_t outBuffer[], size_t bufferLen) {
   if (bufferLen < vibrationsPayloadLen) {
     BLEGC_LOGW("Expected buffer of at least %d bytes, was %d bytes", vibrationsPayloadLen, bufferLen);
@@ -126,15 +130,15 @@ size_t encodeVibrationsCommand(const VibrationsCommand& c, uint8_t outBuffer[], 
     outBuffer[0] = 0;
   } else {
     outBuffer[0] = encodeMotorEnable(c.rightMotor, 0) | encodeMotorEnable(c.leftMotor, 1) |
-                   encodeMotorEnable(c.rightTrigger, 2) | encodeMotorEnable(c.leftTrigger, 3);
+                   encodeMotorEnable(c.rightTriggerMotor, 2) | encodeMotorEnable(c.leftTriggerMotor, 3);
   }
 
-  outBuffer[1] = encodeMotorPower(c.leftTrigger);
-  outBuffer[2] = encodeMotorPower(c.rightTrigger);
+  outBuffer[1] = encodeMotorPower(c.leftTriggerMotor);
+  outBuffer[2] = encodeMotorPower(c.rightTriggerMotor);
   outBuffer[3] = encodeMotorPower(c.leftMotor);
   outBuffer[4] = encodeMotorPower(c.rightMotor);
-  outBuffer[5] = c.duration;
-  outBuffer[6] = c.pause;
+  outBuffer[5] = encodeDuration(c.durationMs);
+  outBuffer[6] = encodeDuration(c.pauseMs);
   outBuffer[7] = c.cycles == 0 ? 0 : c.cycles - 1;
 
   return vibrationsPayloadLen;
