@@ -14,7 +14,7 @@ IncomingSignal<T>::IncomingSignal(const NimBLEAddress address)
     : _initialized(false),
       _consumer([](T&) {}),
       _hasSubscription(false),
-      _decoder([](T&, uint8_t[], size_t) { return true; }),
+      _decoder([](T&, uint8_t[], size_t) { return 1; }),
       _address(address),
       _pChar(nullptr),
       _callConsumerTask(nullptr),
@@ -109,7 +109,7 @@ void IncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
   BLEGC_LOGD("Received a notification. %s", Utils::remoteCharToStr(pChar).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  auto result = _decoder(_store.event, pData, length);
+  auto result = _decoder(_store.event, pData, length) > 0;
   _store.updated = result;
   configASSERT(xSemaphoreGive(_storeMutex));
 

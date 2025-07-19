@@ -11,8 +11,6 @@ using BatteryConfig = IncomingSignalConfig<BatteryEvent>;
 using VibrationsConfig = OutgoingSignalConfig<VibrationsCommand>;
 
 struct ControllerConfig {
-  ControllerConfig() = default;
-
   std::string deviceName{};
   ControlsConfig controls{};
   BatteryConfig battery{};

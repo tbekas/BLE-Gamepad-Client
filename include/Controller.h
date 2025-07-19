@@ -25,7 +25,7 @@ class Controller {
  private:
   bool _initialized;
   NimBLEAddress _address;
-  ControlsSignal _controlsSignal;
-  BatterySignal _batterySignal;
-  VibrationsSignal _vibrationsSignal;
+  ControlsSignal _controls;
+  BatterySignal _battery;
+  VibrationsSignal _vibrations;
 };

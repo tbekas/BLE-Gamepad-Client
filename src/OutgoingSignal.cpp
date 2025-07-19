@@ -33,10 +33,10 @@ void OutgoingSignal<T>::_sendDataFn(void* pvParameters) {
     self->_store.pBuffer = tmp;
 
     auto used = self->_store.used;
-    auto encodeSuccess = self->_store.used > 0 && self->_store.used <= self->_store.capacity;
+    auto result = self->_store.used > 0 && self->_store.used <= self->_store.capacity;
     configASSERT(xSemaphoreGive(self->_storeMutex));
 
-    if (!encodeSuccess) {
+    if (!result) {
       BLEGC_LOGD("Encoding failed");
       continue;
     }
@@ -71,10 +71,10 @@ void OutgoingSignal<T>::write(const T& value) {
 
   _store.used = used;
   BLEGC_LOGD("used: %d, capacity: %d", _store.used, _store.capacity);
-  auto encodeSuccess = _store.used > 0 && _store.used <= _store.capacity;
+  auto result = _store.used > 0 && _store.used <= _store.capacity;
   configASSERT(xSemaphoreGive(_storeMutex));
 
-  if (!encodeSuccess) {
+  if (!result) {
     BLEGC_LOGD("Encoding failed");
     return;
   }

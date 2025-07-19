@@ -1,7 +1,6 @@
 #pragma once
 
 #include <NimBLEDevice.h>
-#include "Logger.h"
 #include "SignalCoder.h"
 #include "SignalConfig.h"
 #include "VibrationsCommand.h"

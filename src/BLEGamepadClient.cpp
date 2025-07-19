@@ -12,7 +12,7 @@
 static constexpr uint32_t scanTimeMs = 30 * 1000;
 static constexpr uint32_t connTimeoutMs = 15 * 1000;
 
-BLEGamepadClient GamepadClient;
+BLEGamepadClient_& BLEGamepadClient = BLEGamepadClient_::getInstance();
 
 enum BLEClientStatusMsgKind : uint8_t {
   /// @brief BLE client bonded and connected
@@ -45,36 +45,36 @@ class ClientCallbacks : public NimBLEClientCallbacks {
     BLEGC_LOGE("Failed connecting to a device, address: %s, reason: 0x%04x %s",
                std::string(pClient->getPeerAddress()).c_str(), reason, NimBLEUtils::returnCodeToString(reason));
     NimBLEDevice::deleteClient(pClient);
-    if (xSemaphoreGive(GamepadClient._connectionSlots) != pdTRUE) {
+    if (xSemaphoreGive(BLEGamepadClient._connectionSlots) != pdTRUE) {
       BLEGC_LOGE("Failed to release connection slot");
     }
-    GamepadClient._autoScanCheck();
+    BLEGamepadClient._autoScanCheck();
   }
 
   void onAuthenticationComplete(NimBLEConnInfo& connInfo) override {
     if (connInfo.isBonded()) {
       BLEGC_LOGI("Bonded successfully with a device, address: %s", std::string(connInfo.getAddress()).c_str());
       BLEClientStatus msg = {connInfo.getAddress(), BLEClientConnected};
-      if (xQueueSend(GamepadClient._clientStatusQueue, &msg, 0) != pdPASS) {
+      if (xQueueSend(BLEGamepadClient._clientStatusQueue, &msg, 0) != pdPASS) {
         BLEGC_LOGE("Failed to send client status message");
       }
     } else {
       BLEGC_LOGW("Failed to bond with a device, address: %s", std::string(connInfo.getAddress()).c_str());
       // TODO: disconnect and tmp ban?
     }
-    GamepadClient._autoScanCheck();
+    BLEGamepadClient._autoScanCheck();
   }
 
   void onDisconnect(NimBLEClient* pClient, int reason) override {
     BLEGC_LOGI("Device disconnected, address: %s, reason: 0x%04x %s", std::string(pClient->getPeerAddress()).c_str(),
                reason, NimBLEUtils::returnCodeToString(reason));
-    if (xSemaphoreGive(GamepadClient._connectionSlots) != pdTRUE) {
+    if (xSemaphoreGive(BLEGamepadClient._connectionSlots) != pdTRUE) {
       BLEGC_LOGE("Failed to release connection slot");
     }
-    GamepadClient._autoScanCheck();
+    BLEGamepadClient._autoScanCheck();
 
     BLEClientStatus msg = {pClient->getPeerAddress(), BLEClientDisconnected};
-    if (xQueueSend(GamepadClient._clientStatusQueue, &msg, 0) != pdPASS) {
+    if (xQueueSend(BLEGamepadClient._clientStatusQueue, &msg, 0) != pdPASS) {
       BLEGC_LOGE("Failed to send client status message");
     }
   }
@@ -87,8 +87,8 @@ class ScanCallbacks : public NimBLEScanCallbacks {
 
     auto configMatch = std::bitset<MAX_CONFIGS>();
 
-    for (int i = 0; i < GamepadClient._configs.size(); i++) {
-      auto& config = GamepadClient._configs[i];
+    for (int i = 0; i < BLEGamepadClient._configs.size(); i++) {
+      auto& config = BLEGamepadClient._configs[i];
 
       if (pAdvertisedDevice->haveName() && !config.deviceName.empty() &&
           pAdvertisedDevice->getName() == config.deviceName) {
@@ -96,20 +96,17 @@ class ScanCallbacks : public NimBLEScanCallbacks {
         continue;
       }
 
-      if (config.controls.isEnabled() &&
-          pAdvertisedDevice->isAdvertisingService(config.controls.serviceUUID)) {
+      if (config.controls.isEnabled() && pAdvertisedDevice->isAdvertisingService(config.controls.serviceUUID)) {
         configMatch[i] = true;
         continue;
       }
 
-      if (config.battery.isEnabled() &&
-          pAdvertisedDevice->isAdvertisingService(config.battery.serviceUUID)) {
+      if (config.battery.isEnabled() && pAdvertisedDevice->isAdvertisingService(config.battery.serviceUUID)) {
         configMatch[i] = true;
         continue;
       }
 
-      if (config.vibrations.isEnabled() &&
-          pAdvertisedDevice->isAdvertisingService(config.vibrations.serviceUUID)) {
+      if (config.vibrations.isEnabled() && pAdvertisedDevice->isAdvertisingService(config.vibrations.serviceUUID)) {
         configMatch[i] = true;
         continue;
       }
@@ -120,7 +117,7 @@ class ScanCallbacks : public NimBLEScanCallbacks {
       return;
     }
 
-    GamepadClient._configMatch[pAdvertisedDevice->getAddress()] = configMatch.to_ulong();
+    BLEGamepadClient._configMatch[pAdvertisedDevice->getAddress()] = configMatch.to_ulong();
 
     auto pClient = NimBLEDevice::getClientByPeerAddress(pAdvertisedDevice->getAddress());
     if (pClient) {
@@ -136,7 +133,7 @@ class ScanCallbacks : public NimBLEScanCallbacks {
       pClient->setClientCallbacks(&clientCallbacks, false);
     }
 
-    if (xSemaphoreTake(GamepadClient._connectionSlots, 0) != pdTRUE) {
+    if (xSemaphoreTake(BLEGamepadClient._connectionSlots, 0) != pdTRUE) {
       BLEGC_LOGD("No connections slots left");
       return;
     }
@@ -146,21 +143,26 @@ class ScanCallbacks : public NimBLEScanCallbacks {
     if (!pClient->connect(true, true, false)) {
       BLEGC_LOGE("Failed to initiate connection, address: %s", std::string(pClient->getPeerAddress()).c_str());
       NimBLEDevice::deleteClient(pClient);
-      if (xSemaphoreGive(GamepadClient._connectionSlots) != pdTRUE) {
+      if (xSemaphoreGive(BLEGamepadClient._connectionSlots) != pdTRUE) {
         BLEGC_LOGE("Failed to release connection slot");
       }
-      GamepadClient._autoScanCheck();
+      BLEGamepadClient._autoScanCheck();
       return;
     }
   }
 
   void onScanEnd(const NimBLEScanResults& results, int reason) override {
     BLEGC_LOGD("Scan ended, reason: 0x%04x %s", reason, NimBLEUtils::returnCodeToString(reason));
-    GamepadClient._autoScanCheck();
+    BLEGamepadClient._autoScanCheck();
   }
 } scanCallbacks;
 
-Controller& BLEGamepadClient::_getOrCreateController(NimBLEAddress address) {
+BLEGamepadClient_& BLEGamepadClient_::getInstance() {
+  static BLEGamepadClient_ instance;
+  return instance;
+}
+
+Controller& BLEGamepadClient_::_getOrCreateController(NimBLEAddress address) {
   for (auto& ctrl : _controllers) {
     if (ctrl.getAddress() == address) {
       BLEGC_LOGD("Reusing existing controller instance, address: %s", std::string(address).c_str());
@@ -173,8 +175,8 @@ Controller& BLEGamepadClient::_getOrCreateController(NimBLEAddress address) {
   return _controllers.back();
 }
 
-void BLEGamepadClient::_clientStatusConsumerFn(void* pvParameters) {
-  auto* self = (BLEGamepadClient*)pvParameters;
+void BLEGamepadClient_::_clientStatusConsumerFn(void* pvParameters) {
+  auto* self = (BLEGamepadClient_*)pvParameters;
 
   while (true) {
     BLEClientStatus msg{};
@@ -236,7 +238,7 @@ void BLEGamepadClient::_clientStatusConsumerFn(void* pvParameters) {
   }
 }
 
-void BLEGamepadClient::_autoScanCheck() {
+void BLEGamepadClient_::_autoScanCheck() {
   if (!_autoScanEnabled) {
     BLEGC_LOGD("Scan not started, auto scan is disabled");
     return;
@@ -251,7 +253,7 @@ void BLEGamepadClient::_autoScanCheck() {
   NimBLEDevice::getScan()->start(scanTimeMs);
 }
 
-BLEGamepadClient::BLEGamepadClient()
+BLEGamepadClient_::BLEGamepadClient_()
     : _initialized(false),
       _autoScanEnabled(false),
       _maxConnected(0),
@@ -279,7 +281,7 @@ BLEGamepadClient::BLEGamepadClient()
  * }
  * @endcode
  */
-bool BLEGamepadClient::begin(bool autoScanEnabled, int maxConnected, bool deleteBonds) {
+bool BLEGamepadClient_::begin(bool autoScanEnabled, int maxConnected, bool deleteBonds) {
   if (_initialized) {
     return false;
   }
@@ -296,9 +298,9 @@ bool BLEGamepadClient::begin(bool autoScanEnabled, int maxConnected, bool delete
   configASSERT(_clientStatusConsumerTask);
 
   // default configs
-  addConfig(xbox::controllerConfig());
+  addConfig(xbox::controllerConfig);
 
-  NimBLEDevice::init("Async-Client");
+  NimBLEDevice::init("ESP32");
   NimBLEDevice::setPower(3);                                 /** +3db */
   NimBLEDevice::setSecurityAuth(true, true, true);           /** bonding, MITM protection, BLE secure connections */
   NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT); /** no screen, no keyboard */
@@ -323,7 +325,7 @@ bool BLEGamepadClient::begin(bool autoScanEnabled, int maxConnected, bool delete
  * @brief Deinitializes a GamepadClient instance.
  * @return True if successful.
  */
-bool BLEGamepadClient::end() {
+bool BLEGamepadClient_::end() {
   if (!_initialized) {
     return false;
   }
@@ -379,7 +381,7 @@ bool BLEGamepadClient::end() {
  * }
  * @endcode
  */
-std::list<Controller>& BLEGamepadClient::getControllers() {
+std::list<Controller>& BLEGamepadClient_::getControllers() {
   return _controllers;
 }
 
@@ -388,7 +390,7 @@ std::list<Controller>& BLEGamepadClient::getControllers() {
  * @param address Peer address of the controller to search for.
  * @return A pointer to the controller or nullptr if not found.
  */
-Controller* BLEGamepadClient::getControllerPtrByAddress(NimBLEAddress address) {
+Controller* BLEGamepadClient_::getControllerPtrByAddress(NimBLEAddress address) {
   for (auto& ctrl : _controllers) {
     if (ctrl.getAddress() == address) {
       return &ctrl;
@@ -401,7 +403,7 @@ Controller* BLEGamepadClient::getControllerPtrByAddress(NimBLEAddress address) {
  * @brief Sets the callback that will be invoked when the controller connects.
  * @param onControllerConnected Reference to a callback function.
  */
-void BLEGamepadClient::setConnectedCallback(const ControllerCallback& onControllerConnected) {
+void BLEGamepadClient_::setConnectedCallback(const ControllerCallback& onControllerConnected) {
   _onConnected = onControllerConnected;
 }
 
@@ -409,7 +411,7 @@ void BLEGamepadClient::setConnectedCallback(const ControllerCallback& onControll
  * @brief Sets the callback that will be invoked when the controller disconnects.
  * @param onControllerDisconnected Reference to a callback function.
  */
-void BLEGamepadClient::setDisconnectedCallback(const ControllerCallback& onControllerDisconnected) {
+void BLEGamepadClient_::setDisconnectedCallback(const ControllerCallback& onControllerDisconnected) {
   _onDisconnected = onControllerDisconnected;
 }
 
@@ -419,7 +421,7 @@ void BLEGamepadClient::setDisconnectedCallback(const ControllerCallback& onContr
  * @param config Configuration to be registered.
  * @return True if successful.
  */
-bool BLEGamepadClient::addConfig(const ControllerConfig& config) {
+bool BLEGamepadClient_::addConfig(const ControllerConfig& config) {
   if (_initialized) {
     BLEGC_LOGE("Failed to add config. Call `addConfig` before calling `begin`");
     return false;
@@ -442,7 +444,7 @@ bool BLEGamepadClient::addConfig(const ControllerConfig& config) {
  * @param durationMs The duration in milliseconds for which to scan. 0 == scan forever.
  * @return True if successful.
  */
-bool BLEGamepadClient::startScan(uint32_t durationMs) {
+bool BLEGamepadClient_::startScan(uint32_t durationMs) {
   _autoScanEnabled = false;
   return NimBLEDevice::getScan()->start(durationMs);
 }
@@ -451,7 +453,7 @@ bool BLEGamepadClient::startScan(uint32_t durationMs) {
  * @brief Stops a scan, disables auto scan. Proxy for `NimBLEDevice::getScan()->stop()`.
  * @return True if successful.
  */
-bool BLEGamepadClient::stopScan() {
+bool BLEGamepadClient_::stopScan() {
   _autoScanEnabled = false;
   return NimBLEDevice::getScan()->stop();
 }

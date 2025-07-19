@@ -1,12 +1,29 @@
 #pragma once
 
+#include<stdint.h>
+
 struct VibrationsCommand {
-  bool selectCenter, selectLeft, selectRight, selectShake;
 
-  float powerCenter, powerLeft, powerRight, powerShake;
+  float leftTrigger;
+  float rightTrigger;
+  float leftMotor;
+  float rightMotor;
 
-  uint8_t timeActiveMs;
-  uint8_t timeInactiveMs;
+  /// @brief Vibration duration in 0.01s units.
+  uint8_t duration;
 
-  uint8_t repeat;
+  /// @brief Pause duration in 0.01s units.
+  uint8_t pause;
+
+  /// @brief Number of vibration-pause cycles. Default is 1 cycle.
+  uint8_t cycles;
+
+  VibrationsCommand():
+    leftTrigger(0.0f),
+    rightTrigger(0.0f),
+    leftMotor(0.0f),
+    rightMotor(0.0f),
+    duration(0),
+    pause(0),
+    cycles(1) {}
 };
