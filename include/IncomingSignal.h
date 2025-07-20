@@ -16,14 +16,12 @@ class IncomingSignal {
  public:
   struct Store {
     T event;
-    bool updated;
   };
 
   explicit IncomingSignal(NimBLEAddress address);
   ~IncomingSignal() = default;
 
   void read(T& out);
-  bool isUpdated() const;
   bool isInitialized() const;
   void subscribe(const Consumer<T>& onUpdate);
 

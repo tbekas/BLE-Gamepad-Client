@@ -25,6 +25,15 @@ class Utils {
       BLEGC_LOGE("Failed to discover attributes, address %s", std::string(address).c_str());
       return false;
     }
+
+    #if CONFIG_BLEGC_LOG_LEVEL >= 4
+    for (auto& pService : pClient->getServices(false)) {
+      BLEGC_LOGD("Discovered service %s", std::string(pService->getUUID()).c_str());
+      for (auto& pChar   : pService->getCharacteristics(false)) {
+        BLEGC_LOGD("Discovered characteristic %s", Utils::remoteCharToStr(pChar).c_str());
+      }
+    }
+    #endif
     return true;
   }
 
@@ -35,6 +44,8 @@ class Utils {
       const NimBLEUUID serviceUUID,
       const NimBLEUUID characteristicUUID = NimBLEUUID(),
       const BLECharacteristicFilter& filter = [](NimBLERemoteCharacteristic*) { return true; }) {
+    BLEGC_LOGD("Looking up for characteristic. Service uuid: %s, characteristic uuid %s.",
+               std::string(serviceUUID).c_str(), std::string(characteristicUUID).c_str());
 
     auto pBleClient = NimBLEDevice::getClientByPeerAddress(address);
     if (!pBleClient) {
@@ -48,38 +59,19 @@ class Utils {
       return nullptr;
     }
 
-    if (!std::string(characteristicUUID).empty()) {
-      auto pChar = pService->getCharacteristic(characteristicUUID);
-      if (!pChar) {
-        BLEGC_LOGE("Characteristic not found, characteristicUUID: %s", std::string(characteristicUUID).c_str());
-        return nullptr;
-      }
-
-      if (!filter(pChar)) {
-        BLEGC_LOGE("Characteristic found, but it doesn't meet criteria. %s", Utils::remoteCharToStr(pChar).c_str());
-        return nullptr;
-      }
-
-      return pChar;
-    }
-
-    BLEGC_LOGD("Characteristics in a service %s", std::string(serviceUUID).c_str());
-
     for (auto pChar : pService->getCharacteristics(false)) {
-      BLEGC_LOGD("A characteristic: %s", Utils::remoteCharToStr(pChar).c_str());
-    }
-
-    // lookup any characteristic that can notify
-    for (auto pChar : pService->getCharacteristics(false)) {
-      if (!filter(pChar)) {
-        BLEGC_LOGD("Skipping characteristic that doesn't meet criteria. %s", Utils::remoteCharToStr(pChar).c_str());
+      if (!std::string(characteristicUUID).empty() && characteristicUUID != pChar->getUUID()) {
+        BLEGC_LOGD("Characteristic uuid different from lookup uuid. %s", Utils::remoteCharToStr(pChar).c_str());
         continue;
       }
-      BLEGC_LOGD("Found characteristic that meet criteria. %s", Utils::remoteCharToStr(pChar).c_str());
+
+      if (!filter(pChar)) {
+        BLEGC_LOGD("Characteristic doesn't pass filter. %s", Utils::remoteCharToStr(pChar).c_str());
+        continue;
+      }
+
       return pChar;
     }
-
-    BLEGC_LOGE("Unable to find any characteristic that can notify");
 
     return nullptr;
   }

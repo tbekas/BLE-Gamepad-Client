@@ -9,7 +9,7 @@ void setup(void) {
 void loop() {
   // Note the usage of a reference type `Controller&`
   for (Controller& ctrl : BLEGamepadClient.getControllers()) {
-    if (ctrl.isConnected() && ctrl.controls().isUpdated()) {
+    if (ctrl.isConnected()) {
       ControlsEvent e;
       ctrl.controls().read(e);
 

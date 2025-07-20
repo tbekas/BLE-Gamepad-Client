@@ -19,7 +19,7 @@ IncomingSignal<T>::IncomingSignal(const NimBLEAddress address)
       _pChar(nullptr),
       _callConsumerTask(nullptr),
       _storeMutex(nullptr),
-      _store({T(), false}) {}
+      _store({ .event = T() }) {}
 
 template <typename T>
 bool IncomingSignal<T>::init(IncomingSignalConfig<T>& config) {
@@ -89,7 +89,7 @@ bool IncomingSignal<T>::deinit(bool disconnected) {
 
 template <typename T>
 void IncomingSignal<T>::_callConsumerFn(void* pvParameters) {
-  auto* self = (IncomingSignal<T>*)pvParameters;
+  auto* self = static_cast<IncomingSignal*>(pvParameters);
 
   while (true) {
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
@@ -110,8 +110,11 @@ void IncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   auto result = _decoder(_store.event, pData, length) > 0;
-  _store.updated = result;
   configASSERT(xSemaphoreGive(_storeMutex));
+
+  if (!result) {
+    BLEGC_LOGW("Decoding failed. %s", Utils::remoteCharToStr(pChar).c_str());
+  }
 
   if (_hasSubscription && result) {
     xTaskNotifyGive(_callConsumerTask);
@@ -125,15 +128,8 @@ void IncomingSignal<T>::read(T& out) {
   }
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  BLEGC_LOGD("Reading a value");
-  _store.updated = false;
   out = _store.event;
   configASSERT(xSemaphoreGive(_storeMutex));
-}
-
-template <typename T>
-bool IncomingSignal<T>::isUpdated() const {
-  return _store.updated;
 }
 
 template <typename T>
