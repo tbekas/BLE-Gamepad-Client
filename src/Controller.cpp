@@ -1,21 +1,30 @@
 #include "Controller.h"
 #include <NimBLEAddress.h>
 #include "ControllerConfig.h"
-#include "InputSignal.hpp"
+#include "IncomingSignal.h"
+#include "Utils.h"
 
 Controller::Controller(const NimBLEAddress address)
-    : _initialized(false), _address(address), _controlsSignal(address), _batterySignal(address) {}
+    : _initialized(false),
+      _address(address),
+      _controls(address),
+      _battery(address),
+      _vibrations(address) {}
 
 NimBLEAddress Controller::getAddress() const {
   return _address;
 }
 
 ControlsSignal& Controller::controls() {
-  return _controlsSignal;
+  return _controls;
 }
 
 BatterySignal& Controller::battery() {
-  return _batterySignal;
+  return _battery;
+}
+
+VibrationsSignal& Controller::vibrations() {
+  return _vibrations;
 }
 
 bool Controller::isInitialized() const {
@@ -32,16 +41,32 @@ bool Controller::init(ControllerConfig& config) {
     return false;
   }
 
-  if (config.controlsConfig.isEnabled()) {
-    if (!_controlsSignal.init(config.controlsConfig)) {
+  if (!Utils::discoverAttributes(_address)) {
+    return false;
+  }
+
+  if (config.controls.isEnabled()) {
+    if (!_controls.init(config.controls)) {
       return false;
     }
   }
 
-  if (config.batteryConfig.isEnabled()) {
-    if (!_batterySignal.init(config.batteryConfig)) {
-      if (_controlsSignal.isInitialized()) {
-        _controlsSignal.deinit(false);
+  if (config.battery.isEnabled()) {
+    if (!_battery.init(config.battery)) {
+      if (_controls.isInitialized()) {
+        _controls.deinit(false);
+      }
+      return false;
+    }
+  }
+
+  if (config.vibrations.isEnabled()) {
+    if (!_vibrations.init(config.vibrations)) {
+      if (_battery.isInitialized()) {
+        _battery.deinit(false);
+      }
+      if (_controls.isInitialized()) {
+        _controls.deinit(false);
       }
       return false;
     }
@@ -58,8 +83,9 @@ bool Controller::deinit(bool disconnected) {
   bool result = true;
 
   // order of operands on the && matters here
-  result = _controlsSignal.deinit(disconnected) && result;
-  result = _batterySignal.deinit(disconnected) && result;
+  result = _vibrations.deinit(disconnected) && result;
+  result = _battery.deinit(disconnected) && result;
+  result = _controls.deinit(disconnected) && result;
 
   _initialized = false;
   return result;

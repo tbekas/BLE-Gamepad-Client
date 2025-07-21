@@ -23,13 +23,13 @@ struct ControlsEvent : BaseEvent {
    *     -1.0   0.0   1.0
    * @endverbatim
    */
-  float lx, ly, rx, ry;
+  float leftStickX, leftStickY, rightStickX, rightStickY;
 
   /// @brief Button activated when pressing down on the left stick, also known as the L3 button.
-  bool lsb;
+  bool leftStickButton;
 
   /// @brief Button activated when pressing down on the right stick, also known as the R3 button.
-  bool rsb;
+  bool rightStickButton;
 
   /// @brief Up button on the directional pad.
   bool dpadUp;
@@ -56,18 +56,18 @@ struct ControlsEvent : BaseEvent {
   bool buttonY;
 
   /// @brief Left bumper button, also known as the L1 or L shoulder button.
-  bool lb;
+  bool leftBumper;
 
   /// @brief Right bumper button, also known as the R1 or R shoulder button.
-  bool rb;
+  bool rightBumper;
 
   /// @brief Pressure level of a left trigger. Takes values between 0.0 and 1.0. No pressure should yield 0.0. This
   /// control is also known as L2.
-  float lt;
+  float leftTrigger;
 
   /// @brief Pressure level of a right trigger. Takes values between 0.0 and 1.0. No pressure should yield 0.0. This
   /// control is also known as R2.
-  float rt;
+  float rightTrigger;
 
   /// @brief Share button.
   bool share;

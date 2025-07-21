@@ -1,26 +1,30 @@
+#include "xbox.h"
 #include <bitset>
 #include "BatteryEvent.h"
 #include "ControllerConfig.h"
 #include "ControlsEvent.h"
 #include "Logger.h"
+#include "VibrationsCommand.h"
 
-namespace xbox {
-const NimBLEUUID deviceInfoServiceUUID((uint16_t)0x180a);
-const NimBLEUUID batteryServiceUUID((uint16_t)0x180f);
 const NimBLEUUID hidServiceUUID((uint16_t)0x1812);
+const NimBLEUUID batteryServiceUUID((uint16_t)0x180f);
 
-const uint16_t axisMax = 0xffff;
-const uint16_t triggerMax = 0x3ff;
+constexpr size_t controlsPayloadLen = 16;
+constexpr size_t batteryPayloadLen = 1;
+constexpr size_t vibrationsPayloadLen = 8;
 
-inline float axisX(uint16_t val) {
+constexpr uint16_t axisMax = 0xffff;
+constexpr uint16_t triggerMax = 0x3ff;
+
+inline float decodeStickX(uint16_t val) {
   return ((2.0f * val) / axisMax) - 1.0f;
 }
 
-inline float axisY(uint16_t val) {
+inline float decodeStickY(uint16_t val) {
   return ((-2.0f * val) / axisMax) + 1.0f;
 }
 
-inline float trigger(uint16_t val) {
+inline float decodeTrigger(uint16_t val) {
   return (1.0f * val) / triggerMax;
 }
 
@@ -35,7 +39,7 @@ constexpr uint8_t mask(int bit) {
   return uint8_t(1) << bit;
 }
 
-inline bool button(uint8_t byte, int bit) {
+inline bool decodeButton(uint8_t byte, int bit) {
   return byte & mask(bit);
 }
 
@@ -44,25 +48,23 @@ inline void printBits(uint8_t byte, int label) {
   BLEGC_LOGI("Byte %d: %s", label, bits.to_string().c_str());
 }
 
-ControlsEvent parseControlsData(uint8_t pData[], size_t length) {
-  ControlsEvent e;
-
-  if (length != 16) {
-    BLEGC_LOGE("Expected 16 bytes, was %d bytes", length);
-    return e;
+size_t decodeControlsEvent(ControlsEvent& e, uint8_t payload[], size_t payloadLen) {
+  if (payloadLen != controlsPayloadLen) {
+    BLEGC_LOGE("Expected %d bytes, was %d bytes", controlsPayloadLen, payloadLen);
+    return 0;
   }
 
-  e.lx = axisX(uint16(pData[0], pData[1]));
-  e.ly = axisY(uint16(pData[2], pData[3]));
-  e.rx = axisX(uint16(pData[4], pData[5]));
-  e.ry = axisY(uint16(pData[6], pData[7]));
-  e.lt = trigger(uint16(pData[8], pData[9]));
-  e.rt = trigger(uint16(pData[10], pData[11]));
+  e.leftStickX = decodeStickX(uint16(payload[0], payload[1]));
+  e.leftStickY = decodeStickY(uint16(payload[2], payload[3]));
+  e.rightStickX = decodeStickX(uint16(payload[4], payload[5]));
+  e.rightStickY = decodeStickY(uint16(payload[6], payload[7]));
+  e.leftTrigger = decodeTrigger(uint16(payload[8], payload[9]));
+  e.rightTrigger = decodeTrigger(uint16(payload[10], payload[11]));
 
   // clang-format off
   e.dpadUp = e.dpadRight = e.dpadDown = e.dpadLeft = false;
-  uint8_t dpad = pData[12];
-  switch (dpad) {
+  uint8_t byte12 = payload[12];
+  switch (byte12) {
     case 1: e.dpadUp = true; break;
     case 2: e.dpadUp = e.dpadRight = true; break;
     case 3: e.dpadRight = true; break;
@@ -75,45 +77,84 @@ ControlsEvent parseControlsData(uint8_t pData[], size_t length) {
   }
   // clang-format on
 
-  uint8_t btns1 = pData[13];
-  e.buttonA = button(btns1, 0);
-  e.buttonB = button(btns1, 1);
-  e.buttonX = button(btns1, 3);
-  e.buttonY = button(btns1, 4);
-  e.lb = button(btns1, 6);
-  e.rb = button(btns1, 7);
+  uint8_t byte13 = payload[13];
+  e.buttonA = decodeButton(byte13, 0);
+  e.buttonB = decodeButton(byte13, 1);
+  e.buttonX = decodeButton(byte13, 3);
+  e.buttonY = decodeButton(byte13, 4);
+  e.leftBumper = decodeButton(byte13, 6);
+  e.rightBumper = decodeButton(byte13, 7);
 
-  uint8_t btns2 = pData[14];
-  e.view = button(btns2, 2);
-  e.menu = button(btns2, 3);
-  e.xbox = button(btns2, 4);
-  e.lsb = button(btns2, 5);
-  e.rsb = button(btns2, 6);
+  uint8_t byte14 = payload[14];
+  e.view = decodeButton(byte14, 2);
+  e.menu = decodeButton(byte14, 3);
+  e.xbox = decodeButton(byte14, 4);
+  e.leftStickButton = decodeButton(byte14, 5);
+  e.rightStickButton = decodeButton(byte14, 6);
 
-  uint8_t btns3 = pData[15];
-  e.share = button(btns3, 0);
+  uint8_t byte15 = payload[15];
+  e.share = decodeButton(byte15, 0);
 
-  return e;
+  return controlsPayloadLen;
 }
 
-BatteryEvent parseBatteryData(uint8_t pData[], size_t length) {
-  BatteryEvent e;
-
-  if (length != 1) {
-    BLEGC_LOGE("Expected 1 byte, was %d bytes", length);
-    return e;
+size_t decodeBatteryEvent(BatteryEvent& e, uint8_t payload[], size_t payloadLen) {
+  if (payloadLen != batteryPayloadLen) {
+    BLEGC_LOGE("Expected %d bytes, was %d bytes", batteryPayloadLen, payloadLen);
+    return 0;
   }
 
-  e.level = (0.01f * pData[0]);
-
-  return e;
+  e.level = 0.01f * static_cast<float>(payload[0]);
+  return batteryPayloadLen;
 }
 
-ControllerConfig controllerConfig() {
+inline uint8_t encodeMotorEnable(float power, int bit) {
+  return (power > 0.0f) * mask(bit);
+}
+
+inline uint8_t encodeMotorPower(float power) {
+  return static_cast<uint8_t>(max(min(power, 1.0f), 0.0f) * 100.0f);
+}
+
+inline uint8_t encodeDuration(uint32_t durationMs) {
+  return static_cast<uint8_t>(min(durationMs, uint32_t(2550)) / 10);
+}
+
+size_t encodeVibrationsCommand(const VibrationsCommand& c, uint8_t outBuffer[], size_t bufferLen) {
+  if (bufferLen < vibrationsPayloadLen) {
+    BLEGC_LOGW("Expected buffer of at least %d bytes, was %d bytes", vibrationsPayloadLen, bufferLen);
+    return 0;
+  }
+
+  if (c.cycles == 0) {
+    outBuffer[0] = 0;
+  } else {
+    outBuffer[0] = encodeMotorEnable(c.rightMotor, 0) | encodeMotorEnable(c.leftMotor, 1) |
+                   encodeMotorEnable(c.rightTriggerMotor, 2) | encodeMotorEnable(c.leftTriggerMotor, 3);
+  }
+
+  outBuffer[1] = encodeMotorPower(c.leftTriggerMotor);
+  outBuffer[2] = encodeMotorPower(c.rightTriggerMotor);
+  outBuffer[3] = encodeMotorPower(c.leftMotor);
+  outBuffer[4] = encodeMotorPower(c.rightMotor);
+  outBuffer[5] = encodeDuration(c.durationMs);
+  outBuffer[6] = encodeDuration(c.pauseMs);
+  outBuffer[7] = c.cycles == 0 ? 0 : c.cycles - 1;
+
+  return vibrationsPayloadLen;
+}
+
+ControllerConfig makeControllerConfig() {
   ControllerConfig config;
   config.deviceName = "Xbox Wireless Controller";
-  config.setControlsConfig(hidServiceUUID, parseControlsData);
-  config.setBatteryConfig(batteryServiceUUID, parseBatteryData);
+  config.controls.serviceUUID = hidServiceUUID;
+  config.controls.decoder = decodeControlsEvent;
+  config.battery.serviceUUID = batteryServiceUUID;
+  config.battery.decoder = decodeBatteryEvent;
+  config.vibrations.serviceUUID = hidServiceUUID;
+  config.vibrations.encoder = encodeVibrationsCommand;
+  config.vibrations.bufferLen = vibrationsPayloadLen;
   return config;
 }
-}  // namespace xbox
+
+const ControllerConfig xbox::controllerConfig = makeControllerConfig();

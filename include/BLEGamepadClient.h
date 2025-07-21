@@ -10,9 +10,9 @@
 typedef Controller* ControllerPtr;
 typedef std::function<void(Controller& controller)> ControllerCallback;
 
-class BLEGamepadClient {
+class BLEGamepadClient_ {
  public:
-  BLEGamepadClient();
+  static BLEGamepadClient_& getInstance();
 
   bool begin(bool autoScanEnabled = true, int maxConnected = 1, bool deleteBonds = false);
   bool end();
@@ -27,10 +27,13 @@ class BLEGamepadClient {
   bool startScan(uint32_t durationMs);
   bool stopScan();
 
+
   friend class ClientCallbacks;
   friend class ScanCallbacks;
 
  private:
+  BLEGamepadClient_();
+
   static void _clientStatusConsumerFn(void* pvParameters);
   Controller& _getOrCreateController(NimBLEAddress address);
   void _autoScanCheck();
@@ -47,4 +50,4 @@ class BLEGamepadClient {
   std::deque<ControllerConfig> _configs;
 };
 
-extern BLEGamepadClient GamepadClient;
+extern BLEGamepadClient_& BLEGamepadClient;

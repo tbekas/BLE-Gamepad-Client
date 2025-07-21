@@ -16,7 +16,7 @@ tbekas/BLE-Gamepad-Client@^0.1.0
 #include <BLEGamepadClient.h>
 
 void onUpdate(ControlsEvent& e) {
-  Serial.printf("lx: %f, ly: %f\n", e.lx, e.ly);
+  Serial.printf("lx: %f, ly: %f\n", e.leftStickX, e.leftStickY);
 }
 
 void onConnected(Controller& controller) {
@@ -25,8 +25,8 @@ void onConnected(Controller& controller) {
 
 void setup(void) {
   Serial.begin(115200);
-  GamepadClient.setConnectedCallback(onConnected);
-  GamepadClient.begin();
+  BLEGamepadClient.setConnectedCallback(onConnected);
+  BLEGamepadClient.begin();
 }
 
 void loop() {

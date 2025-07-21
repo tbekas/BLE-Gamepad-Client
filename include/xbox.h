@@ -2,5 +2,7 @@
 
 #include "ControllerConfig.h"
 namespace xbox {
-ControllerConfig controllerConfig();
+
+extern const ControllerConfig controllerConfig;
+
 }
