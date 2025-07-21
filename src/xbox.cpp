@@ -48,7 +48,7 @@ inline void printBits(uint8_t byte, int label) {
   BLEGC_LOGI("Byte %d: %s", label, bits.to_string().c_str());
 }
 
-size_t decodeControlsData(ControlsEvent& e, uint8_t payload[], size_t payloadLen) {
+size_t decodeControlsEvent(ControlsEvent& e, uint8_t payload[], size_t payloadLen) {
   if (payloadLen != controlsPayloadLen) {
     BLEGC_LOGE("Expected %d bytes, was %d bytes", controlsPayloadLen, payloadLen);
     return 0;
@@ -98,7 +98,7 @@ size_t decodeControlsData(ControlsEvent& e, uint8_t payload[], size_t payloadLen
   return controlsPayloadLen;
 }
 
-size_t decodeBatteryData(BatteryEvent& e, uint8_t payload[], size_t payloadLen) {
+size_t decodeBatteryEvent(BatteryEvent& e, uint8_t payload[], size_t payloadLen) {
   if (payloadLen != batteryPayloadLen) {
     BLEGC_LOGE("Expected %d bytes, was %d bytes", batteryPayloadLen, payloadLen);
     return 0;
@@ -144,32 +144,17 @@ size_t encodeVibrationsCommand(const VibrationsCommand& c, uint8_t outBuffer[], 
   return vibrationsPayloadLen;
 }
 
-ControllerConfig controllerConfigFn() {
+ControllerConfig makeControllerConfig() {
   ControllerConfig config;
   config.deviceName = "Xbox Wireless Controller";
   config.controls.serviceUUID = hidServiceUUID;
-  config.controls.decoder = decodeControlsData;
+  config.controls.decoder = decodeControlsEvent;
   config.battery.serviceUUID = batteryServiceUUID;
-  config.battery.decoder = decodeBatteryData;
+  config.battery.decoder = decodeBatteryEvent;
   config.vibrations.serviceUUID = hidServiceUUID;
   config.vibrations.encoder = encodeVibrationsCommand;
   config.vibrations.bufferLen = vibrationsPayloadLen;
   return config;
 }
 
-const ControllerConfig xbox::controllerConfig = {
-  .deviceName = "Xbox Wireless Controller",
-  .controls = {
-    .serviceUUID = hidServiceUUID,
-    .decoder = decodeControlsData,
-  },
-  .battery = {
-    .serviceUUID = batteryServiceUUID,
-    .decoder = decodeBatteryData,
-  },
-  .vibrations = {
-    .serviceUUID = hidServiceUUID,
-    .encoder = encodeVibrationsCommand,
-    .bufferLen = vibrationsPayloadLen,
-  }
-};
+const ControllerConfig xbox::controllerConfig = makeControllerConfig();

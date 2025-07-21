@@ -6,9 +6,9 @@
 
 template <typename T>
 struct IncomingSignalConfig {
-  NimBLEUUID serviceUUID;
-  NimBLEUUID characteristicUUID;
-  SignalDecoder<T> decoder;
+  NimBLEUUID serviceUUID{};
+  NimBLEUUID characteristicUUID{};
+  SignalDecoder<T> decoder{};
 
   bool isEnabled() const { return !std::string(serviceUUID).empty(); }
   bool isDisabled() const { return !isEnabled(); }
@@ -22,9 +22,9 @@ IncomingSignalConfig<T>::operator std::string() const {
 
 template <typename T>
 struct OutgoingSignalConfig {
-  NimBLEUUID serviceUUID;
-  NimBLEUUID characteristicUUID;
-  SignalEncoder<T> encoder;
+  NimBLEUUID serviceUUID{};
+  NimBLEUUID characteristicUUID{};
+  SignalEncoder<T> encoder{};
 
   /// @brief Optional. Specifies the size of the buffer for the encoded payload. Leave undefined if the encoded size
   /// varies depending on the input.

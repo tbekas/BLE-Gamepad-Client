@@ -13,6 +13,7 @@ jobs:
         example:
           - examples/BasicUsage
           - examples/UsageInLoop
+          - examples/Vibrations
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -35,6 +36,7 @@ jobs:
           [env]
           platform = espressif32
           framework = arduino
+          build_flags = -D CONFIG_BLEGC_LOG_LEVEL=4
 
           [env:esp32dev]
           board = esp32dev
