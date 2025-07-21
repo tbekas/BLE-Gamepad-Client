@@ -314,7 +314,7 @@ bool BLEGamepadClient_::begin(bool autoScanEnabled, int maxConnected, bool delet
     pScan->setScanCallbacks(&scanCallbacks, false);
     pScan->setActiveScan(true);
     pScan->setMaxResults(0);
-    pScan->start(scanTimeMs);
+    _autoScanCheck();
   }
 
   _initialized = true;
