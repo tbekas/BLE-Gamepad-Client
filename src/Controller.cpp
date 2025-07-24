@@ -14,13 +14,13 @@ Controller::Controller(NimBLEAddress address)
       _onBatteryUpdateSet(false) {}
 
 bool Controller::begin() {
-  if (!BLEGamepadClient.isInitialized()) {
-    if (!BLEGamepadClient.init()) {
+  if (!BLEGamepadClient::isInitialized()) {
+    if (!BLEGamepadClient::init()) {
       return false;
     }
   }
 
-  _pCtrl = BLEGamepadClient.createController(_allowedAddress);
+  _pCtrl = BLEGamepadClient::createController(_allowedAddress);
   if (!_pCtrl) {
     return false;
   }
@@ -44,12 +44,22 @@ bool Controller::isConnected() const {
 
   return false;
 }
+
+/**
+ * @brief Sets the callback that will be invoked when the controller connects.
+ * @param callback Reference to a callback function.
+ */
 void Controller::onConnect(const OnConnect& callback) {
   _onConnect = callback;
   if (_pCtrl) {
     _pCtrl->onConnect(_onConnect);
   }
 }
+
+/**
+ * @brief Sets the callback that will be invoked when the controller disconnects.
+ * @param callback Reference to a callback function.
+ */
 void Controller::onDisconnect(const OnDisconnect& callback) {
   _onDisconnect = callback;
   if (_pCtrl) {

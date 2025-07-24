@@ -46,8 +46,6 @@ void OutgoingSignal<T>::_sendDataFn(void* pvParameters) {
       continue;
     }
 
-    BLEGC_LOGI("Writing value");
-
     self->_pChar->writeValue(self->_store.pSendBuffer, used);
   }
 }
