@@ -11,10 +11,10 @@
 constexpr size_t maxCapacity = 1024;
 
 template <typename T>
-OutgoingSignal<T>::OutgoingSignal(const NimBLEAddress address)
+OutgoingSignal<T>::OutgoingSignal()
     : _initialized(false),
       _encoder([](const T&, uint8_t[], size_t) { return static_cast<size_t>(0); }),
-      _address(address),
+      _address(),
       _pChar(nullptr),
       _sendDataTask(nullptr),
       _storeMutex(nullptr) {}
@@ -83,10 +83,12 @@ void OutgoingSignal<T>::write(const T& value) {
 }
 
 template <typename T>
-bool OutgoingSignal<T>::init(OutgoingSignalConfig<T>& config) {
+bool OutgoingSignal<T>::init(NimBLEAddress address, OutgoingSignalConfig<T>& config) {
   if (_initialized) {
     return false;
   }
+
+  _address = address;
 
   _store.capacity = config.bufferLen > 0 ? config.bufferLen : 8;
   _store.pBuffer = new uint8_t[_store.capacity];

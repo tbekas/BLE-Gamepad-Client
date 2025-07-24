@@ -1,92 +1,91 @@
 #include "Controller.h"
-#include <NimBLEAddress.h>
-#include "ControllerConfig.h"
-#include "IncomingSignal.h"
-#include "Utils.h"
+#include "BLEGamepadClient.h"
 
-Controller::Controller(const NimBLEAddress address)
-    : _initialized(false),
-      _address(address),
-      _controls(address),
-      _battery(address),
-      _vibrations(address) {}
+Controller::Controller() : Controller(NimBLEAddress()) {}
 
-NimBLEAddress Controller::getAddress() const {
-  return _address;
-}
+Controller::Controller(NimBLEAddress address)
+    : _pCtrl(nullptr),
+      _allowedAddress(address),
+      _onConnect([](NimBLEAddress) {}),
+      _onDisconnect([](NimBLEAddress) {}),
+      _onControlsUpdate([](ControlsEvent&) {}),
+      _onControlsUpdateSet(false),
+      _onBatteryUpdate([](BatteryEvent&) {}),
+      _onBatteryUpdateSet(false) {}
 
-ControlsSignal& Controller::controls() {
-  return _controls;
-}
+bool Controller::begin() {
+  if (!BLEGamepadClient.isInitialized()) {
+    if (!BLEGamepadClient.init()) {
+      return false;
+    }
+  }
 
-BatterySignal& Controller::battery() {
-  return _battery;
-}
-
-VibrationsSignal& Controller::vibrations() {
-  return _vibrations;
-}
-
-bool Controller::isInitialized() const {
-  return _initialized;
-}
-
-bool Controller::isConnected() const {
-  // initialization is kept in sync with client connect/client disconnect events
-  return _initialized;
-}
-
-bool Controller::init(ControllerConfig& config) {
-  if (_initialized) {
+  _pCtrl = BLEGamepadClient.createController(_allowedAddress);
+  if (!_pCtrl) {
     return false;
   }
 
-  if (!Utils::discoverAttributes(_address)) {
-    return false;
+  _pCtrl->onConnect(_onConnect);
+  _pCtrl->onDisconnect(_onDisconnect);
+  if (_onControlsUpdateSet) {
+    _pCtrl->getControls().onUpdate(_onControlsUpdate);
+  }
+  if (_onBatteryUpdateSet) {
+    _pCtrl->getBattery().onUpdate(_onBatteryUpdate);
   }
 
-  if (config.controls.isEnabled()) {
-    if (!_controls.init(config.controls)) {
-      return false;
-    }
-  }
-
-  if (config.battery.isEnabled()) {
-    if (!_battery.init(config.battery)) {
-      if (_controls.isInitialized()) {
-        _controls.deinit(false);
-      }
-      return false;
-    }
-  }
-
-  if (config.vibrations.isEnabled()) {
-    if (!_vibrations.init(config.vibrations)) {
-      if (_battery.isInitialized()) {
-        _battery.deinit(false);
-      }
-      if (_controls.isInitialized()) {
-        _controls.deinit(false);
-      }
-      return false;
-    }
-  }
-
-  _initialized = true;
   return true;
 }
 
-bool Controller::deinit(bool disconnected) {
-  if (!_initialized) {
-    return false;
+bool Controller::isConnected() const {
+  if (_pCtrl) {
+    return _pCtrl->isInitialized();
   }
-  bool result = true;
 
-  // order of operands on the && matters here
-  result = _vibrations.deinit(disconnected) && result;
-  result = _battery.deinit(disconnected) && result;
-  result = _controls.deinit(disconnected) && result;
+  return false;
+}
+void Controller::onConnect(const OnConnect& callback) {
+  _onConnect = callback;
+  if (_pCtrl) {
+    _pCtrl->onConnect(_onConnect);
+  }
+}
+void Controller::onDisconnect(const OnDisconnect& callback) {
+  _onDisconnect = callback;
+  if (_pCtrl) {
+    _pCtrl->onDisconnect(_onDisconnect);
+  }
+}
 
-  _initialized = false;
-  return result;
+void Controller::readControls(ControlsEvent& event) const {
+  if (_pCtrl) {
+    _pCtrl->getControls().read(event);
+  }
+}
+void Controller::onControlsUpdate(const OnControlsUpdate& callback) {
+  _onControlsUpdateSet = true;
+  _onControlsUpdate = callback;
+  if (_pCtrl) {
+    _pCtrl->getControls().onUpdate(_onControlsUpdate);
+  }
+}
+
+void Controller::readBattery(BatteryEvent& event) const {
+  if (_pCtrl) {
+    _pCtrl->getBattery().read(event);
+  }
+}
+
+void Controller::onBatteryUpdate(const OnBatteryUpdate& callback) {
+  _onBatteryUpdateSet = true;
+  _onBatteryUpdate = callback;
+  if (_pCtrl) {
+    _pCtrl->getBattery().onUpdate(_onBatteryUpdate);
+  }
+}
+
+void Controller::writeVibrations(const VibrationsCommand& cmd) const {
+  if (_pCtrl) {
+    _pCtrl->getVibrations().write(cmd);
+  }
 }

@@ -7,17 +7,17 @@
 #include "Controller.h"
 #include "ControllerConfig.h"
 
-typedef Controller* ControllerPtr;
-typedef std::function<void(Controller& controller)> ControllerCallback;
+typedef ControllerInternal* ControllerPtr;
+typedef std::function<void(ControllerInternal& controller)> ControllerCallback;
 
 class BLEGamepadClient_ {
  public:
   static BLEGamepadClient_& getInstance();
 
-  bool begin(bool autoScanEnabled = true, int maxConnected = 1, bool deleteBonds = false);
+  bool init();
   bool end();
 
-  std::list<Controller>& getControllers();
+  std::list<ControllerInternal>& getControllers();
   ControllerPtr getControllerPtrByAddress(NimBLEAddress address);
   void setConnectedCallback(const ControllerCallback& onConnected);
   void setDisconnectedCallback(const ControllerCallback& onDisconnected);
@@ -27,26 +27,31 @@ class BLEGamepadClient_ {
   bool startScan(uint32_t durationMs);
   bool stopScan();
 
+  bool isInitialized() const;
+
 
   friend class ClientCallbacks;
   friend class ScanCallbacks;
 
+ // TODO: package-protected
+ ControllerInternal* createController(NimBLEAddress allowedAddress);
+
  private:
   BLEGamepadClient_();
 
+  bool _releaseController(NimBLEAddress address);
+  bool _reserveController(NimBLEAddress address);
+
   static void _clientStatusConsumerFn(void* pvParameters);
-  Controller& _getOrCreateController(NimBLEAddress address);
+  ControllerInternal* _getController(NimBLEAddress address);
   void _autoScanCheck();
   bool _initialized;
   bool _autoScanEnabled;
-  int _maxConnected;
   QueueHandle_t _clientStatusQueue;
   TaskHandle_t _clientStatusConsumerTask;
   SemaphoreHandle_t _connectionSlots;
   std::map<NimBLEAddress, uint64_t> _configMatch;
-  std::list<Controller> _controllers;
-  ControllerCallback _onConnected;
-  ControllerCallback _onDisconnected;
+  std::list<ControllerInternal> _controllers;
   std::deque<ControllerConfig> _configs;
 };
 

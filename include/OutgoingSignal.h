@@ -14,13 +14,14 @@ class OutgoingSignal {
     size_t used{};
     size_t capacity{};
   };
-  explicit OutgoingSignal(NimBLEAddress address);
+
+  OutgoingSignal();
   ~OutgoingSignal() = default;
 
   void write(const T& value);
   bool isInitialized() const;
 
-  bool init(OutgoingSignalConfig<T>& config);
+  bool init(NimBLEAddress address, OutgoingSignalConfig<T>& config);
   bool deinit(bool disconnected);
 
  private:

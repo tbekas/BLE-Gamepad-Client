@@ -9,7 +9,7 @@
 #include "BatteryEvent.h"
 
 template <typename T>
-using Consumer = std::function<void(T& value)>;
+using OnUpdate = std::function<void(T& value)>;
 
 template <typename T>
 class IncomingSignal {
@@ -18,26 +18,26 @@ class IncomingSignal {
     T event;
   };
 
-  explicit IncomingSignal(NimBLEAddress address);
+  IncomingSignal();
   ~IncomingSignal() = default;
 
   void read(T& out);
   bool isInitialized() const;
-  void subscribe(const Consumer<T>& onUpdate);
+  void onUpdate(const OnUpdate<T>& onUpdate);
 
-  bool init(IncomingSignalConfig<T>& config);
+  bool init(NimBLEAddress address, IncomingSignalConfig<T>& config);
   bool deinit(bool disconnected);
 
  private:
   static void _callConsumerFn(void* pvParameters);
   bool _initialized;
-  Consumer<T> _consumer;
-  bool _hasSubscription;
+  OnUpdate<T> _onUpdate;
+  bool _onUpdateSet;
   void _handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify);
   SignalDecoder<T> _decoder;
   NimBLEAddress _address;
   NimBLERemoteCharacteristic* _pChar;
-  TaskHandle_t _callConsumerTask;
+  TaskHandle_t _callOnUpdateTask;
   SemaphoreHandle_t _storeMutex;
   Store _store;
 };

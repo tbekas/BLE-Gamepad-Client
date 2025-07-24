@@ -10,28 +10,29 @@
 #include "Utils.h"
 
 template <typename T>
-IncomingSignal<T>::IncomingSignal(const NimBLEAddress address)
+IncomingSignal<T>::IncomingSignal()
     : _initialized(false),
-      _consumer([](T&) {}),
-      _hasSubscription(false),
+      _onUpdate([](T&) {}),
+      _onUpdateSet(false),
       _decoder([](T&, uint8_t[], size_t) { return 1; }),
-      _address(address),
+      _address(),
       _pChar(nullptr),
-      _callConsumerTask(nullptr),
+      _callOnUpdateTask(nullptr),
       _storeMutex(nullptr),
       _store({ .event = T() }) {}
 
 template <typename T>
-bool IncomingSignal<T>::init(IncomingSignalConfig<T>& config) {
+bool IncomingSignal<T>::init(NimBLEAddress address, IncomingSignalConfig<T>& config) {
   if (_initialized) {
     return false;
   }
+  _address = address;
 
   _storeMutex = xSemaphoreCreateMutex();
   configASSERT(_storeMutex);
   configASSERT(xSemaphoreGive(_storeMutex));
-  xTaskCreate(_callConsumerFn, "_callConsumerFn", 10000, this, 0, &_callConsumerTask);
-  configASSERT(_callConsumerTask);
+  xTaskCreate(_callConsumerFn, "_callConsumerFn", 10000, this, 0, &_callOnUpdateTask);
+  configASSERT(_callOnUpdateTask);
 
   _decoder = config.decoder;
   _pChar = Utils::findCharacteristic(_address, config.serviceUUID, config.characteristicUUID,
@@ -74,8 +75,8 @@ bool IncomingSignal<T>::deinit(bool disconnected) {
     }
   }
 
-  if (_callConsumerTask != nullptr) {
-    vTaskDelete(_callConsumerTask);
+  if (_callOnUpdateTask != nullptr) {
+    vTaskDelete(_callOnUpdateTask);
   }
   if (_storeMutex != nullptr) {
     vSemaphoreDelete(_storeMutex);
@@ -97,7 +98,7 @@ void IncomingSignal<T>::_callConsumerFn(void* pvParameters) {
     configASSERT(xSemaphoreTake(self->_storeMutex, portMAX_DELAY));
     auto eventCopy = self->_store.event;
     configASSERT(xSemaphoreGive(self->_storeMutex));
-    self->_consumer(eventCopy);
+    self->_onUpdate(eventCopy);
   }
 }
 
@@ -116,8 +117,8 @@ void IncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
     BLEGC_LOGW("Decoding failed. %s", Utils::remoteCharToStr(pChar).c_str());
   }
 
-  if (_hasSubscription && result) {
-    xTaskNotifyGive(_callConsumerTask);
+  if (_onUpdateSet && result) {
+    xTaskNotifyGive(_callOnUpdateTask);
   }
 }
 
@@ -133,9 +134,9 @@ void IncomingSignal<T>::read(T& out) {
 }
 
 template <typename T>
-void IncomingSignal<T>::subscribe(const Consumer<T>& onUpdate) {
-  _consumer = onUpdate;
-  _hasSubscription = true;
+void IncomingSignal<T>::onUpdate(const OnUpdate<T>& onUpdate) {
+  _onUpdate = onUpdate;
+  _onUpdateSet = true;
 }
 
 template <typename T>

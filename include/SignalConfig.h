@@ -3,6 +3,7 @@
 #include <NimBLEUUID.h>
 #include <string>
 #include "SignalCoder.h"
+#include "Utils.h"
 
 template <typename T>
 struct IncomingSignalConfig {
@@ -10,7 +11,7 @@ struct IncomingSignalConfig {
   NimBLEUUID characteristicUUID{};
   SignalDecoder<T> decoder{};
 
-  bool isEnabled() const { return !std::string(serviceUUID).empty(); }
+  bool isEnabled() const { return !Utils::isNull(serviceUUID); }
   bool isDisabled() const { return !isEnabled(); }
   explicit operator std::string() const;
 };
@@ -30,7 +31,7 @@ struct OutgoingSignalConfig {
   /// varies depending on the input.
   size_t bufferLen{};
 
-  bool isEnabled() const { return !std::string(serviceUUID).empty(); }
+  bool isEnabled() const { return !Utils::isNull(serviceUUID); }
   bool isDisabled() const { return !isEnabled(); }
   explicit operator std::string() const;
 };
