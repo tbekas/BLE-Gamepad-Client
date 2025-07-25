@@ -4,7 +4,7 @@
 #include <NimBLERemoteCharacteristic.h>
 #include <bitset>
 #include <functional>
-#include "Logger.h"
+#include "logger.h"
 #include "SignalCoder.h"
 #include "SignalConfig.h"
 #include "Utils.h"
@@ -107,14 +107,14 @@ void IncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
                                       uint8_t* pData,
                                       size_t length,
                                       bool isNotify) {
-  BLEGC_LOGD("Received a notification. %s", Utils::remoteCharToStr(pChar).c_str());
+  BLEGC_LOGT("Received a notification. %s", Utils::remoteCharToStr(pChar).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   auto result = _decoder(_store.event, pData, length) > 0;
   configASSERT(xSemaphoreGive(_storeMutex));
 
   if (!result) {
-    BLEGC_LOGW("Decoding failed. %s", Utils::remoteCharToStr(pChar).c_str());
+    BLEGC_LOGE("Decoding failed. %s", Utils::remoteCharToStr(pChar).c_str());
   }
 
   if (_onUpdateSet && result) {

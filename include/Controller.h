@@ -9,10 +9,11 @@
 class Controller {
  public:
   Controller();
-  explicit Controller(NimBLEAddress address);  // TODO refactor to string type
+  explicit Controller(NimBLEAddress address);
+  explicit Controller(const std::string& address,  bool addrPublic = true);
   ~Controller() = default;
 
-  bool begin();
+  bool begin(bool deleteBonds = false);
 
   bool isConnected() const;
   void onConnect(const OnConnect& callback);
@@ -33,7 +34,7 @@ class Controller {
   OnConnect _onConnect;
   OnDisconnect _onDisconnect;
   OnControlsUpdate _onControlsUpdate;
-  bool _onControlsUpdateSet;
+  bool _onControlsUpdateIsSet;
   OnBatteryUpdate _onBatteryUpdate;
-  bool _onBatteryUpdateSet;
+  bool _onBatteryUpdateIsSet;
 };

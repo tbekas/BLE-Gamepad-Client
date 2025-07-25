@@ -3,7 +3,7 @@
 #include "ControllerConfig.h"
 #include "IncomingSignal.h"
 #include "Utils.h"
-#include "Logger.h"
+#include "logger.h"
 
 ControllerInternal::ControllerInternal(const NimBLEAddress allowedAddress)
     : _initialized(false),
@@ -11,12 +11,12 @@ ControllerInternal::ControllerInternal(const NimBLEAddress allowedAddress)
       _allowedAddress(allowedAddress),
       _lastAddress(),
       _onConnect([](NimBLEAddress) {}),
-      _onDisconnect([](NimBLEAddress) {})
-      {}
+      _onDisconnect([](NimBLEAddress) {}) {}
 
 NimBLEAddress ControllerInternal::getAllowedAddress() const {
   return _allowedAddress;
 }
+
 void ControllerInternal::onConnect(const OnConnect& callback) {
   _onConnect = callback;
 }

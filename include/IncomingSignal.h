@@ -2,7 +2,7 @@
 
 #include <NimBLEDevice.h>
 #include <functional>
-#include "Logger.h"
+#include "logger.h"
 #include "SignalCoder.h"
 #include "SignalConfig.h"
 #include "ControlsEvent.h"

@@ -18,7 +18,7 @@ struct IncomingSignalConfig {
 
 template <typename T>
 IncomingSignalConfig<T>::operator std::string() const {
-  return "serviceUUID: " + std::string(serviceUUID) + ", characteristicUUID: " + std::string(characteristicUUID);
+  return "service uuid: " + std::string(serviceUUID) + ", characteristic uuid: " + std::string(characteristicUUID);
 }
 
 template <typename T>
@@ -38,5 +38,5 @@ struct OutgoingSignalConfig {
 
 template <typename T>
 OutgoingSignalConfig<T>::operator std::string() const {
-  return "serviceUUID: " + std::string(serviceUUID) + ", characteristicUUID: " + std::string(characteristicUUID);
+  return "service uuid: " + std::string(serviceUUID) + ", characteristic uuid: " + std::string(characteristicUUID);
 }

@@ -4,14 +4,11 @@
 #include <NimBLEScan.h>
 #include <NimBLEUtils.h>
 #include <bitset>
-#include "Logger.h"
+#include "config.h"
+#include "logger.h"
 #include "xbox.h"
 
-#define MAX_CONFIGS 64
-#define MAX_CONNECTED 8
-
-static constexpr uint32_t scanTimeMs = 30 * 1000; // TODO Config params for these
-static constexpr uint32_t connTimeoutMs = 15 * 1000;
+#define MAX_CTRL_CONFIG_COUNT sizeof(CTRL_CONFIG_MATCH_TYPE)
 
 enum BLEClientStatusMsgKind : uint8_t {
   /// @brief BLE client bonded and connected
@@ -77,7 +74,7 @@ class ScanCallbacks : public NimBLEScanCallbacks {
     BLEGC_LOGD("Device discovered, address: %s, name: %s", std::string(pAdvertisedDevice->getAddress()).c_str(),
                pAdvertisedDevice->getName().c_str());
 
-    auto configMatch = std::bitset<MAX_CONFIGS>();
+    auto configMatch = std::bitset<MAX_CTRL_CONFIG_COUNT>();
 
     for (int i = 0; i < BLEGamepadClient::_configs.size(); i++) {
       auto& config = BLEGamepadClient::_configs[i];
@@ -127,7 +124,7 @@ class ScanCallbacks : public NimBLEScanCallbacks {
         BLEGamepadClient::_autoScanCheck();
         return;
       }
-      pClient->setConnectTimeout(connTimeoutMs);
+      pClient->setConnectTimeout(CONFIG_BT_BLEGC_CONN_TIMEOUT_MS);
       pClient->setClientCallbacks(&clientCallbacks, false);
     }
 
@@ -172,7 +169,7 @@ bool BLEGamepadClient::_reserveController(const NimBLEAddress address) {
   }
 
   // get one with matching filter
-  for (auto& ctrl: _controllers) {
+  for (auto& ctrl : _controllers) {
     if (!ctrl.getAddress().isNull()) {
       // already reserved
       continue;
@@ -185,7 +182,7 @@ bool BLEGamepadClient::_reserveController(const NimBLEAddress address) {
   }
 
   // get one reserved last time
-  for (auto& ctrl: _controllers) {
+  for (auto& ctrl : _controllers) {
     if (!ctrl.getAddress().isNull()) {
       // already reserved
       continue;
@@ -198,7 +195,7 @@ bool BLEGamepadClient::_reserveController(const NimBLEAddress address) {
   }
 
   // get any
-  for (auto& ctrl: _controllers) {
+  for (auto& ctrl : _controllers) {
     if (!ctrl.getAddress().isNull()) {
       // already reserved
       continue;
@@ -220,7 +217,7 @@ bool BLEGamepadClient::_reserveController(const NimBLEAddress address) {
   return false;
 }
 
-ControllerInternal* BLEGamepadClient::createController(NimBLEAddress allowedAddress) {
+ControllerInternal* BLEGamepadClient::_createController(NimBLEAddress allowedAddress) {
   if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
     BLEGC_LOGE("Cannot create controller");
     return nullptr;
@@ -262,8 +259,9 @@ void BLEGamepadClient::_clientStatusConsumerFn(void* pvParameters) {
           break;
         }
 
-        auto configMatch = std::bitset<MAX_CONFIGS>(_configMatch[msg.address]);
-        for (int i = 0; i < _configs.size(); i++) {
+        auto configMatch = std::bitset<MAX_CTRL_CONFIG_COUNT>(_configMatch[msg.address]);
+        // reverse iteration order - configs
+        for (int i = _configs.size() - 1; i >= 0; i--) {
           if (!configMatch[i]) {
             continue;
           }
@@ -303,22 +301,16 @@ void BLEGamepadClient::_clientStatusConsumerFn(void* pvParameters) {
 }
 
 void BLEGamepadClient::_autoScanCheck() {
-  if (!_autoScanEnabled) {
-    BLEGC_LOGD("Scan not started, auto scan is disabled");
-    return;
-  }
-
   if (uxSemaphoreGetCount(_connectionSlots) == 0) {
     BLEGC_LOGD("Scan not started, no available connection slots");
     return;
   }
 
   BLEGC_LOGD("Scan started");
-  NimBLEDevice::getScan()->start(scanTimeMs);
+  NimBLEDevice::getScan()->start(CONFIG_BT_BLEGC_SCAN_DURATION_MS);
 }
 
 bool BLEGamepadClient::_initialized{false};
-bool BLEGamepadClient::_autoScanEnabled{true};
 QueueHandle_t BLEGamepadClient::_clientStatusQueue{nullptr};
 TaskHandle_t BLEGamepadClient::_clientStatusConsumerTask{nullptr};
 SemaphoreHandle_t BLEGamepadClient::_connectionSlots{nullptr};
@@ -329,16 +321,13 @@ std::deque<ControllerConfig> BLEGamepadClient::_configs{};
 bool BLEGamepadClient::isInitialized() {
   return _initialized;
 }
-void BLEGamepadClient::disableAutoScan() {
-  _autoScanEnabled = false;
-}
 
-bool BLEGamepadClient::init() {
+bool BLEGamepadClient::init(bool deleteBonds) {
   if (_initialized) {
     return false;
   }
 
-  _connectionSlots = xSemaphoreCreateCounting(MAX_CONNECTED, 0);
+  _connectionSlots = xSemaphoreCreateCounting(CONFIG_BT_BLEGC_MAX_CONNECTIONS, 0);
   configASSERT(_connectionSlots);
   _clientStatusQueue = xQueueCreate(10, sizeof(BLEClientStatus));
   configASSERT(_clientStatusQueue);
@@ -347,15 +336,19 @@ bool BLEGamepadClient::init() {
                           &_clientStatusConsumerTask, CONFIG_BT_NIMBLE_PINNED_TO_CORE);
   configASSERT(_clientStatusConsumerTask);
 
-  // default configs
-  addConfig(xbox::controllerConfig);
+  // default config - lowest priority
+  _configs.push_front(xbox::controllerConfig);
 
-  NimBLEDevice::init("ESP32");
-  NimBLEDevice::setPower(3);                                 /** +3db */
-  NimBLEDevice::setSecurityAuth(true, true, true);           /** bonding, MITM protection, BLE secure connections */
-  NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT); /** no screen, no keyboard */
+  if (!NimBLEDevice::isInitialized()) {
+    NimBLEDevice::init(CONFIG_BT_BLEGC_DEVICE_NAME);
+    NimBLEDevice::setPower(CONFIG_BT_BLEGC_POWER_DBM);
+    NimBLEDevice::setSecurityAuth(CONFIG_BT_BLEGC_SECURITY_AUTH);
+    NimBLEDevice::setSecurityIOCap(CONFIG_BT_BLEGC_SECURITY_IO_CAP);
+  }
 
-  // NimBLEDevice::deleteAllBonds(); // TODO config for this?
+  if (deleteBonds) {
+    NimBLEDevice::deleteAllBonds();
+  }
 
   NimBLEScan* pScan = NimBLEDevice::getScan();
   pScan->setScanCallbacks(&scanCallbacks, false);
@@ -419,20 +412,16 @@ bool BLEGamepadClient::deinit() {
  * @param config Configuration to be registered.
  * @return True if successful.
  */
-bool BLEGamepadClient::addConfig(const ControllerConfig& config) {
-  if (_initialized) { // TODO remove this check somehow
-    BLEGC_LOGE("Failed to add config. Call `addConfig` before calling `begin`");
+bool BLEGamepadClient::addControllerConfig(const ControllerConfig& config) {
+  if (_configs.size() >= MAX_CTRL_CONFIG_COUNT) {
+    BLEGC_LOGE("Reached maximum number of configs: %d", MAX_CTRL_CONFIG_COUNT);
     return false;
   }
-  if (_configs.size() >= MAX_CONFIGS) {
-    BLEGC_LOGE("Failed to add config. Reached maximum number of configs: %d", _configs.size());
-    return false;
-  }
-  if (config.controls.isDisabled() && config.battery.isDisabled()) {
-    BLEGC_LOGE("Invalid config, at least one of `controlsConfig` and `batteryConfig` has to be enabled");
+  if (config.controls.isDisabled() && config.battery.isDisabled() && config.vibrations.isDisabled()) {
+    BLEGC_LOGE("Invalid config, at least one of [`controls`, `battery`, `vibrations`] has to be enabled");
     return false;
   }
 
-  _configs.push_front(config);
+  _configs.push_back(config);
   return true;
 }

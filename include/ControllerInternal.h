@@ -42,10 +42,8 @@ private:
   NimBLEAddress _address;
   NimBLEAddress _allowedAddress;
   NimBLEAddress _lastAddress;
-
   OnConnect _onConnect{};
   OnDisconnect _onDisconnect{};
-
   ControlsSignal _controls{};
   BatterySignal _battery{};
   VibrationsSignal _vibrations{};

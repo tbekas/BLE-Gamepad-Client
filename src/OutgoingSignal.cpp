@@ -3,7 +3,7 @@
 #include <NimBLERemoteCharacteristic.h>
 #include <bitset>
 #include <functional>
-#include "Logger.h"
+#include "logger.h"
 #include "SignalCoder.h"
 #include "SignalConfig.h"
 #include "Utils.h"
@@ -37,7 +37,7 @@ void OutgoingSignal<T>::_sendDataFn(void* pvParameters) {
     configASSERT(xSemaphoreGive(self->_storeMutex));
 
     if (!result) {
-      BLEGC_LOGD("Encoding failed");
+      BLEGC_LOGE("Encoding failed");
       continue;
     }
 
@@ -45,6 +45,8 @@ void OutgoingSignal<T>::_sendDataFn(void* pvParameters) {
       BLEGC_LOGE("Remote characteristic not initialized");
       continue;
     }
+
+    BLEGC_LOGT("Writing value. %s", Utils::remoteCharToStr(_pChar));
 
     self->_pChar->writeValue(self->_store.pSendBuffer, used);
   }
@@ -64,16 +66,14 @@ void OutgoingSignal<T>::write(const T& value) {
     _store.capacity = min(_store.capacity * 2, maxCapacity);
     _store.pBuffer = new uint8_t[_store.capacity];
     _store.pSendBuffer = new uint8_t[_store.capacity];
-    BLEGC_LOGD("Encode loop");
   }
 
   _store.used = used;
-  BLEGC_LOGD("used: %d, capacity: %d", _store.used, _store.capacity);
   auto result = _store.used > 0 && _store.used <= _store.capacity;
   configASSERT(xSemaphoreGive(_storeMutex));
 
   if (!result) {
-    BLEGC_LOGD("Encoding failed");
+    BLEGC_LOGE("Encoding failed");
     return;
   }
 

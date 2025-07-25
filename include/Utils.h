@@ -2,7 +2,7 @@
 
 #include <NimBLEDevice.h>
 #include <string>
-#include "Logger.h"
+#include "logger.h"
 
 class Utils {
  public:
@@ -42,16 +42,16 @@ class Utils {
     return true;
   }
 
-  using BLECharacteristicFilter = std::function<bool(NimBLERemoteCharacteristic*)>;
+  using CharacteristicFilter = std::function<bool(NimBLERemoteCharacteristic*)>;
 
   static NimBLERemoteCharacteristic* findCharacteristic(
       const NimBLEAddress address,
-      const NimBLEUUID& serviceUuid,
-      const NimBLEUUID& characteristicUuid = NimBLEUUID(),
-      const BLECharacteristicFilter& filter = [](NimBLERemoteCharacteristic*) { return true; }) {
+      const NimBLEUUID& serviceUUID,
+      const NimBLEUUID& characteristicUUID = NimBLEUUID(),
+      const CharacteristicFilter& filter = [](NimBLERemoteCharacteristic*) { return true; }) {
     BLEGC_LOGD("Looking up for characteristic, service uuid: %s, characteristic uuid: %s.",
-               std::string(serviceUuid).c_str(),
-               isNull(characteristicUuid) ? "null" : std::string(characteristicUuid).c_str());
+               std::string(serviceUUID).c_str(),
+               isNull(characteristicUUID) ? "null" : std::string(characteristicUUID).c_str());
 
     const auto pBleClient = NimBLEDevice::getClientByPeerAddress(address);
     if (!pBleClient) {
@@ -59,14 +59,14 @@ class Utils {
       return nullptr;
     }
 
-    const auto pService = pBleClient->getService(serviceUuid);
+    const auto pService = pBleClient->getService(serviceUUID);
     if (!pService) {
-      BLEGC_LOGE("Service not found, service uuid: %s", std::string(serviceUuid).c_str());
+      BLEGC_LOGE("Service not found, service uuid: %s", std::string(serviceUUID).c_str());
       return nullptr;
     }
 
     for (auto pChar : pService->getCharacteristics(false)) {
-      if (!isNull(characteristicUuid) && characteristicUuid != pChar->getUUID()) {
+      if (!isNull(characteristicUUID) && characteristicUUID != pChar->getUUID()) {
         continue;
       }
 
@@ -77,8 +77,8 @@ class Utils {
       return pChar;
     }
 
-    BLEGC_LOGE("Characteristic not found, service uuid: %s, characteristic uuid: %s.", std::string(serviceUuid).c_str(),
-               isNull(characteristicUuid) ? "null" : std::string(characteristicUuid).c_str());
+    BLEGC_LOGE("Characteristic not found, service uuid: %s, characteristic uuid: %s.", std::string(serviceUUID).c_str(),
+               isNull(characteristicUUID) ? "null" : std::string(characteristicUUID).c_str());
 
     return nullptr;
   }

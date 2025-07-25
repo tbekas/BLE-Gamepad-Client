@@ -3,34 +3,37 @@
 
 Controller::Controller() : Controller(NimBLEAddress()) {}
 
-Controller::Controller(NimBLEAddress address)
+Controller::Controller(const std::string& address, const bool addrPublic)
+    : Controller(NimBLEAddress(address, addrPublic ? BLE_ADDR_PUBLIC : BLE_ADDR_RANDOM)) {}
+
+Controller::Controller(const NimBLEAddress address)
     : _pCtrl(nullptr),
       _allowedAddress(address),
       _onConnect([](NimBLEAddress) {}),
       _onDisconnect([](NimBLEAddress) {}),
       _onControlsUpdate([](ControlsEvent&) {}),
-      _onControlsUpdateSet(false),
+      _onControlsUpdateIsSet(false),
       _onBatteryUpdate([](BatteryEvent&) {}),
-      _onBatteryUpdateSet(false) {}
+      _onBatteryUpdateIsSet(false) {}
 
-bool Controller::begin() {
+bool Controller::begin(bool deleteBonds) {
   if (!BLEGamepadClient::isInitialized()) {
-    if (!BLEGamepadClient::init()) {
+    if (!BLEGamepadClient::init(deleteBonds)) {
       return false;
     }
   }
 
-  _pCtrl = BLEGamepadClient::createController(_allowedAddress);
+  _pCtrl = BLEGamepadClient::_createController(_allowedAddress);
   if (!_pCtrl) {
     return false;
   }
 
   _pCtrl->onConnect(_onConnect);
   _pCtrl->onDisconnect(_onDisconnect);
-  if (_onControlsUpdateSet) {
+  if (_onControlsUpdateIsSet) {
     _pCtrl->getControls().onUpdate(_onControlsUpdate);
   }
-  if (_onBatteryUpdateSet) {
+  if (_onBatteryUpdateIsSet) {
     _pCtrl->getBattery().onUpdate(_onBatteryUpdate);
   }
 
@@ -73,7 +76,7 @@ void Controller::readControls(ControlsEvent& event) const {
   }
 }
 void Controller::onControlsUpdate(const OnControlsUpdate& callback) {
-  _onControlsUpdateSet = true;
+  _onControlsUpdateIsSet = true;
   _onControlsUpdate = callback;
   if (_pCtrl) {
     _pCtrl->getControls().onUpdate(_onControlsUpdate);
@@ -87,7 +90,7 @@ void Controller::readBattery(BatteryEvent& event) const {
 }
 
 void Controller::onBatteryUpdate(const OnBatteryUpdate& callback) {
-  _onBatteryUpdateSet = true;
+  _onBatteryUpdateIsSet = true;
   _onBatteryUpdate = callback;
   if (_pCtrl) {
     _pCtrl->getBattery().onUpdate(_onBatteryUpdate);
