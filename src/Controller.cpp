@@ -3,8 +3,7 @@
 
 Controller::Controller() : Controller(NimBLEAddress()) {}
 
-Controller::Controller(const std::string& address, const bool addrPublic)
-    : Controller(NimBLEAddress(address, addrPublic ? BLE_ADDR_PUBLIC : BLE_ADDR_RANDOM)) {}
+Controller::Controller(const std::string& address) : Controller(NimBLEAddress(address, BLE_ADDR_PUBLIC)) {}
 
 Controller::Controller(const NimBLEAddress address)
     : _pCtrl(nullptr),

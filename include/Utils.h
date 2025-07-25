@@ -7,7 +7,7 @@
 class Utils {
  public:
   static bool isNull(const NimBLEUUID& uuid) {
-    return std::string(uuid).empty();  // TODO probably faster is to determine using bitSize();
+    return uuid.bitSize() == 0;
   }
 
   static std::string remoteCharToStr(const NimBLERemoteCharacteristic* pChar) {

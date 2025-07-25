@@ -10,7 +10,7 @@ class Controller {
  public:
   Controller();
   explicit Controller(NimBLEAddress address);
-  explicit Controller(const std::string& address,  bool addrPublic = true);
+  explicit Controller(const std::string& address);
   ~Controller() = default;
 
   bool begin(bool deleteBonds = false);

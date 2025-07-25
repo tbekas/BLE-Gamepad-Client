@@ -71,7 +71,8 @@ class ClientCallbacks : public NimBLEClientCallbacks {
 
 class ScanCallbacks : public NimBLEScanCallbacks {
   void onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) override {
-    BLEGC_LOGD("Device discovered, address: %s, name: %s", std::string(pAdvertisedDevice->getAddress()).c_str(),
+    BLEGC_LOGD("Device discovered, address: %s, address type: %d, name: %s",
+               std::string(pAdvertisedDevice->getAddress()).c_str(), pAdvertisedDevice->getAddressType(),
                pAdvertisedDevice->getName().c_str());
 
     auto configMatch = std::bitset<MAX_CTRL_CONFIG_COUNT>();
@@ -171,7 +172,6 @@ bool BLEGamepadClient::_reserveController(const NimBLEAddress address) {
   // get one with matching filter
   for (auto& ctrl : _controllers) {
     if (!ctrl.getAddress().isNull()) {
-      // already reserved
       continue;
     }
 
@@ -184,7 +184,6 @@ bool BLEGamepadClient::_reserveController(const NimBLEAddress address) {
   // get one reserved last time
   for (auto& ctrl : _controllers) {
     if (!ctrl.getAddress().isNull()) {
-      // already reserved
       continue;
     }
 
@@ -197,7 +196,6 @@ bool BLEGamepadClient::_reserveController(const NimBLEAddress address) {
   // get any
   for (auto& ctrl : _controllers) {
     if (!ctrl.getAddress().isNull()) {
-      // already reserved
       continue;
     }
 
@@ -260,8 +258,9 @@ void BLEGamepadClient::_clientStatusConsumerFn(void* pvParameters) {
         }
 
         auto configMatch = std::bitset<MAX_CTRL_CONFIG_COUNT>(_configMatch[msg.address]);
-        // reverse iteration order - configs
-        for (int i = _configs.size() - 1; i >= 0; i--) {
+        const int configsSize = _configs.size();
+        // reverse iteration order
+        for (int i = configsSize - 1; i >= 0; i--) {
           if (!configMatch[i]) {
             continue;
           }
@@ -277,7 +276,7 @@ void BLEGamepadClient::_clientStatusConsumerFn(void* pvParameters) {
           BLEGC_LOGD("Controller sucesfuly initialized");
           break;
         }
-        // TODO: if all config failed, disconnect and tmp ban?
+        // TODO: disconnect and tmp ban?
       } break;
       case BLEClientDisconnected:
         auto* pCtrl = _getController(msg.address);
