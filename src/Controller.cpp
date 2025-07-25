@@ -1,5 +1,6 @@
 #include "Controller.h"
 #include "BLEGamepadClient.h"
+#include <NimBLEDevice.h>
 
 Controller::Controller() : Controller(NimBLEAddress()) {}
 
@@ -14,7 +15,11 @@ Controller::Controller(const NimBLEAddress address)
       _onControlsUpdateIsSet(false),
       _onBatteryUpdate([](BatteryEvent&) {}),
       _onBatteryUpdateIsSet(false) {}
-
+/**
+ * @brief Initializes a controller instance and NimBLE stack if it's not already initialized.
+ * @param deleteBonds If true, all data related to previously bonded devices is deleted. Default is false.
+ * @return True if initialization was successful.
+ */
 bool Controller::begin(bool deleteBonds) {
   if (!BLEGamepadClient::isInitialized()) {
     if (!BLEGamepadClient::init(deleteBonds)) {
@@ -39,6 +44,10 @@ bool Controller::begin(bool deleteBonds) {
   return true;
 }
 
+/**
+ * @brief Is controller assigned to this instance is connected with the board.
+ * @return True if controller is connected, false otherwise.
+ */
 bool Controller::isConnected() const {
   if (_pCtrl) {
     return _pCtrl->isInitialized();
@@ -48,7 +57,7 @@ bool Controller::isConnected() const {
 }
 
 /**
- * @brief Sets the callback that will be invoked when the controller connects.
+ * @brief Sets the callback to be invoked when the controller connects.
  * @param callback Reference to a callback function.
  */
 void Controller::onConnect(const OnConnect& callback) {
@@ -59,8 +68,8 @@ void Controller::onConnect(const OnConnect& callback) {
 }
 
 /**
- * @brief Sets the callback that will be invoked when the controller disconnects.
- * @param callback Reference to a callback function.
+ * @brief Sets the callback to be invoked when the controller disconnects.
+ * @param callback Reference to the callback function.
  */
 void Controller::onDisconnect(const OnDisconnect& callback) {
   _onDisconnect = callback;
@@ -69,11 +78,20 @@ void Controller::onDisconnect(const OnDisconnect& callback) {
   }
 }
 
+/**
+ * @brief Read the controls state from the connected controller.
+ * @param[out] event Reference to the event instance where the data will be written.
+ */
 void Controller::readControls(ControlsEvent& event) const {
   if (_pCtrl) {
     _pCtrl->getControls().read(event);
   }
 }
+
+/**
+ * @brief Sets the callback to be invoked when the controller sends update to the controls state.
+ * @param callback Reference to the callback function.
+ */
 void Controller::onControlsUpdate(const OnControlsUpdate& callback) {
   _onControlsUpdateIsSet = true;
   _onControlsUpdate = callback;
@@ -82,12 +100,20 @@ void Controller::onControlsUpdate(const OnControlsUpdate& callback) {
   }
 }
 
+/**
+ * @brief Read the battery state from the connected controller.
+ * @param[out] event Reference to the event instance where the data will be written.
+ */
 void Controller::readBattery(BatteryEvent& event) const {
   if (_pCtrl) {
     _pCtrl->getBattery().read(event);
   }
 }
 
+/**
+ * @brief Sets the callback to be invoked when the controller sends update to the battery state.
+ * @param callback Reference to the callback function.
+ */
 void Controller::onBatteryUpdate(const OnBatteryUpdate& callback) {
   _onBatteryUpdateIsSet = true;
   _onBatteryUpdate = callback;
@@ -96,6 +122,10 @@ void Controller::onBatteryUpdate(const OnBatteryUpdate& callback) {
   }
 }
 
+/**
+ * @brief Send the vibrations command to the connected controller.
+ * @param cmd Command enabling specific motors in the controller.
+ */
 void Controller::writeVibrations(const VibrationsCommand& cmd) const {
   if (_pCtrl) {
     _pCtrl->getVibrations().write(cmd);

@@ -30,7 +30,6 @@ class Controller {
  private:
   ControllerInternal* _pCtrl;
   NimBLEAddress _allowedAddress;
-
   OnConnect _onConnect;
   OnDisconnect _onDisconnect;
   OnControlsUpdate _onControlsUpdate;

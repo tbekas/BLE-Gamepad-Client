@@ -23,61 +23,61 @@ struct ControlsEvent : BaseEvent {
    *     -1.0   0.0   1.0
    * @endverbatim
    */
-  float leftStickX, leftStickY, rightStickX, rightStickY;
+  float leftStickX{0.0f}, leftStickY{0.0f}, rightStickX{0.0f}, rightStickY{0.0f};
 
   /// @brief Button activated when pressing down on the left stick, also known as the L3 button.
-  bool leftStickButton;
+  bool leftStickButton{false};
 
   /// @brief Button activated when pressing down on the right stick, also known as the R3 button.
-  bool rightStickButton;
+  bool rightStickButton{false};
 
   /// @brief Up button on the directional pad.
-  bool dpadUp;
+  bool dpadUp{false};
 
   /// @brief Down button on the directional pad.
-  bool dpadDown;
+  bool dpadDown{false};
 
   /// @brief Left button on the directional pad.
-  bool dpadLeft;
+  bool dpadLeft{false};
 
   /// @brief Right button on the directional pad.
-  bool dpadRight;
+  bool dpadRight{false};
 
   /// @brief Face button A, also known as the cross button.
-  bool buttonA;
+  bool buttonA{false};
 
   /// @brief Face button B, also known as the circle button.
-  bool buttonB;
+  bool buttonB{false};
 
   /// @brief Face button B, also known as the triangle button.
-  bool buttonX;
+  bool buttonX{false};
 
   /// @brief Face button B, also known as the square button.
-  bool buttonY;
+  bool buttonY{false};
 
   /// @brief Left bumper button, also known as the L1 or L shoulder button.
-  bool leftBumper;
+  bool leftBumper{false};
 
   /// @brief Right bumper button, also known as the R1 or R shoulder button.
-  bool rightBumper;
+  bool rightBumper{false};
 
   /// @brief Pressure level of a left trigger. Takes values between 0.0 and 1.0. No pressure should yield 0.0. This
   /// control is also known as L2.
-  float leftTrigger;
+  float leftTrigger{0.0f};
 
   /// @brief Pressure level of a right trigger. Takes values between 0.0 and 1.0. No pressure should yield 0.0. This
   /// control is also known as R2.
-  float rightTrigger;
+  float rightTrigger{0.0f};
 
   /// @brief Share button.
-  bool share;
+  bool share{false};
 
   /// @brief Menu button, also known as start button.
-  bool menu;
+  bool menu{false};
 
   /// @brief View button, also known as back button.
-  bool view;
+  bool view{false};
 
   /// @brief Xbox button, also known as guide button.
-  bool xbox;
+  bool xbox{false};
 };

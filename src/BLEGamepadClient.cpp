@@ -169,7 +169,7 @@ bool BLEGamepadClient::_reserveController(const NimBLEAddress address) {
     return false;
   }
 
-  // get one with matching filter
+  // try reserve ctrl with matching allowed address
   for (auto& ctrl : _controllers) {
     if (!ctrl.getAddress().isNull()) {
       continue;
@@ -181,7 +181,7 @@ bool BLEGamepadClient::_reserveController(const NimBLEAddress address) {
     }
   }
 
-  // get one reserved last time
+  // try reserve ctrl reserved last time
   for (auto& ctrl : _controllers) {
     if (!ctrl.getAddress().isNull()) {
       continue;
@@ -193,7 +193,7 @@ bool BLEGamepadClient::_reserveController(const NimBLEAddress address) {
     }
   }
 
-  // get any
+  // try reserve any controller
   for (auto& ctrl : _controllers) {
     if (!ctrl.getAddress().isNull()) {
       continue;

@@ -20,6 +20,7 @@ NimBLEAddress ControllerInternal::getAllowedAddress() const {
 void ControllerInternal::onConnect(const OnConnect& callback) {
   _onConnect = callback;
 }
+
 void ControllerInternal::onDisconnect(const OnDisconnect& callback) {
   _onDisconnect = callback;
 }
@@ -30,6 +31,7 @@ void ControllerInternal::setAddress(NimBLEAddress address) {
 NimBLEAddress ControllerInternal::getLastAddress() const {
   return _lastAddress;
 }
+
 void ControllerInternal::setLastAddress(NimBLEAddress address) {
   _lastAddress = address;
 }
@@ -101,7 +103,7 @@ bool ControllerInternal::deinit(bool disconnected) {
   }
   bool result = true;
 
-  // order of operands on the && matters here
+  // order of operands on the && operator matters here
   result = _vibrations.deinit(disconnected) && result;
   result = _battery.deinit(disconnected) && result;
   result = _controls.deinit(disconnected) && result;
