@@ -9,6 +9,19 @@
 #include "ControllerInternal.h"
 
 #define CTRL_CONFIG_MATCH_TYPE uint64_t
+#define MAX_CTRL_CONFIG_COUNT sizeof(CTRL_CONFIG_MATCH_TYPE)
+
+enum BLEClientStatusMsgKind : uint8_t {
+ BLEClientConnected = 0,
+ BLEClientDisconnected = 1
+};
+
+struct BLEClientStatus {
+ NimBLEAddress address;
+ BLEClientStatusMsgKind kind;
+
+ explicit operator std::string() const;
+};
 
 class BLEGamepadClient {
  public:
@@ -24,8 +37,8 @@ class BLEGamepadClient {
  private:
   static ControllerInternal* _createController(NimBLEAddress allowedAddress);
   static ControllerInternal* _getController(NimBLEAddress address);
-  static bool _releaseController(NimBLEAddress address);
   static bool _reserveController(NimBLEAddress address);
+  static bool _releaseController(NimBLEAddress address);
   static void _clientStatusConsumerFn(void* pvParameters);
   static void _autoScanCheck();
   static bool _initialized;

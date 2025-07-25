@@ -1,6 +1,6 @@
 #include "Controller.h"
-#include "BLEGamepadClient.h"
 #include <NimBLEDevice.h>
+#include "BLEGamepadClient.h"
 
 Controller::Controller() : Controller(NimBLEAddress()) {}
 

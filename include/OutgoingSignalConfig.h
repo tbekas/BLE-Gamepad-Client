@@ -1,25 +1,12 @@
 #pragma once
 
 #include <NimBLEUUID.h>
+#include <functional>
 #include <string>
-#include "SignalCoder.h"
 #include "Utils.h"
 
 template <typename T>
-struct IncomingSignalConfig {
-  NimBLEUUID serviceUUID{};
-  NimBLEUUID characteristicUUID{};
-  SignalDecoder<T> decoder{};
-
-  bool isEnabled() const { return !Utils::isNull(serviceUUID); }
-  bool isDisabled() const { return !isEnabled(); }
-  explicit operator std::string() const;
-};
-
-template <typename T>
-IncomingSignalConfig<T>::operator std::string() const {
-  return "service uuid: " + std::string(serviceUUID) + ", characteristic uuid: " + std::string(characteristicUUID);
-}
+using SignalEncoder = std::function<size_t(const T& value, uint8_t buffer[], size_t bufferLen)>;
 
 template <typename T>
 struct OutgoingSignalConfig {

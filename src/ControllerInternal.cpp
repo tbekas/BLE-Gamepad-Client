@@ -13,49 +13,6 @@ ControllerInternal::ControllerInternal(const NimBLEAddress allowedAddress)
       _onConnect([](NimBLEAddress) {}),
       _onDisconnect([](NimBLEAddress) {}) {}
 
-NimBLEAddress ControllerInternal::getAllowedAddress() const {
-  return _allowedAddress;
-}
-
-void ControllerInternal::onConnect(const OnConnect& callback) {
-  _onConnect = callback;
-}
-
-void ControllerInternal::onDisconnect(const OnDisconnect& callback) {
-  _onDisconnect = callback;
-}
-
-void ControllerInternal::setAddress(NimBLEAddress address) {
-  _address = address;
-}
-NimBLEAddress ControllerInternal::getLastAddress() const {
-  return _lastAddress;
-}
-
-void ControllerInternal::setLastAddress(NimBLEAddress address) {
-  _lastAddress = address;
-}
-
-NimBLEAddress ControllerInternal::getAddress() const {
-  return _address;
-}
-
-ControlsSignal& ControllerInternal::getControls() {
-  return _controls;
-}
-
-BatterySignal& ControllerInternal::getBattery() {
-  return _battery;
-}
-
-VibrationsSignal& ControllerInternal::getVibrations() {
-  return _vibrations;
-}
-
-bool ControllerInternal::isInitialized() const {
-  return _initialized;
-}
-
 bool ControllerInternal::init(ControllerConfig& config) {
   if (_initialized) {
     return false;
@@ -111,4 +68,48 @@ bool ControllerInternal::deinit(bool disconnected) {
   _initialized = false;
   _onDisconnect(_address);
   return result;
+}
+
+bool ControllerInternal::isInitialized() const {
+  return _initialized;
+}
+
+NimBLEAddress ControllerInternal::getAddress() const {
+  return _address;
+}
+
+void ControllerInternal::setAddress(NimBLEAddress address) {
+  _address = address;
+}
+
+NimBLEAddress ControllerInternal::getAllowedAddress() const {
+  return _allowedAddress;
+}
+
+NimBLEAddress ControllerInternal::getLastAddress() const {
+  return _lastAddress;
+}
+
+void ControllerInternal::setLastAddress(NimBLEAddress address) {
+  _lastAddress = address;
+}
+
+void ControllerInternal::onConnect(const OnConnect& callback) {
+  _onConnect = callback;
+}
+
+void ControllerInternal::onDisconnect(const OnDisconnect& callback) {
+  _onDisconnect = callback;
+}
+
+ControlsSignal& ControllerInternal::getControls() {
+  return _controls;
+}
+
+BatterySignal& ControllerInternal::getBattery() {
+  return _battery;
+}
+
+VibrationsSignal& ControllerInternal::getVibrations() {
+  return _vibrations;
 }

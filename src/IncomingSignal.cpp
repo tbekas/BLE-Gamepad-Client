@@ -4,10 +4,9 @@
 #include <NimBLERemoteCharacteristic.h>
 #include <bitset>
 #include <functional>
-#include "logger.h"
-#include "SignalCoder.h"
-#include "SignalConfig.h"
+#include "IncomingSignalConfig.h"
 #include "Utils.h"
+#include "logger.h"
 
 template <typename T>
 IncomingSignal<T>::IncomingSignal()
@@ -19,7 +18,7 @@ IncomingSignal<T>::IncomingSignal()
       _pChar(nullptr),
       _callOnUpdateTask(nullptr),
       _storeMutex(nullptr),
-      _store({ .event = T() }) {}
+      _store({.event = T()}) {}
 
 template <typename T>
 bool IncomingSignal<T>::init(NimBLEAddress address, IncomingSignalConfig<T>& config) {
@@ -36,7 +35,7 @@ bool IncomingSignal<T>::init(NimBLEAddress address, IncomingSignalConfig<T>& con
 
   _decoder = config.decoder;
   _pChar = Utils::findCharacteristic(_address, config.serviceUUID, config.characteristicUUID,
-                                         [](NimBLERemoteCharacteristic* c) { return c->canNotify(); });
+                                     [](NimBLERemoteCharacteristic* c) { return c->canNotify(); });
   if (!_pChar) {
     return false;
   }
@@ -89,37 +88,8 @@ bool IncomingSignal<T>::deinit(bool disconnected) {
 }
 
 template <typename T>
-void IncomingSignal<T>::_callConsumerFn(void* pvParameters) {
-  auto* self = static_cast<IncomingSignal*>(pvParameters);
-
-  while (true) {
-    ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-
-    configASSERT(xSemaphoreTake(self->_storeMutex, portMAX_DELAY));
-    auto eventCopy = self->_store.event;
-    configASSERT(xSemaphoreGive(self->_storeMutex));
-    self->_onUpdate(eventCopy);
-  }
-}
-
-template <typename T>
-void IncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
-                                      uint8_t* pData,
-                                      size_t length,
-                                      bool isNotify) {
-  BLEGC_LOGT("Received a notification. %s", Utils::remoteCharToStr(pChar).c_str());
-
-  configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  auto result = _decoder(_store.event, pData, length) > 0;
-  configASSERT(xSemaphoreGive(_storeMutex));
-
-  if (!result) {
-    BLEGC_LOGE("Decoding failed. %s", Utils::remoteCharToStr(pChar).c_str());
-  }
-
-  if (_onUpdateSet && result) {
-    xTaskNotifyGive(_callOnUpdateTask);
-  }
+bool IncomingSignal<T>::isInitialized() const {
+  return _initialized;
 }
 
 template <typename T>
@@ -140,6 +110,32 @@ void IncomingSignal<T>::onUpdate(const OnUpdate<T>& onUpdate) {
 }
 
 template <typename T>
-bool IncomingSignal<T>::isInitialized() const {
-  return _initialized;
+void IncomingSignal<T>::_callConsumerFn(void* pvParameters) {
+  auto* self = static_cast<IncomingSignal*>(pvParameters);
+
+  while (true) {
+    ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+
+    configASSERT(xSemaphoreTake(self->_storeMutex, portMAX_DELAY));
+    auto eventCopy = self->_store.event;
+    configASSERT(xSemaphoreGive(self->_storeMutex));
+    self->_onUpdate(eventCopy);
+  }
+}
+
+template <typename T>
+void IncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify) {
+  BLEGC_LOGT("Received a notification. %s", Utils::remoteCharToStr(pChar).c_str());
+
+  configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
+  auto result = _decoder(_store.event, pData, length) > 0;
+  configASSERT(xSemaphoreGive(_storeMutex));
+
+  if (!result) {
+    BLEGC_LOGE("Decoding failed. %s", Utils::remoteCharToStr(pChar).c_str());
+  }
+
+  if (_onUpdateSet && result) {
+    xTaskNotifyGive(_callOnUpdateTask);
+  }
 }

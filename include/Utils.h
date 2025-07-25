@@ -6,9 +6,7 @@
 
 class Utils {
  public:
-  static bool isNull(const NimBLEUUID& uuid) {
-    return uuid.bitSize() == 0;
-  }
+  static bool isNull(const NimBLEUUID& uuid) { return uuid.bitSize() == 0; }
 
   static std::string remoteCharToStr(const NimBLERemoteCharacteristic* pChar) {
     auto str = pChar->toString();

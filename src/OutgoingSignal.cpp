@@ -3,10 +3,9 @@
 #include <NimBLERemoteCharacteristic.h>
 #include <bitset>
 #include <functional>
-#include "logger.h"
-#include "SignalCoder.h"
-#include "SignalConfig.h"
+#include "OutgoingSignalConfig.h"
 #include "Utils.h"
+#include "logger.h"
 
 constexpr size_t maxCapacity = 1024;
 
@@ -18,67 +17,6 @@ OutgoingSignal<T>::OutgoingSignal()
       _pChar(nullptr),
       _sendDataTask(nullptr),
       _storeMutex(nullptr) {}
-
-template <typename T>
-void OutgoingSignal<T>::_sendDataFn(void* pvParameters) {
-  auto* self = static_cast<OutgoingSignal*>(pvParameters);
-
-  while (true) {
-    ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-
-    configASSERT(xSemaphoreTake(self->_storeMutex, portMAX_DELAY));
-
-    uint8_t* tmp = self->_store.pSendBuffer;
-    self->_store.pSendBuffer = self->_store.pBuffer;
-    self->_store.pBuffer = tmp;
-
-    auto used = self->_store.used;
-    auto result = self->_store.used > 0 && self->_store.used <= self->_store.capacity;
-    configASSERT(xSemaphoreGive(self->_storeMutex));
-
-    if (!result) {
-      BLEGC_LOGE("Encoding failed");
-      continue;
-    }
-
-    if (!self->_pChar) {
-      BLEGC_LOGE("Remote characteristic not initialized");
-      continue;
-    }
-
-    BLEGC_LOGT("Writing value. %s", Utils::remoteCharToStr(_pChar));
-
-    self->_pChar->writeValue(self->_store.pSendBuffer, used);
-  }
-}
-
-template <typename T>
-void OutgoingSignal<T>::write(const T& value) {
-  if (!_initialized) {
-    return;
-  }
-
-  configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  size_t used;
-  while ((used = _encoder(value, _store.pBuffer, _store.capacity)) == 0 && _store.capacity < maxCapacity) {
-    delete[] _store.pBuffer;
-    delete[] _store.pSendBuffer;
-    _store.capacity = min(_store.capacity * 2, maxCapacity);
-    _store.pBuffer = new uint8_t[_store.capacity];
-    _store.pSendBuffer = new uint8_t[_store.capacity];
-  }
-
-  _store.used = used;
-  auto result = _store.used > 0 && _store.used <= _store.capacity;
-  configASSERT(xSemaphoreGive(_storeMutex));
-
-  if (!result) {
-    BLEGC_LOGE("Encoding failed");
-    return;
-  }
-
-  xTaskNotifyGive(_sendDataTask);
-}
 
 template <typename T>
 bool OutgoingSignal<T>::init(NimBLEAddress address, OutgoingSignalConfig<T>& config) {
@@ -134,4 +72,65 @@ bool OutgoingSignal<T>::deinit(bool disconnected) {
 template <typename T>
 bool OutgoingSignal<T>::isInitialized() const {
   return _initialized;
+}
+
+template <typename T>
+void OutgoingSignal<T>::write(const T& value) {
+  if (!_initialized) {
+    return;
+  }
+
+  configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
+  size_t used;
+  while ((used = _encoder(value, _store.pBuffer, _store.capacity)) == 0 && _store.capacity < maxCapacity) {
+    delete[] _store.pBuffer;
+    delete[] _store.pSendBuffer;
+    _store.capacity = min(_store.capacity * 2, maxCapacity);
+    _store.pBuffer = new uint8_t[_store.capacity];
+    _store.pSendBuffer = new uint8_t[_store.capacity];
+  }
+
+  _store.used = used;
+  auto result = _store.used > 0 && _store.used <= _store.capacity;
+  configASSERT(xSemaphoreGive(_storeMutex));
+
+  if (!result) {
+    BLEGC_LOGE("Encoding failed");
+    return;
+  }
+
+  xTaskNotifyGive(_sendDataTask);
+}
+
+template <typename T>
+void OutgoingSignal<T>::_sendDataFn(void* pvParameters) {
+  auto* self = static_cast<OutgoingSignal*>(pvParameters);
+
+  while (true) {
+    ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+
+    configASSERT(xSemaphoreTake(self->_storeMutex, portMAX_DELAY));
+
+    uint8_t* tmp = self->_store.pSendBuffer;
+    self->_store.pSendBuffer = self->_store.pBuffer;
+    self->_store.pBuffer = tmp;
+
+    auto used = self->_store.used;
+    auto result = self->_store.used > 0 && self->_store.used <= self->_store.capacity;
+    configASSERT(xSemaphoreGive(self->_storeMutex));
+
+    if (!result) {
+      BLEGC_LOGE("Encoding failed");
+      continue;
+    }
+
+    if (!self->_pChar) {
+      BLEGC_LOGE("Remote characteristic not initialized");
+      continue;
+    }
+
+    BLEGC_LOGT("Writing value. %s", Utils::remoteCharToStr(_pChar));
+
+    self->_pChar->writeValue(self->_store.pSendBuffer, used);
+  }
 }

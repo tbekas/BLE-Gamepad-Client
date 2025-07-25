@@ -3,8 +3,8 @@
 #include "BatteryEvent.h"
 #include "ControllerConfig.h"
 #include "ControlsEvent.h"
-#include "logger.h"
 #include "VibrationsCommand.h"
+#include "logger.h"
 
 const NimBLEUUID hidServiceUUID((uint16_t)0x1812);
 const NimBLEUUID batteryServiceUUID((uint16_t)0x180f);
