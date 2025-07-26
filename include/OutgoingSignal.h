@@ -1,8 +1,7 @@
 #pragma once
 
 #include <NimBLEDevice.h>
-#include "SignalCoder.h"
-#include "SignalConfig.h"
+#include "OutgoingSignalConfig.h"
 #include "VibrationsCommand.h"
 
 template <typename T>
@@ -14,14 +13,12 @@ class OutgoingSignal {
     size_t used{};
     size_t capacity{};
   };
-  explicit OutgoingSignal(NimBLEAddress address);
+  OutgoingSignal();
   ~OutgoingSignal() = default;
-
-  void write(const T& value);
-  bool isInitialized() const;
-
-  bool init(OutgoingSignalConfig<T>& config);
+  bool init(NimBLEAddress address, OutgoingSignalConfig<T>& config);
   bool deinit(bool disconnected);
+  bool isInitialized() const;
+  void write(const T& value);
 
  private:
   static void _sendDataFn(void* pvParameters);

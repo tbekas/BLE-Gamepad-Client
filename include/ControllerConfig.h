@@ -3,7 +3,8 @@
 #include <string>
 #include "BatteryEvent.h"
 #include "ControlsEvent.h"
-#include "SignalConfig.h"
+#include "IncomingSignalConfig.h"
+#include "OutgoingSignalConfig.h"
 #include "VibrationsCommand.h"
 
 using ControlsConfig = IncomingSignalConfig<ControlsEvent>;

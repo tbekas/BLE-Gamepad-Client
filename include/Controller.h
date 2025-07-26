@@ -2,30 +2,34 @@
 
 #include <NimBLEAddress.h>
 #include "BatteryEvent.h"
-#include "ControllerConfig.h"
+#include "ControllerInternal.h"
 #include "ControlsEvent.h"
-#include "IncomingSignal.h"
-#include "OutgoingSignal.h"
+#include "VibrationsCommand.h"
 
 class Controller {
  public:
+  Controller();
   explicit Controller(NimBLEAddress address);
+  explicit Controller(const std::string& address);
   ~Controller() = default;
-
-  NimBLEAddress getAddress() const;
-  ControlsSignal& controls();
-  BatterySignal& battery();
-  VibrationsSignal& vibrations();
+  bool begin();
   bool isConnected() const;
-  bool isInitialized() const;
-
-  bool init(ControllerConfig& config);
-  bool deinit(bool disconnected);
+  NimBLEAddress getAddress() const;
+  void onConnect(const OnConnect& callback);
+  void onDisconnect(const OnDisconnect& callback);
+  void readControls(ControlsEvent& event) const;
+  void onControlsUpdate(const OnControlsUpdate& callback);
+  void readBattery(BatteryEvent& event) const;
+  void onBatteryUpdate(const OnBatteryUpdate& callback);
+  void writeVibrations(const VibrationsCommand& cmd) const;
 
  private:
-  bool _initialized;
-  NimBLEAddress _address;
-  ControlsSignal _controls;
-  BatterySignal _battery;
-  VibrationsSignal _vibrations;
+  ControllerInternal* _pCtrl;
+  NimBLEAddress _allowedAddress;
+  OnConnect _onConnect;
+  OnDisconnect _onDisconnect;
+  OnControlsUpdate _onControlsUpdate;
+  bool _onControlsUpdateIsSet;
+  OnBatteryUpdate _onBatteryUpdate;
+  bool _onBatteryUpdateIsSet;
 };
