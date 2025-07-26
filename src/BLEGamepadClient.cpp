@@ -18,7 +18,7 @@ BLEClientStatus::operator std::string() const {
   return "BLEClientStatus address: " + std::string(address) + ", kind: " + kindStr;
 }
 
-bool BLEGamepadClient::init(bool deleteBonds) {
+bool BLEGamepadClient::init() {
   if (_initialized) {
     return false;
   }
@@ -42,7 +42,7 @@ bool BLEGamepadClient::init(bool deleteBonds) {
     NimBLEDevice::setSecurityIOCap(CONFIG_BT_BLEGC_SECURITY_IO_CAP);
   }
 
-  if (deleteBonds) {
+  if (CONFIG_BT_BLEGC_DELETE_BONDS) {
     NimBLEDevice::deleteAllBonds();
   }
 

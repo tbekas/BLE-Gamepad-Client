@@ -1,18 +1,6 @@
 #pragma once
 
-#include <Arduino.h>
-
-#ifndef CONFIG_BT_BLEGC_LOG_LEVEL
-#if defined(ARDUINO_ARCH_ESP32) && defined(CORE_DEBUG_LEVEL)
-#define CONFIG_BT_BLEGC_LOG_LEVEL CORE_DEBUG_LEVEL
-#else
-#define CONFIG_BT_BLEGC_LOG_LEVEL 0
-#endif
-#endif
-
-#ifndef CONFIG_BT_BLEGC_LOGGER
-#define CONFIG_BT_BLEGC_LOGGER Serial.printf
-#endif
+#include "config.h"
 
 #if CONFIG_BT_BLEGC_LOG_LEVEL >= 5
 #define BLEGC_LOGT(format, ...) CONFIG_BT_BLEGC_LOGGER("TRACE " format "\n", ##__VA_ARGS__)

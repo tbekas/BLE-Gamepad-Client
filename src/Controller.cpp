@@ -1,6 +1,7 @@
 #include "Controller.h"
 #include <NimBLEDevice.h>
 #include "BLEGamepadClient.h"
+#include "Utils.h"
 
 Controller::Controller() : Controller(NimBLEAddress()) {}
 
@@ -17,12 +18,11 @@ Controller::Controller(const NimBLEAddress address)
       _onBatteryUpdateIsSet(false) {}
 /**
  * @brief Initializes a controller instance and NimBLE stack if it's not already initialized.
- * @param deleteBonds If true, all data related to previously bonded devices is deleted. Default is false.
  * @return True if initialization was successful.
  */
-bool Controller::begin(bool deleteBonds) {
+bool Controller::begin() {
   if (!BLEGamepadClient::isInitialized()) {
-    if (!BLEGamepadClient::init(deleteBonds)) {
+    if (!BLEGamepadClient::init()) {
       return false;
     }
   }
@@ -45,7 +45,7 @@ bool Controller::begin(bool deleteBonds) {
 }
 
 /**
- * @brief Is controller assigned to this instance is connected with the board.
+ * @brief Is controller connected to the board.
  * @return True if controller is connected, false otherwise.
  */
 bool Controller::isConnected() const {
@@ -54,6 +54,22 @@ bool Controller::isConnected() const {
   }
 
   return false;
+}
+
+/**
+ * @brief Returns one of the following:
+ *   - The address of the currently connected controller (if connected)
+ *   - The address of the controller allowed to be assigned to this instance (if predefined via constructor param)
+ *   - A null address (a NimBLEAddress instance for which method `isNull()` returns true)
+ *
+ * @return The relevant address based on the current connection or configuration state.
+ */
+NimBLEAddress Controller::getAddress() const {
+  if (_pCtrl && _pCtrl->isInitialized()) {
+    return _pCtrl->getAddress();
+  }
+
+  return _allowedAddress;
 }
 
 /**

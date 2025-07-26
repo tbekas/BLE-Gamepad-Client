@@ -25,7 +25,7 @@ struct BLEClientStatus {
 
 class BLEGamepadClient {
  public:
-  static bool init(bool deleteBonds = false);
+  static bool init();
   static bool deinit();
   static bool isInitialized();
   static bool addControllerConfig(const ControllerConfig& config);

@@ -12,8 +12,9 @@ class Controller {
   explicit Controller(NimBLEAddress address);
   explicit Controller(const std::string& address);
   ~Controller() = default;
-  bool begin(bool deleteBonds = false);
+  bool begin();
   bool isConnected() const;
+  NimBLEAddress getAddress() const;
   void onConnect(const OnConnect& callback);
   void onDisconnect(const OnDisconnect& callback);
   void readControls(ControlsEvent& event) const;

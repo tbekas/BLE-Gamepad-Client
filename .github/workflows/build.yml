@@ -13,6 +13,7 @@ jobs:
         example:
           - examples/ReadingControls
           - examples/TriggeringVibrations
+          - examples/TwoControllers
           - examples/UsingCallbacks
     runs-on: ubuntu-latest
     steps:
