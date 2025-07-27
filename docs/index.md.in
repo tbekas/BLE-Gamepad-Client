@@ -5,7 +5,7 @@ It is built on top of the [NimBLE-Arduino](https://github.com/h2zero/NimBLE-Ardu
 # PlatformIO dependency
 Add the following line to the [lib_deps](https://docs.platformio.org/en/latest/projectconf/sections/env/options/library/lib_deps.html) option of [platformio.ini](https://docs.platformio.org/en/latest/projectconf/index.html) file.
 ```yaml
-tbekas/BLE-Gamepad-Client@^0.1.0
+tbekas/BLE-Gamepad-Client@^@PROJECT_VERSION@
 ```
 
 # Example usage
@@ -33,4 +33,4 @@ void loop() {
 ```
 
 # More examples
-Checkout the code examples in the [examples directory](https://github.com/tbekas/BLE-Gamepad-Client/tree/main/examples).
+Checkout the code examples in the [examples directory](https://github.com/tbekas/BLE-Gamepad-Client/tree/@PROJECT_VERSION@/examples).
