@@ -1,3 +1,11 @@
+include(FetchContent)
+FetchContent_Declare(
+        doxygen-awesome-css
+        URL https://github.com/jothepro/doxygen-awesome-css/archive/refs/heads/main.zip
+)
+FetchContent_MakeAvailable(doxygen-awesome-css)
+FetchContent_GetProperties(doxygen-awesome-css SOURCE_DIR AWESOME_CSS_DIR)
+
 find_package(Doxygen REQUIRED)
 
 configure_file("index.md.in" "index.md" @ONLY)
@@ -6,6 +14,7 @@ set(DOXYGEN_MARKDOWN_ID_STYLE "GITHUB")
 set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${CMAKE_CURRENT_BINARY_DIR}/index.md")
 set(DOXYGEN_GENERATE_LATEX "NO")
 set(DOXYGEN_CLASS_GRAPH "NO")
+set(DOXYGEN_HTML_EXTRA_STYLESHEET "${AWESOME_CSS_DIR}/doxygen-awesome.css")
 
 doxygen_add_docs(
         my_doc
