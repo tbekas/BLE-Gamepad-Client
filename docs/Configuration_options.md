@@ -1,6 +1,6 @@
-# Configuration Options
+# Configuration options
 
-## General Options
+## General options
 
 `CONFIG_BT_BLEGC_LOG_LEVEL`
 
@@ -37,26 +37,7 @@ Timeout (in milliseconds) for establishing a connection with a peer.
 
 ---
 
-## NimBLE Initialization Settings
-
-If the settings below are not sufficient for your use case, you can initialize the NimBLE stack manually **before** initializing any controller instance.
-
-```cpp
-#include <Arduino.h>
-#include <BLEGamepadClient.h>
-
-Controller controller;
-
-void setup() {
-    NimBLEDevice::init("My device");
-    NimBLEDevice::setPower(3);                                  // +3 dBm
-    NimBLEDevice::setSecurityAuth(true, true, true);            // bonding, MITM protection, secure connections
-    NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);  // no screen, no keyboard
-    
-    controller.begin();
-}
-```
-<br/>
+## NimBLE initialization settings
 
 `CONFIG_BT_BLEGC_DEVICE_NAME`
 
@@ -111,4 +92,27 @@ void setup() {
 ```
 
 ***Default***: `0` (disabled)  
+<br/>
+
+---
+
+## Manual NimBLE initialization
+
+If the settings above are not sufficient for your use case, you can initialize the NimBLE stack manually **before** initializing any controller instance.
+
+```cpp
+#include <Arduino.h>
+#include <BLEGamepadClient.h>
+
+Controller controller;
+
+void setup() {
+    NimBLEDevice::init("My device");
+    NimBLEDevice::setPower(3);                                  // +3 dBm
+    NimBLEDevice::setSecurityAuth(true, true, true);            // bonding, MITM protection, secure connections
+    NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);  // no screen, no keyboard
+    
+    controller.begin();
+}
+```
 <br/>
