@@ -27,6 +27,10 @@ bool Controller::begin() {
     }
   }
 
+  if (_pCtrl) {
+    return false;
+  }
+
   _pCtrl = BLEGamepadClient::_createController(_allowedAddress);
   if (!_pCtrl) {
     return false;

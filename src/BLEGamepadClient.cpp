@@ -23,7 +23,7 @@ bool BLEGamepadClient::init() {
     return false;
   }
 
-  _connectionSlots = xSemaphoreCreateCounting(CONFIG_BT_BLEGC_MAX_CONNECTIONS, 0);
+  _connectionSlots = xSemaphoreCreateCounting(CONFIG_BT_NIMBLE_MAX_CONNECTIONS, 0);
   configASSERT(_connectionSlots);
   _clientStatusQueue = xQueueCreate(10, sizeof(BLEClientStatus));
   configASSERT(_clientStatusQueue);
@@ -42,7 +42,7 @@ bool BLEGamepadClient::init() {
     NimBLEDevice::setSecurityIOCap(CONFIG_BT_BLEGC_SECURITY_IO_CAP);
   }
 
-  if (CONFIG_BT_BLEGC_DELETE_BONDS) {
+  if constexpr (CONFIG_BT_BLEGC_DELETE_BONDS) {
     NimBLEDevice::deleteAllBonds();
   }
 

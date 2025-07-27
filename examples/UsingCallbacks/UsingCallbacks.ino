@@ -7,21 +7,21 @@ void onControlsUpdate(ControlsEvent& e) {
 }
 
 void onConnect(NimBLEAddress address) {
-  Serial.printf("Controller connected, address: %s\n", address.toString().c_str());
+  Serial.printf("controller connected, address: %s\n", address.toString().c_str());
 }
 
 void onDisconnect(NimBLEAddress address) {
-  Serial.printf("Controller disconnected, address: %s\n", address.toString().c_str());
+  Serial.printf("controller disconnected, address: %s\n", address.toString().c_str());
 }
 
 Controller controller;
 
 void setup(void) {
   Serial.begin(115200);
+  controller.begin();
   controller.onConnect(onConnect);
   controller.onDisconnect(onDisconnect);
   controller.onControlsUpdate(onControlsUpdate);
-  controller.begin();
 }
 
 void loop() {
