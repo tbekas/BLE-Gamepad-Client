@@ -1,0 +1,53 @@
+name: Deploy documentation to GitHub Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install CMake
+        run: |
+          apt update
+          apt install -y cmake
+      - name: Install Doxygen
+        run: |
+          apt install -y wget
+          wget -nv https://www.doxygen.nl/files/doxygen-1.14.0.linux.bin.tar.gz
+          tar -xzf doxygen-1.14.0.linux.bin.tar.gz
+          echo "$(pwd)/doxygen-1.14.0/bin" >> $GITHUB_PATH
+      - name: CMake build
+        run: |
+          mkdir -p build
+          cd build
+          cmake ..
+      - name: Generate Doxygen docs
+        run: doxygen build/docs/Doxyfile.lib_docs
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/docs/html/
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
