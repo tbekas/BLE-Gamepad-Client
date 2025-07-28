@@ -20,14 +20,14 @@ jobs:
         uses: actions/checkout@v4
       - name: Install CMake
         run: |
-          apt update
-          apt install -y cmake
+          sudo apt update
+          sudo apt install -y cmake
       - name: Install Doxygen
         run: |
-          apt install -y wget
+          sudo apt install -y wget
           wget -nv https://www.doxygen.nl/files/doxygen-1.14.0.linux.bin.tar.gz
           tar -xzf doxygen-1.14.0.linux.bin.tar.gz
-          echo "$(pwd)/doxygen-1.14.0/bin" >> $GITHUB_PATH
+          echo "$PWD/doxygen-1.14.0/bin" >> $GITHUB_PATH
       - name: CMake build
         run: |
           mkdir -p build
