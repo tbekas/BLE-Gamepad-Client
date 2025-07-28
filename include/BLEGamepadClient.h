@@ -28,6 +28,9 @@ class BLEGamepadClient {
   static bool init();
   static bool deinit();
   static bool isInitialized();
+  static void enableAutoScan();
+  static void disableAutoScan();
+  static bool isAutoScanEnabled();
   static bool addControllerConfig(const ControllerConfig& config);
 
   friend class ClientCallbacks;
@@ -42,6 +45,7 @@ class BLEGamepadClient {
   static void _clientStatusConsumerFn(void* pvParameters);
   static void _autoScanCheck();
   static bool _initialized;
+  static bool _autoScanEnabled;
   static QueueHandle_t _clientStatusQueue;
   static TaskHandle_t _clientStatusConsumerTask;
   static SemaphoreHandle_t _connectionSlots;

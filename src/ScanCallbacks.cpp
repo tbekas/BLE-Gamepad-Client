@@ -50,7 +50,7 @@ void ScanCallbacks::onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
 
     BLEGamepadClient::_configMatch[pAdvertisedDevice->getAddress()] = configMatch.to_ulong();
 
-    auto pClient = NimBLEDevice::getClientByPeerAddress(pAdvertisedDevice->getAddress());
+    auto* pClient = NimBLEDevice::getClientByPeerAddress(pAdvertisedDevice->getAddress());
     if (pClient) {
       BLEGC_LOGD("Reusing existing client for a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
     } else {

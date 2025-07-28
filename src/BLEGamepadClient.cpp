@@ -42,15 +42,10 @@ bool BLEGamepadClient::init() {
     NimBLEDevice::setSecurityIOCap(CONFIG_BT_BLEGC_SECURITY_IO_CAP);
   }
 
-  if constexpr (CONFIG_BT_BLEGC_DELETE_BONDS) {
-    NimBLEDevice::deleteAllBonds();
-  }
-
-  NimBLEScan* pScan = NimBLEDevice::getScan();
+  auto* pScan = NimBLEDevice::getScan();
   pScan->setScanCallbacks(&scanCallbacks, false);
   pScan->setActiveScan(true);
   pScan->setMaxResults(0);
-  _autoScanCheck();
 
   _initialized = true;
   return true;
@@ -67,7 +62,7 @@ bool BLEGamepadClient::deinit() {
 
   bool result = true;
 
-  NimBLEScan* pScan = NimBLEDevice::getScan();
+  auto* pScan = NimBLEDevice::getScan();
   if (pScan->isScanning()) {
     result = pScan->stop() && result;
   }
@@ -77,7 +72,7 @@ bool BLEGamepadClient::deinit() {
       result = ctrl.deinit(false) && result;
     }
 
-    auto pClient = BLEDevice::getClientByPeerAddress(ctrl.getAddress());
+    auto* pClient = BLEDevice::getClientByPeerAddress(ctrl.getAddress());
     if (!pClient) {
       continue;
     }
@@ -105,7 +100,22 @@ bool BLEGamepadClient::deinit() {
 bool BLEGamepadClient::isInitialized() {
   return _initialized;
 }
+void BLEGamepadClient::enableAutoScan() {
+  _autoScanEnabled = true;
+  if (_initialized) {
+    _autoScanCheck();
+  }
+}
+void BLEGamepadClient::disableAutoScan() {
+  _autoScanEnabled = false;
+  if (_initialized) {
+    _autoScanCheck();
+  }
+}
 
+bool BLEGamepadClient::isAutoScanEnabled() {
+  return _autoScanEnabled;
+}
 /**
  * @brief Registers a configuration for a new controller type. The configuration is used to set up a connection and to
  * decode raw data coming from the controller.
@@ -280,16 +290,30 @@ void BLEGamepadClient::_clientStatusConsumerFn(void* pvParameters) {
 }
 
 void BLEGamepadClient::_autoScanCheck() {
-  if (uxSemaphoreGetCount(_connectionSlots) == 0) {
-    BLEGC_LOGD("Scan not started, no available connection slots");
-    return;
-  }
+  auto* pScan = NimBLEDevice::getScan();
+  const auto isScanning = pScan->isScanning();
 
-  BLEGC_LOGD("Scan started");
-  NimBLEDevice::getScan()->start(CONFIG_BT_BLEGC_SCAN_DURATION_MS);
+  if (_autoScanEnabled && isScanning) {
+    BLEGC_LOGD("Auto-scan enabled, scan in progress");
+    // do nothing
+  } else if (_autoScanEnabled && !isScanning) {
+    if (uxSemaphoreGetCount(_connectionSlots) == 0) {
+      BLEGC_LOGD("Auto-scan enabled, no available connection slots");
+    } else {
+      BLEGC_LOGD("Auto-scan enabled, starting scan");
+      pScan->start(CONFIG_BT_BLEGC_SCAN_DURATION_MS);
+    }
+  } else if (!_autoScanEnabled && isScanning) {
+    BLEGC_LOGD("Auto-scan disabled, stopping scan");
+    pScan->stop();
+  } else if (!_autoScanEnabled && !isScanning) {
+    BLEGC_LOGD("Auto-scan disabled, no scan in-progress");
+    // do nothing
+  }
 }
 
 bool BLEGamepadClient::_initialized{false};
+bool BLEGamepadClient::_autoScanEnabled{true};
 QueueHandle_t BLEGamepadClient::_clientStatusQueue{nullptr};
 TaskHandle_t BLEGamepadClient::_clientStatusConsumerTask{nullptr};
 SemaphoreHandle_t BLEGamepadClient::_connectionSlots{nullptr};
