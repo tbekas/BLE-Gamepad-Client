@@ -81,7 +81,7 @@ If the settings above are not sufficient for your use case, you can initialize t
 
 ```cpp
 #include <Arduino.h>
-#include <BLEGamepadClient.h>
+#include <BLEControllerRegistry.h>
 
 Controller controller;
 

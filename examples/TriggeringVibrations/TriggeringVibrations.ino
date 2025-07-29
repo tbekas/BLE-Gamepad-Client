@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <BLEGamepadClient.h>
+#include <BLEControllerRegistry.h>
 
 Controller controller;
 

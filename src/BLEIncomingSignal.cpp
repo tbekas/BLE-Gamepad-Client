@@ -1,15 +1,15 @@
-#include "IncomingSignal.h"
+#include "BLEIncomingSignal.h"
 
 #include <NimBLEDevice.h>
 #include <NimBLERemoteCharacteristic.h>
 #include <bitset>
 #include <functional>
-#include "IncomingSignalConfig.h"
-#include "Utils.h"
+#include "BLEIncomingSignalAdapter.h"
+#include "BLEHelpers.h"
 #include "logger.h"
 
 template <typename T>
-IncomingSignal<T>::IncomingSignal()
+BLEIncomingSignal<T>::BLEIncomingSignal()
     : _initialized(false),
       _onUpdate([](T&) {}),
       _onUpdateSet(false),
@@ -21,7 +21,7 @@ IncomingSignal<T>::IncomingSignal()
       _store({.event = T()}) {}
 
 template <typename T>
-bool IncomingSignal<T>::init(NimBLEAddress address, IncomingSignalConfig<T>& config) {
+bool BLEIncomingSignal<T>::init(NimBLEAddress address, BLEIncomingSignalAdapter<T>& config) {
   if (_initialized) {
     return false;
   }
@@ -34,30 +34,30 @@ bool IncomingSignal<T>::init(NimBLEAddress address, IncomingSignalConfig<T>& con
   configASSERT(_callOnUpdateTask);
 
   _decoder = config.decoder;
-  _pChar = Utils::findCharacteristic(_address, config.serviceUUID, config.characteristicUUID,
+  _pChar = BLEHelpers::findCharacteristic(_address, config.serviceUUID, config.characteristicUUID,
                                      [](NimBLERemoteCharacteristic* c) { return c->canNotify(); });
   if (!_pChar) {
     return false;
   }
 
-  auto handlerFn = std::bind(&IncomingSignal<T>::_handleNotify, this, std::placeholders::_1, std::placeholders::_2,
+  auto handlerFn = std::bind(&BLEIncomingSignal<T>::_handleNotify, this, std::placeholders::_1, std::placeholders::_2,
                              std::placeholders::_3, std::placeholders::_4);
 
-  BLEGC_LOGD("Subscribing to notifications. %s", Utils::remoteCharToStr(_pChar).c_str());
+  BLEGC_LOGD("Subscribing to notifications. %s", BLEHelpers::remoteCharToStr(_pChar).c_str());
 
   if (!_pChar->subscribe(true, handlerFn, true)) {
-    BLEGC_LOGE("Failed to subscribe to notifications. %s", Utils::remoteCharToStr(_pChar).c_str());
+    BLEGC_LOGE("Failed to subscribe to notifications. %s", BLEHelpers::remoteCharToStr(_pChar).c_str());
     return false;
   }
 
-  BLEGC_LOGD("Successfully subscribed to notifications. %s", Utils::remoteCharToStr(_pChar).c_str());
+  BLEGC_LOGD("Successfully subscribed to notifications. %s", BLEHelpers::remoteCharToStr(_pChar).c_str());
 
   _initialized = true;
   return true;
 }
 
 template <typename T>
-bool IncomingSignal<T>::deinit(bool disconnected) {
+bool BLEIncomingSignal<T>::deinit(bool disconnected) {
   if (!_initialized) {
     return false;
   }
@@ -66,10 +66,10 @@ bool IncomingSignal<T>::deinit(bool disconnected) {
   if (!disconnected) {
     if (_pChar) {
       if (!_pChar->unsubscribe()) {
-        BLEGC_LOGW("Failed to unsubscribe from notifications. %s", Utils::remoteCharToStr(_pChar).c_str());
+        BLEGC_LOGW("Failed to unsubscribe from notifications. %s", BLEHelpers::remoteCharToStr(_pChar).c_str());
         result = false;
       } else {
-        BLEGC_LOGD("Successfully unsubscribed from notifications. %s", Utils::remoteCharToStr(_pChar).c_str());
+        BLEGC_LOGD("Successfully unsubscribed from notifications. %s", BLEHelpers::remoteCharToStr(_pChar).c_str());
       }
     }
   }
@@ -88,12 +88,12 @@ bool IncomingSignal<T>::deinit(bool disconnected) {
 }
 
 template <typename T>
-bool IncomingSignal<T>::isInitialized() const {
+bool BLEIncomingSignal<T>::isInitialized() const {
   return _initialized;
 }
 
 template <typename T>
-void IncomingSignal<T>::read(T& out) {
+void BLEIncomingSignal<T>::read(T& out) {
   if (!_initialized) {
     return;
   }
@@ -104,14 +104,14 @@ void IncomingSignal<T>::read(T& out) {
 }
 
 template <typename T>
-void IncomingSignal<T>::onUpdate(const OnUpdate<T>& onUpdate) {
+void BLEIncomingSignal<T>::onUpdate(const OnUpdate<T>& onUpdate) {
   _onUpdate = onUpdate;
   _onUpdateSet = true;
 }
 
 template <typename T>
-void IncomingSignal<T>::_callConsumerFn(void* pvParameters) {
-  auto* self = static_cast<IncomingSignal*>(pvParameters);
+void BLEIncomingSignal<T>::_callConsumerFn(void* pvParameters) {
+  auto* self = static_cast<BLEIncomingSignal*>(pvParameters);
 
   while (true) {
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
@@ -124,7 +124,7 @@ void IncomingSignal<T>::_callConsumerFn(void* pvParameters) {
 }
 
 template <typename T>
-void IncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify) {
+void BLEIncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify) {
   BLEGC_LOGT("Received a notification. %s", Utils::remoteCharToStr(pChar).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
@@ -132,7 +132,7 @@ void IncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t
   configASSERT(xSemaphoreGive(_storeMutex));
 
   if (!result) {
-    BLEGC_LOGE("Decoding failed. %s", Utils::remoteCharToStr(pChar).c_str());
+    BLEGC_LOGE("Decoding failed. %s", BLEHelpers::remoteCharToStr(pChar).c_str());
   }
 
   if (_onUpdateSet && result) {

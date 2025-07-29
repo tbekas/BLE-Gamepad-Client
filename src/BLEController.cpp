@@ -1,28 +1,27 @@
-#include "Controller.h"
+#include "BLEController.h"
 #include <NimBLEDevice.h>
-#include "BLEGamepadClient.h"
-#include "Utils.h"
+#include "BLEControllerRegistry.h"
 
-Controller::Controller() : Controller(NimBLEAddress()) {}
+BLEController::BLEController() : BLEController(NimBLEAddress()) {}
 
-Controller::Controller(const std::string& address) : Controller(NimBLEAddress(address, BLE_ADDR_PUBLIC)) {}
+BLEController::BLEController(const std::string& address) : BLEController(NimBLEAddress(address, BLE_ADDR_PUBLIC)) {}
 
-Controller::Controller(const NimBLEAddress address)
+BLEController::BLEController(const NimBLEAddress address)
     : _pCtrl(nullptr),
       _allowedAddress(address),
       _onConnect([](NimBLEAddress) {}),
       _onDisconnect([](NimBLEAddress) {}),
-      _onControlsUpdate([](ControlsEvent&) {}),
+      _onControlsUpdate([](BLEControlsEvent&) {}),
       _onControlsUpdateIsSet(false),
-      _onBatteryUpdate([](BatteryEvent&) {}),
+      _onBatteryUpdate([](BLEBatteryEvent&) {}),
       _onBatteryUpdateIsSet(false) {}
 /**
  * @brief Initializes a controller instance and NimBLE stack if it's not already initialized.
  * @return True if initialization was successful.
  */
-bool Controller::begin() {
-  if (!BLEGamepadClient::isInitialized()) {
-    if (!BLEGamepadClient::init()) {
+bool BLEController::begin() {
+  if (!BLEControllerRegistry::isInitialized()) {
+    if (!BLEControllerRegistry::init()) {
       return false;
     }
   }
@@ -31,7 +30,7 @@ bool Controller::begin() {
     return false;
   }
 
-  _pCtrl = BLEGamepadClient::_createController(_allowedAddress);
+  _pCtrl = BLEControllerRegistry::_createController(_allowedAddress);
   if (!_pCtrl) {
     return false;
   }
@@ -52,7 +51,7 @@ bool Controller::begin() {
  * @brief Is controller connected to the board.
  * @return True if controller is connected, false otherwise.
  */
-bool Controller::isConnected() const {
+bool BLEController::isConnected() const {
   if (_pCtrl) {
     return _pCtrl->isInitialized();
   }
@@ -68,7 +67,7 @@ bool Controller::isConnected() const {
  *
  * @return The relevant address based on the current connection or configuration state.
  */
-NimBLEAddress Controller::getAddress() const {
+NimBLEAddress BLEController::getAddress() const {
   if (_pCtrl && _pCtrl->isInitialized()) {
     return _pCtrl->getAddress();
   }
@@ -80,7 +79,7 @@ NimBLEAddress Controller::getAddress() const {
  * @brief Sets the callback to be invoked when the controller connects.
  * @param callback Reference to a callback function.
  */
-void Controller::onConnect(const OnConnect& callback) {
+void BLEController::onConnect(const OnConnect& callback) {
   _onConnect = callback;
   if (_pCtrl) {
     _pCtrl->onConnect(_onConnect);
@@ -91,7 +90,7 @@ void Controller::onConnect(const OnConnect& callback) {
  * @brief Sets the callback to be invoked when the controller disconnects.
  * @param callback Reference to the callback function.
  */
-void Controller::onDisconnect(const OnDisconnect& callback) {
+void BLEController::onDisconnect(const OnDisconnect& callback) {
   _onDisconnect = callback;
   if (_pCtrl) {
     _pCtrl->onDisconnect(_onDisconnect);
@@ -102,7 +101,7 @@ void Controller::onDisconnect(const OnDisconnect& callback) {
  * @brief Read the controls state from the connected controller.
  * @param[out] event Reference to the event instance where the data will be written.
  */
-void Controller::readControls(ControlsEvent& event) const {
+void BLEController::readControls(BLEControlsEvent& event) const {
   if (_pCtrl) {
     _pCtrl->getControls().read(event);
   }
@@ -112,7 +111,7 @@ void Controller::readControls(ControlsEvent& event) const {
  * @brief Sets the callback to be invoked when the controller sends update to the controls state.
  * @param callback Reference to the callback function.
  */
-void Controller::onControlsUpdate(const OnControlsUpdate& callback) {
+void BLEController::onControlsUpdate(const OnControlsUpdate& callback) {
   _onControlsUpdateIsSet = true;
   _onControlsUpdate = callback;
   if (_pCtrl) {
@@ -124,7 +123,7 @@ void Controller::onControlsUpdate(const OnControlsUpdate& callback) {
  * @brief Read the battery state from the connected controller.
  * @param[out] event Reference to the event instance where the data will be written.
  */
-void Controller::readBattery(BatteryEvent& event) const {
+void BLEController::readBattery(BLEBatteryEvent& event) const {
   if (_pCtrl) {
     _pCtrl->getBattery().read(event);
   }
@@ -134,7 +133,7 @@ void Controller::readBattery(BatteryEvent& event) const {
  * @brief Sets the callback to be invoked when the controller sends update to the battery state.
  * @param callback Reference to the callback function.
  */
-void Controller::onBatteryUpdate(const OnBatteryUpdate& callback) {
+void BLEController::onBatteryUpdate(const OnBatteryUpdate& callback) {
   _onBatteryUpdateIsSet = true;
   _onBatteryUpdate = callback;
   if (_pCtrl) {
@@ -146,7 +145,7 @@ void Controller::onBatteryUpdate(const OnBatteryUpdate& callback) {
  * @brief Send the vibrations command to the connected controller.
  * @param cmd Command enabling specific motors in the controller.
  */
-void Controller::writeVibrations(const VibrationsCommand& cmd) const {
+void BLEController::writeVibrations(const BLEVibrationsCommand& cmd) const {
   if (_pCtrl) {
     _pCtrl->getVibrations().write(cmd);
   }

@@ -2,22 +2,22 @@
 
 #include <NimBLEDevice.h>
 #include <functional>
-#include "BatteryEvent.h"
-#include "ControlsEvent.h"
-#include "IncomingSignalConfig.h"
+#include "BLEBatteryEvent.h"
+#include "BLEControlsEvent.h"
+#include "BLEIncomingSignalAdapter.h"
 
 template <typename T>
 using OnUpdate = std::function<void(T& value)>;
 
 template <typename T>
-class IncomingSignal {
+class BLEIncomingSignal {
  public:
   struct Store {
     T event;
   };
-  IncomingSignal();
-  ~IncomingSignal() = default;
-  bool init(NimBLEAddress address, IncomingSignalConfig<T>& config);
+  BLEIncomingSignal();
+  ~BLEIncomingSignal() = default;
+  bool init(NimBLEAddress address, BLEIncomingSignalAdapter<T>& config);
   bool deinit(bool disconnected);
   bool isInitialized() const;
   void read(T& out);
@@ -29,7 +29,7 @@ class IncomingSignal {
   bool _initialized;
   OnUpdate<T> _onUpdate;
   bool _onUpdateSet;
-  SignalDecoder<T> _decoder;
+  BLESignalDecoder<T> _decoder;
   NimBLEAddress _address;
   NimBLERemoteCharacteristic* _pChar;
   TaskHandle_t _callOnUpdateTask;
@@ -37,8 +37,8 @@ class IncomingSignal {
   Store _store;
 };
 
-template class IncomingSignal<ControlsEvent>;
-template class IncomingSignal<BatteryEvent>;
+template class BLEIncomingSignal<BLEControlsEvent>;
+template class BLEIncomingSignal<BLEBatteryEvent>;
 
-using ControlsSignal = IncomingSignal<ControlsEvent>;
-using BatterySignal = IncomingSignal<BatteryEvent>;
+using ControlsSignal = BLEIncomingSignal<BLEControlsEvent>;
+using BatterySignal = BLEIncomingSignal<BLEBatteryEvent>;

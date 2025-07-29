@@ -1,16 +1,16 @@
-#include "OutgoingSignal.h"
+#include "BLEOutgoingSignal.h"
 #include <NimBLEDevice.h>
 #include <NimBLERemoteCharacteristic.h>
 #include <bitset>
 #include <functional>
-#include "OutgoingSignalConfig.h"
-#include "Utils.h"
+#include "BLEOutgoingSignalAdapter.h"
+#include "BLEHelpers.h"
 #include "logger.h"
 
 constexpr size_t maxCapacity = 1024;
 
 template <typename T>
-OutgoingSignal<T>::OutgoingSignal()
+BLEOutgoingSignal<T>::BLEOutgoingSignal()
     : _initialized(false),
       _encoder([](const T&, uint8_t[], size_t) { return static_cast<size_t>(0); }),
       _address(),
@@ -19,7 +19,7 @@ OutgoingSignal<T>::OutgoingSignal()
       _storeMutex(nullptr) {}
 
 template <typename T>
-bool OutgoingSignal<T>::init(NimBLEAddress address, OutgoingSignalConfig<T>& config) {
+bool BLEOutgoingSignal<T>::init(NimBLEAddress address, BLEOutgoingSignalAdapter<T>& config) {
   if (_initialized) {
     return false;
   }
@@ -31,7 +31,7 @@ bool OutgoingSignal<T>::init(NimBLEAddress address, OutgoingSignalConfig<T>& con
   _store.pSendBuffer = new uint8_t[_store.capacity];
 
   _encoder = config.encoder;
-  _pChar = Utils::findCharacteristic(_address, config.serviceUUID, config.characteristicUUID,
+  _pChar = BLEHelpers::findCharacteristic(_address, config.serviceUUID, config.characteristicUUID,
                                      [](NimBLERemoteCharacteristic* c) { return c->canWrite(); });
   if (!_pChar) {
     return false;
@@ -48,7 +48,7 @@ bool OutgoingSignal<T>::init(NimBLEAddress address, OutgoingSignalConfig<T>& con
 }
 
 template <typename T>
-bool OutgoingSignal<T>::deinit(bool disconnected) {
+bool BLEOutgoingSignal<T>::deinit(bool disconnected) {
   if (!_initialized) {
     return false;
   }
@@ -70,12 +70,12 @@ bool OutgoingSignal<T>::deinit(bool disconnected) {
 }
 
 template <typename T>
-bool OutgoingSignal<T>::isInitialized() const {
+bool BLEOutgoingSignal<T>::isInitialized() const {
   return _initialized;
 }
 
 template <typename T>
-void OutgoingSignal<T>::write(const T& value) {
+void BLEOutgoingSignal<T>::write(const T& value) {
   if (!_initialized) {
     return;
   }
@@ -103,8 +103,8 @@ void OutgoingSignal<T>::write(const T& value) {
 }
 
 template <typename T>
-void OutgoingSignal<T>::_sendDataFn(void* pvParameters) {
-  auto* self = static_cast<OutgoingSignal*>(pvParameters);
+void BLEOutgoingSignal<T>::_sendDataFn(void* pvParameters) {
+  auto* self = static_cast<BLEOutgoingSignal*>(pvParameters);
 
   while (true) {
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);

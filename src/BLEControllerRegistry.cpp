@@ -1,24 +1,28 @@
-#include "BLEGamepadClient.h"
+#include "BLEControllerRegistry.h"
 
 #include <NimBLEClient.h>
 #include <NimBLEDevice.h>
 #include <NimBLEScan.h>
 #include <NimBLEUtils.h>
 #include <bitset>
-#include "ClientCallbacks.h"
-#include "ScanCallbacks.h"
+#include "BLEClientCallbacksImpl.h"
+#include "BLEScanCallbacksImpl.h"
 #include "config.h"
 #include "logger.h"
 #include "xbox.h"
 
-ScanCallbacks scanCallbacks;
+BLEScanCallbacksImpl scanCallbacks;
 
 BLEClientStatus::operator std::string() const {
   auto kindStr = kind == BLEClientConnected ? "BLEClientConnected" : "BLEClientDisconnected";
   return "BLEClientStatus address: " + std::string(address) + ", kind: " + kindStr;
 }
 
-bool BLEGamepadClient::init() {
+/**
+ * @brief Initializes a BLEGamepadClient.
+ * @return True if successful.
+ */
+bool BLEControllerRegistry::init() {
   if (_initialized) {
     return false;
   }
@@ -52,10 +56,10 @@ bool BLEGamepadClient::init() {
 }
 
 /**
- * @brief Deinitializes a GamepadClient instance.
+ * @brief Deinitializes a BLEGamepadClient.
  * @return True if successful.
  */
-bool BLEGamepadClient::deinit() {
+bool BLEControllerRegistry::deinit() {
   if (!_initialized) {
     return false;
   }
@@ -97,23 +101,48 @@ bool BLEGamepadClient::deinit() {
   return result;
 }
 
-bool BLEGamepadClient::isInitialized() {
+/**
+ * @brief Checks if BLEGamepadClient is initialized.
+ * @return True if initialized; false otherwise.
+ */
+bool BLEControllerRegistry::isInitialized() {
   return _initialized;
 }
-void BLEGamepadClient::enableAutoScan() {
+
+/**
+ * @brief Enables the auto-scan feature.
+ *
+ * Auto-scan automatically starts scanning whenever there are one or more `BLEController` instances that have been
+ * initialized with `BLEController::begin()` but are not yet connected. Scanning stops automatically once all `BLEController`
+ * instances are connected.
+ */
+void BLEControllerRegistry::enableAutoScan() {
   _autoScanEnabled = true;
   if (_initialized) {
     _autoScanCheck();
   }
 }
-void BLEGamepadClient::disableAutoScan() {
+
+/**
+ * @brief Disables the auto-scan feature.
+ *
+ * @copydetails enableAutoScan
+ */
+void BLEControllerRegistry::disableAutoScan() {
   _autoScanEnabled = false;
   if (_initialized) {
     _autoScanCheck();
   }
 }
 
-bool BLEGamepadClient::isAutoScanEnabled() {
+/**
+ * @brief Checks whether the auto-scan feature is enabled.
+ *
+ * @copydetails enableAutoScan
+ *
+ * @return True if auto-scan is enabled; false otherwise.
+ */
+bool BLEControllerRegistry::isAutoScanEnabled() {
   return _autoScanEnabled;
 }
 /**
@@ -122,7 +151,7 @@ bool BLEGamepadClient::isAutoScanEnabled() {
  * @param config Configuration to be registered.
  * @return True if successful.
  */
-bool BLEGamepadClient::addControllerConfig(const ControllerConfig& config) {
+bool BLEControllerRegistry::addControllerConfig(const BLEControllerAdapter& config) {
   if (_configs.size() >= MAX_CTRL_CONFIG_COUNT) {
     BLEGC_LOGE("Reached maximum number of configs: %d", MAX_CTRL_CONFIG_COUNT);
     return false;
@@ -136,7 +165,7 @@ bool BLEGamepadClient::addControllerConfig(const ControllerConfig& config) {
   return true;
 }
 
-ControllerInternal* BLEGamepadClient::_createController(NimBLEAddress allowedAddress) {
+BLEControllerInternal* BLEControllerRegistry::_createController(NimBLEAddress allowedAddress) {
   if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
     BLEGC_LOGE("Cannot create controller");
     return nullptr;
@@ -150,7 +179,7 @@ ControllerInternal* BLEGamepadClient::_createController(NimBLEAddress allowedAdd
   return &ctrl;
 }
 
-ControllerInternal* BLEGamepadClient::_getController(NimBLEAddress address) {
+BLEControllerInternal* BLEControllerRegistry::_getController(NimBLEAddress address) {
   for (auto& ctrl : _controllers) {
     if (ctrl.getAddress() == address) {
       return &ctrl;
@@ -160,7 +189,7 @@ ControllerInternal* BLEGamepadClient::_getController(NimBLEAddress address) {
   return nullptr;
 }
 
-bool BLEGamepadClient::_reserveController(const NimBLEAddress address) {
+bool BLEControllerRegistry::_reserveController(const NimBLEAddress address) {
   if (xSemaphoreTake(_connectionSlots, 0) != pdTRUE) {
     BLEGC_LOGD("No connections slots left");
     return false;
@@ -212,7 +241,7 @@ bool BLEGamepadClient::_reserveController(const NimBLEAddress address) {
   return false;
 }
 
-bool BLEGamepadClient::_releaseController(const NimBLEAddress address) {
+bool BLEControllerRegistry::_releaseController(const NimBLEAddress address) {
   auto* pCtrl = _getController(address);
   if (pCtrl == nullptr) {
     BLEGC_LOGE("Controller not found, address: %s", std::string(address).c_str());
@@ -229,7 +258,7 @@ bool BLEGamepadClient::_releaseController(const NimBLEAddress address) {
   return true;
 }
 
-void BLEGamepadClient::_clientStatusConsumerFn(void* pvParameters) {
+void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
   while (true) {
     BLEClientStatus msg{};
     if (xQueueReceive(_clientStatusQueue, &msg, portMAX_DELAY) != pdTRUE) {
@@ -289,7 +318,7 @@ void BLEGamepadClient::_clientStatusConsumerFn(void* pvParameters) {
   }
 }
 
-void BLEGamepadClient::_autoScanCheck() {
+void BLEControllerRegistry::_autoScanCheck() {
   auto* pScan = NimBLEDevice::getScan();
   const auto isScanning = pScan->isScanning();
 
@@ -312,11 +341,11 @@ void BLEGamepadClient::_autoScanCheck() {
   }
 }
 
-bool BLEGamepadClient::_initialized{false};
-bool BLEGamepadClient::_autoScanEnabled{true};
-QueueHandle_t BLEGamepadClient::_clientStatusQueue{nullptr};
-TaskHandle_t BLEGamepadClient::_clientStatusConsumerTask{nullptr};
-SemaphoreHandle_t BLEGamepadClient::_connectionSlots{nullptr};
-std::map<NimBLEAddress, uint64_t> BLEGamepadClient::_configMatch{};
-std::list<ControllerInternal> BLEGamepadClient::_controllers{};
-std::deque<ControllerConfig> BLEGamepadClient::_configs{};
+bool BLEControllerRegistry::_initialized{false};
+bool BLEControllerRegistry::_autoScanEnabled{true};
+QueueHandle_t BLEControllerRegistry::_clientStatusQueue{nullptr};
+TaskHandle_t BLEControllerRegistry::_clientStatusConsumerTask{nullptr};
+SemaphoreHandle_t BLEControllerRegistry::_connectionSlots{nullptr};
+std::map<NimBLEAddress, uint64_t> BLEControllerRegistry::_configMatch{};
+std::list<BLEControllerInternal> BLEControllerRegistry::_controllers{};
+std::deque<BLEControllerAdapter> BLEControllerRegistry::_configs{};

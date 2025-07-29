@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <BLEGamepadClient.h>
+#include <BLEControllerRegistry.h>
 
 void onControlsUpdate(ControlsEvent& e) {
   Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",

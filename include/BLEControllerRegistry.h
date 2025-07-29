@@ -4,9 +4,9 @@
 #include <deque>
 #include <list>
 #include <map>
-#include "Controller.h"
-#include "ControllerConfig.h"
-#include "ControllerInternal.h"
+#include "BLEController.h"
+#include "BLEControllerAdapter.h"
+#include "BLEControllerInternal.h"
 
 #define CTRL_CONFIG_MATCH_TYPE uint64_t
 #define MAX_CTRL_CONFIG_COUNT sizeof(CTRL_CONFIG_MATCH_TYPE)
@@ -23,7 +23,7 @@ struct BLEClientStatus {
  explicit operator std::string() const;
 };
 
-class BLEGamepadClient {
+class BLEControllerRegistry {
  public:
   static bool init();
   static bool deinit();
@@ -31,15 +31,15 @@ class BLEGamepadClient {
   static void enableAutoScan();
   static void disableAutoScan();
   static bool isAutoScanEnabled();
-  static bool addControllerConfig(const ControllerConfig& config);
+  static bool addControllerConfig(const BLEControllerAdapter& config);
 
-  friend class ClientCallbacks;
-  friend class ScanCallbacks;
-  friend class Controller;
+  friend class BLEClientCallbacksImpl;
+  friend class BLEScanCallbacksImpl;
+  friend class BLEController;
 
  private:
-  static ControllerInternal* _createController(NimBLEAddress allowedAddress);
-  static ControllerInternal* _getController(NimBLEAddress address);
+  static BLEControllerInternal* _createController(NimBLEAddress allowedAddress);
+  static BLEControllerInternal* _getController(NimBLEAddress address);
   static bool _reserveController(NimBLEAddress address);
   static bool _releaseController(NimBLEAddress address);
   static void _clientStatusConsumerFn(void* pvParameters);
@@ -50,6 +50,6 @@ class BLEGamepadClient {
   static TaskHandle_t _clientStatusConsumerTask;
   static SemaphoreHandle_t _connectionSlots;
   static std::map<NimBLEAddress, CTRL_CONFIG_MATCH_TYPE> _configMatch;
-  static std::list<ControllerInternal> _controllers;
-  static std::deque<ControllerConfig> _configs;
+  static std::list<BLEControllerInternal> _controllers;
+  static std::deque<BLEControllerAdapter> _configs;
 };

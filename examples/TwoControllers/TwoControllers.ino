@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <BLEGamepadClient.h>
+#include <BLEControllerRegistry.h>
 
 
 // As shown in the example below, specifying a MAC address for Controller instances is optional.

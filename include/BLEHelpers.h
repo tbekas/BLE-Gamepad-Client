@@ -4,7 +4,7 @@
 #include <string>
 #include "logger.h"
 
-class Utils {
+class BLEHelpers {
  public:
   static bool isNull(const NimBLEUUID& uuid) { return uuid.bitSize() == 0; }
 
@@ -19,7 +19,7 @@ class Utils {
   }
 
   static bool discoverAttributes(const NimBLEAddress address) {
-    auto pClient = BLEDevice::getClientByPeerAddress(address);
+    auto* pClient = BLEDevice::getClientByPeerAddress(address);
     if (!pClient) {
       BLEGC_LOGE("BLE client not found, address %s", std::string(address).c_str());
       return false;
@@ -51,19 +51,19 @@ class Utils {
                std::string(serviceUUID).c_str(),
                isNull(characteristicUUID) ? "null" : std::string(characteristicUUID).c_str());
 
-    const auto pBleClient = NimBLEDevice::getClientByPeerAddress(address);
+    auto* pBleClient = NimBLEDevice::getClientByPeerAddress(address);
     if (!pBleClient) {
       BLEGC_LOGE("BLE client not found, address %s", std::string(address).c_str());
       return nullptr;
     }
 
-    const auto pService = pBleClient->getService(serviceUUID);
+    auto* pService = pBleClient->getService(serviceUUID);
     if (!pService) {
       BLEGC_LOGE("Service not found, service uuid: %s", std::string(serviceUUID).c_str());
       return nullptr;
     }
 
-    for (auto pChar : pService->getCharacteristics(false)) {
+    for (auto* pChar : pService->getCharacteristics(false)) {
       if (!isNull(characteristicUUID) && characteristicUUID != pChar->getUUID()) {
         continue;
       }

@@ -1,22 +1,22 @@
 #pragma once
 
 #include <NimBLEAddress.h>
-#include "BatteryEvent.h"
-#include "ControllerConfig.h"
-#include "ControlsEvent.h"
-#include "IncomingSignal.h"
-#include "OutgoingSignal.h"
+#include "BLEBatteryEvent.h"
+#include "BLEControllerAdapter.h"
+#include "BLEControlsEvent.h"
+#include "BLEIncomingSignal.h"
+#include "BLEOutgoingSignal.h"
 
-using OnControlsUpdate = std::function<void(ControlsEvent& e)>;
-using OnBatteryUpdate = std::function<void(BatteryEvent& e)>;
+using OnControlsUpdate = std::function<void(BLEControlsEvent& e)>;
+using OnBatteryUpdate = std::function<void(BLEBatteryEvent& e)>;
 using OnConnect = std::function<void(NimBLEAddress a)>;
 using OnDisconnect = std::function<void(NimBLEAddress a)>;
 
-class ControllerInternal {
+class BLEControllerInternal {
  public:
-  explicit ControllerInternal(NimBLEAddress allowedAddress);
-  ~ControllerInternal() = default;
-  bool init(ControllerConfig& config);
+  explicit BLEControllerInternal(NimBLEAddress allowedAddress);
+  ~BLEControllerInternal() = default;
+  bool init(BLEControllerAdapter& config);
   bool deinit(bool disconnected);
   bool isInitialized() const;
   NimBLEAddress getAddress() const;
