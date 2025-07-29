@@ -1,4 +1,4 @@
-# Adding Support for a Controller
+# Adding support for a controller
 
 To add support for a controller model that is not yet supported, you need to provide an instance of the
 `BLEControllerAdapter` struct and register it using `BLEControllerRegistry::addControllerAdapter()`.
