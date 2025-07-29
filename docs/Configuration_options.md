@@ -4,7 +4,8 @@
 
 `CONFIG_BT_BLEGC_LOG_LEVEL`
 
-Defines the log message level. If not defined, it will default to the same value as the Arduino core debug level. Available values:
+Defines the log message level. If not defined, it will default to the same value as the Arduino core debug level.
+Available values:
 
 * `0` = NONE
 * `1` = ERROR
@@ -77,7 +78,8 @@ Bitmap representing the required authentication modes for pairing. Available fla
 
 ## Manual NimBLE initialization
 
-If the settings above are not sufficient for your use case, you can initialize the NimBLE stack manually **before** initializing any controller instance.
+If the settings above are not sufficient for your use case, you can initialize the NimBLE stack manually **before**
+initializing any controller instance.
 
 ```cpp
 #include <Arduino.h>
@@ -94,4 +96,5 @@ void setup() {
     controller.begin();
 }
 ```
+
 <br/>
