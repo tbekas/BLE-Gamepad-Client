@@ -2,7 +2,7 @@
 
 #include<NimBLEDevice.h>
 
-class ScanCallbacks : public NimBLEScanCallbacks {
+class BLEScanCallbacksImpl : public NimBLEScanCallbacks {
   void onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) override;
   void onScanEnd(const NimBLEScanResults& results, int reason) override;
 };

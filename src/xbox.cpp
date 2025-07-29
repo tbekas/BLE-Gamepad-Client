@@ -1,9 +1,9 @@
 #include "xbox.h"
 #include <bitset>
-#include "BatteryEvent.h"
-#include "ControllerConfig.h"
-#include "ControlsEvent.h"
-#include "VibrationsCommand.h"
+#include "BLEBatteryEvent.h"
+#include "BLEControllerAdapter.h"
+#include "BLEControlsEvent.h"
+#include "BLEVibrationsCommand.h"
 #include "logger.h"
 
 const NimBLEUUID hidServiceUUID((uint16_t)0x1812);
@@ -48,7 +48,7 @@ inline void printBits(uint8_t byte, int label) {
   BLEGC_LOGI("Byte %d: %s", label, bits.to_string().c_str());
 }
 
-size_t decodeControlsEvent(ControlsEvent& e, uint8_t payload[], size_t payloadLen) {
+size_t decodeControlsEvent(BLEControlsEvent& e, uint8_t payload[], size_t payloadLen) {
   if (payloadLen != controlsPayloadLen) {
     BLEGC_LOGE("Expected %d bytes, was %d bytes", controlsPayloadLen, payloadLen);
     return 0;
@@ -98,7 +98,7 @@ size_t decodeControlsEvent(ControlsEvent& e, uint8_t payload[], size_t payloadLe
   return controlsPayloadLen;
 }
 
-size_t decodeBatteryEvent(BatteryEvent& e, uint8_t payload[], size_t payloadLen) {
+size_t decodeBatteryEvent(BLEBatteryEvent& e, uint8_t payload[], size_t payloadLen) {
   if (payloadLen != batteryPayloadLen) {
     BLEGC_LOGE("Expected %d bytes, was %d bytes", batteryPayloadLen, payloadLen);
     return 0;
@@ -120,7 +120,7 @@ inline uint8_t encodeDuration(uint32_t durationMs) {
   return static_cast<uint8_t>(min(durationMs, uint32_t(2550)) / 10);
 }
 
-size_t encodeVibrationsCommand(const VibrationsCommand& c, uint8_t outBuffer[], size_t bufferLen) {
+size_t encodeVibrationsCommand(const BLEVibrationsCommand& c, uint8_t outBuffer[], size_t bufferLen) {
   if (bufferLen < vibrationsPayloadLen) {
     BLEGC_LOGW("Expected buffer of at least %d bytes, was %d bytes", vibrationsPayloadLen, bufferLen);
     return 0;
@@ -144,8 +144,8 @@ size_t encodeVibrationsCommand(const VibrationsCommand& c, uint8_t outBuffer[], 
   return vibrationsPayloadLen;
 }
 
-ControllerConfig makeControllerConfig() {
-  ControllerConfig config;
+BLEControllerAdapter makeControllerAdapter() {
+  BLEControllerAdapter config;
   config.deviceName = "Xbox Wireless Controller";
   config.controls.serviceUUID = hidServiceUUID;
   config.controls.decoder = decodeControlsEvent;
@@ -157,4 +157,4 @@ ControllerConfig makeControllerConfig() {
   return config;
 }
 
-const ControllerConfig xbox::controllerConfig = makeControllerConfig();
+const BLEControllerAdapter xbox::controllerAdapter = makeControllerAdapter();

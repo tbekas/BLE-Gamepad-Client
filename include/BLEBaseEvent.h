@@ -2,7 +2,7 @@
 
 #include <NimBLEAddress.h>
 
-struct BaseEvent {
+struct BLEBaseEvent {
   /// @brief Peer address of the controller that send this event.
-  NimBLEAddress controllerAddress;
+  NimBLEAddress controllerAddress{};
 };

@@ -10,9 +10,9 @@ tbekas/BLE-Gamepad-Client@^0.1.0
 # Example usage
 ```cpp
 #include <Arduino.h>
-#include <BLEGamepadClient.h>
+#include <BLEController.h>
 
-Controller controller;
+BLEController controller;
 
 void setup(void) {
   Serial.begin(115200);
@@ -20,7 +20,7 @@ void setup(void) {
 }
 
 void loop() {
-  ControlsEvent e;
+  BLEControlsEvent e;
 
   if (controller.isConnected()) {
     controller.readControls(e);

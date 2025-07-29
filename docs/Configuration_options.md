@@ -73,27 +73,6 @@ Bitmap representing the required authentication modes for pairing. Available fla
 **Default**: `BLE_SM_PAIR_AUTHREQ_BOND | BLE_SM_PAIR_AUTHREQ_MITM | BLE_SM_PAIR_AUTHREQ_SC`  
 <br/>
 
-`CONFIG_BT_BLEGC_DELETE_BONDS`
-
-Deletes all stored bonding information on initialization.
-Alternatively, you can call `deleteAllBonds()` manually after initializing the controller:
-
-```cpp
-#include <Arduino.h>
-#include <BLEGamepadClient.h>
-#include <NimBLEDevice.h>
-
-Controller controller;
-
-void setup() {
-    controller.begin();
-    NimBLEDevice::deleteAllBonds();
-}
-```
-
-***Default***: `0` (disabled)  
-<br/>
-
 ---
 
 ## Manual NimBLE initialization
@@ -102,7 +81,7 @@ If the settings above are not sufficient for your use case, you can initialize t
 
 ```cpp
 #include <Arduino.h>
-#include <BLEGamepadClient.h>
+#include <BLEControllerRegistry.h>
 
 Controller controller;
 

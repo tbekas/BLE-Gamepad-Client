@@ -1,21 +1,21 @@
-#include "ScanCallbacks.h"
+#include "BLEScanCallbacksImpl.h"
 #include "logger.h"
-#include "BLEGamepadClient.h"
+#include "BLEControllerRegistry.h"
 #include "config.h"
-#include "ClientCallbacks.h"
+#include "BLEClientCallbacksImpl.h"
 #include <bitset>
 
-ClientCallbacks clientCallbacks;
+BLEClientCallbacksImpl clientCallbacks;
 
-void ScanCallbacks::onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
+void BLEScanCallbacksImpl::onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
     BLEGC_LOGD("Device discovered, address: %s, address type: %d, name: %s",
                std::string(pAdvertisedDevice->getAddress()).c_str(), pAdvertisedDevice->getAddressType(),
                pAdvertisedDevice->getName().c_str());
 
-    auto configMatch = std::bitset<MAX_CTRL_CONFIG_COUNT>();
+    auto configMatch = std::bitset<MAX_CTRL_ADAPTER_COUNT>();
 
-    for (int i = 0; i < BLEGamepadClient::_configs.size(); i++) {
-      auto& config = BLEGamepadClient::_configs[i];
+    for (int i = 0; i < BLEControllerRegistry::_adapters.size(); i++) {
+      auto& config = BLEControllerRegistry::_adapters[i];
 
       if (pAdvertisedDevice->haveName() && !config.deviceName.empty() &&
           pAdvertisedDevice->getName() == config.deviceName) {
@@ -44,13 +44,13 @@ void ScanCallbacks::onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
       return;
     }
 
-    if (!BLEGamepadClient::_reserveController(pAdvertisedDevice->getAddress())) {
+    if (!BLEControllerRegistry::_reserveController(pAdvertisedDevice->getAddress())) {
       return;
     }
 
-    BLEGamepadClient::_configMatch[pAdvertisedDevice->getAddress()] = configMatch.to_ulong();
+    BLEControllerRegistry::_adapterMatch[pAdvertisedDevice->getAddress()] = configMatch.to_ulong();
 
-    auto pClient = NimBLEDevice::getClientByPeerAddress(pAdvertisedDevice->getAddress());
+    auto* pClient = NimBLEDevice::getClientByPeerAddress(pAdvertisedDevice->getAddress());
     if (pClient) {
       BLEGC_LOGD("Reusing existing client for a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
     } else {
@@ -58,8 +58,8 @@ void ScanCallbacks::onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
       if (!pClient) {
         BLEGC_LOGE("Failed to create client for a device, address: %s",
                    std::string(pAdvertisedDevice->getAddress()).c_str());
-        BLEGamepadClient::_releaseController(pAdvertisedDevice->getAddress());
-        BLEGamepadClient::_autoScanCheck();
+        BLEControllerRegistry::_releaseController(pAdvertisedDevice->getAddress());
+        BLEControllerRegistry::_autoScanCheck();
         return;
       }
       pClient->setConnectTimeout(CONFIG_BT_BLEGC_CONN_TIMEOUT_MS);
@@ -71,13 +71,13 @@ void ScanCallbacks::onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
     if (!pClient->connect(true, true, false)) {
       BLEGC_LOGE("Failed to initiate connection, address: %s", std::string(pClient->getPeerAddress()).c_str());
       NimBLEDevice::deleteClient(pClient);
-      BLEGamepadClient::_releaseController(pClient->getPeerAddress());
-      BLEGamepadClient::_autoScanCheck();
+      BLEControllerRegistry::_releaseController(pClient->getPeerAddress());
+      BLEControllerRegistry::_autoScanCheck();
       return;
     }
   }
 
-  void ScanCallbacks::onScanEnd(const NimBLEScanResults& results, int reason) {
+  void BLEScanCallbacksImpl::onScanEnd(const NimBLEScanResults& results, int reason) {
     BLEGC_LOGD("Scan ended, reason: 0x%04x %s", reason, NimBLEUtils::returnCodeToString(reason));
-    BLEGamepadClient::_autoScanCheck();
+    BLEControllerRegistry::_autoScanCheck();
   }

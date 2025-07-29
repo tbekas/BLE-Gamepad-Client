@@ -1,11 +1,11 @@
 #pragma once
 
 #include <NimBLEDevice.h>
-#include "OutgoingSignalConfig.h"
-#include "VibrationsCommand.h"
+#include "BLEOutgoingSignalAdapter.h"
+#include "BLEVibrationsCommand.h"
 
 template <typename T>
-class OutgoingSignal {
+class BLEOutgoingSignal {
  public:
   struct Store {
     uint8_t* pBuffer{};
@@ -13,9 +13,9 @@ class OutgoingSignal {
     size_t used{};
     size_t capacity{};
   };
-  OutgoingSignal();
-  ~OutgoingSignal() = default;
-  bool init(NimBLEAddress address, OutgoingSignalConfig<T>& config);
+  BLEOutgoingSignal();
+  ~BLEOutgoingSignal() = default;
+  bool init(NimBLEAddress address, BLEOutgoingSignalAdapter<T>& config);
   bool deinit(bool disconnected);
   bool isInitialized() const;
   void write(const T& value);
@@ -23,7 +23,7 @@ class OutgoingSignal {
  private:
   static void _sendDataFn(void* pvParameters);
   bool _initialized;
-  SignalEncoder<T> _encoder;
+  BLESignalEncoder<T> _encoder;
   NimBLEAddress _address;
   NimBLERemoteCharacteristic* _pChar;
   TaskHandle_t _sendDataTask;
@@ -31,6 +31,6 @@ class OutgoingSignal {
   Store _store;
 };
 
-template class OutgoingSignal<VibrationsCommand>;
+template class BLEOutgoingSignal<BLEVibrationsCommand>;
 
-using VibrationsSignal = OutgoingSignal<VibrationsCommand>;
+using BLEVibrationsSignal = BLEOutgoingSignal<BLEVibrationsCommand>;
