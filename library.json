@@ -1,6 +1,6 @@
 {
   "name": "BLE-Gamepad-Client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Enables connecting BLE gamepads to ESP32 boards",
   "keywords": "gamepad, controller, hid, ble, bluetooth, xbox",
   "homepage": "https://github.com/tbekas/BLE-Gamepad-Client",
