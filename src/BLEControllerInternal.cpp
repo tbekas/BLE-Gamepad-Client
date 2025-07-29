@@ -13,23 +13,23 @@ BLEControllerInternal::BLEControllerInternal(const NimBLEAddress allowedAddress)
       _onConnect([](NimBLEAddress) {}),
       _onDisconnect([](NimBLEAddress) {}) {}
 
-bool BLEControllerInternal::init(BLEControllerAdapter& config) {
+bool BLEControllerInternal::init(BLEControllerAdapter& adapter) {
   if (_initialized) {
     return false;
   }
 
-  if (!utils::discoverAttributes(_address)) {
+  if (!blegc::discoverAttributes(_address)) {
     return false;
   }
 
-  if (config.controls.isEnabled()) {
-    if (!_controls.init(_address, config.controls)) {
+  if (adapter.controls.isEnabled()) {
+    if (!_controls.init(_address, adapter.controls)) {
       return false;
     }
   }
 
-  if (config.battery.isEnabled()) {
-    if (!_battery.init(_address, config.battery)) {
+  if (adapter.battery.isEnabled()) {
+    if (!_battery.init(_address, adapter.battery)) {
       if (_controls.isInitialized()) {
         _controls.deinit(false);
       }
@@ -37,8 +37,8 @@ bool BLEControllerInternal::init(BLEControllerAdapter& config) {
     }
   }
 
-  if (config.vibrations.isEnabled()) {
-    if (!_vibrations.init(_address, config.vibrations)) {
+  if (adapter.vibrations.isEnabled()) {
+    if (!_vibrations.init(_address, adapter.vibrations)) {
       if (_battery.isInitialized()) {
         _battery.deinit(false);
       }

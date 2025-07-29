@@ -16,7 +16,7 @@ class BLEControllerInternal {
  public:
   explicit BLEControllerInternal(NimBLEAddress allowedAddress);
   ~BLEControllerInternal() = default;
-  bool init(BLEControllerAdapter& config);
+  bool init(BLEControllerAdapter& adapter);
   bool deinit(bool disconnected);
   bool isInitialized() const;
   NimBLEAddress getAddress() const;

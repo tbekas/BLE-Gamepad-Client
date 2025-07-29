@@ -14,7 +14,7 @@ struct BLEIncomingSignalAdapter {
   NimBLEUUID characteristicUUID{};
   BLESignalDecoder<T> decoder{};
 
-  bool isEnabled() const { return !utils::isNull(serviceUUID); }
+  bool isEnabled() const { return !blegc::isNull(serviceUUID); }
   bool isDisabled() const { return !isEnabled(); }
   explicit operator std::string() const;
 };

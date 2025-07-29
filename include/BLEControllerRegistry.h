@@ -31,7 +31,8 @@ class BLEControllerRegistry {
   static void enableAutoScan();
   static void disableAutoScan();
   static bool isAutoScanEnabled();
-  static bool addControllerAdapter(const BLEControllerAdapter& config);
+  static void deleteBonds();
+  static bool addControllerAdapter(const BLEControllerAdapter& adapter);
 
   friend class BLEClientCallbacksImpl;
   friend class BLEScanCallbacksImpl;
@@ -46,6 +47,7 @@ class BLEControllerRegistry {
   static void _autoScanCheck();
   static bool _initialized;
   static bool _autoScanEnabled;
+  static bool _deleteBonds;
   static QueueHandle_t _clientStatusQueue;
   static TaskHandle_t _clientStatusConsumerTask;
   static SemaphoreHandle_t _connectionSlots;

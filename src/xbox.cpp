@@ -157,4 +157,4 @@ BLEControllerAdapter makeControllerAdapter() {
   return config;
 }
 
-const BLEControllerAdapter xbox::controllerAdapter = makeControllerAdapter();
+const BLEControllerAdapter blegc::xboxControllerAdapter = makeControllerAdapter();

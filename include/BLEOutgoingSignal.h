@@ -15,7 +15,7 @@ class BLEOutgoingSignal {
   };
   BLEOutgoingSignal();
   ~BLEOutgoingSignal() = default;
-  bool init(NimBLEAddress address, BLEOutgoingSignalAdapter<T>& config);
+  bool init(NimBLEAddress address, BLEOutgoingSignalAdapter<T>& adapter);
   bool deinit(bool disconnected);
   bool isInitialized() const;
   void write(const T& value);

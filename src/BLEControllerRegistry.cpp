@@ -36,14 +36,18 @@ bool BLEControllerRegistry::init() {
                           &_clientStatusConsumerTask, CONFIG_BT_NIMBLE_PINNED_TO_CORE);
   configASSERT(_clientStatusConsumerTask);
 
-  // default config - lowest priority
-  _adapters.push_front(xbox::controllerAdapter);
+  // default adapter - lowest priority in front
+  _adapters.push_front(blegc::xboxControllerAdapter);
 
   if (!NimBLEDevice::isInitialized()) {
     NimBLEDevice::init(CONFIG_BT_BLEGC_DEVICE_NAME);
     NimBLEDevice::setPower(CONFIG_BT_BLEGC_POWER_DBM);
     NimBLEDevice::setSecurityAuth(CONFIG_BT_BLEGC_SECURITY_AUTH);
     NimBLEDevice::setSecurityIOCap(CONFIG_BT_BLEGC_SECURITY_IO_CAP);
+  }
+
+  if (_deleteBonds) {
+    NimBLEDevice::deleteAllBonds();
   }
 
   auto* pScan = NimBLEDevice::getScan();
@@ -76,7 +80,7 @@ bool BLEControllerRegistry::deinit() {
       result = ctrl.deinit(false) && result;
     }
 
-    auto* pClient = BLEDevice::getClientByPeerAddress(ctrl.getAddress());
+    auto* pClient = NimBLEDevice::getClientByPeerAddress(ctrl.getAddress());
     if (!pClient) {
       continue;
     }
@@ -145,23 +149,33 @@ void BLEControllerRegistry::disableAutoScan() {
 bool BLEControllerRegistry::isAutoScanEnabled() {
   return _autoScanEnabled;
 }
+
 /**
- * @brief Registers a configuration for a new controller type. The configuration is used to set up a connection and to
+ * @brief Deletes all stored bonding information.
+ */
+void BLEControllerRegistry::deleteBonds() {
+  _deleteBonds = true;
+  if (_initialized) {
+    NimBLEDevice::deleteAllBonds();
+  }
+}
+/**
+ * @brief Registers an adapter for a new controller type. Adapter is used to set up a connection and to
  * decode raw data coming from the controller.
- * @param config Configuration to be registered.
+ * @param adapter Adapter to be added.
  * @return True if successful.
  */
-bool BLEControllerRegistry::addControllerAdapter(const BLEControllerAdapter& config) {
+bool BLEControllerRegistry::addControllerAdapter(const BLEControllerAdapter& adapter) {
   if (_adapters.size() >= MAX_CTRL_ADAPTER_COUNT) {
-    BLEGC_LOGE("Reached maximum number of configs: %d", MAX_CTRL_ADAPTER_COUNT);
+    BLEGC_LOGE("Reached maximum number of adapter: %d", MAX_CTRL_ADAPTER_COUNT);
     return false;
   }
-  if (config.controls.isDisabled() && config.battery.isDisabled() && config.vibrations.isDisabled()) {
-    BLEGC_LOGE("Invalid config, at least one of [`controls`, `battery`, `vibrations`] has to be enabled");
+  if (adapter.controls.isDisabled() && adapter.battery.isDisabled() && adapter.vibrations.isDisabled()) {
+    BLEGC_LOGE("Invalid adapter, at least one of [`controls`, `battery`, `vibrations`] has to be enabled");
     return false;
   }
 
-  _adapters.push_back(config);
+  _adapters.push_back(adapter);
   return true;
 }
 
@@ -343,6 +357,7 @@ void BLEControllerRegistry::_autoScanCheck() {
 
 bool BLEControllerRegistry::_initialized{false};
 bool BLEControllerRegistry::_autoScanEnabled{true};
+bool BLEControllerRegistry::_deleteBonds{false};
 QueueHandle_t BLEControllerRegistry::_clientStatusQueue{nullptr};
 TaskHandle_t BLEControllerRegistry::_clientStatusConsumerTask{nullptr};
 SemaphoreHandle_t BLEControllerRegistry::_connectionSlots{nullptr};
