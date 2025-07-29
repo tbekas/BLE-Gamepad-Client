@@ -17,14 +17,16 @@
   "license": "Apache-2.0",
   "frameworks": "arduino",
   "platforms": "espressif32",
-  "headers": "BLEControllerRegistry.h",
+  "headers": "BLEController.h",
   "dependencies": {
     "h2zero/NimBLE-Arduino": "^2.3.2"
   },
   "export": {
     "exclude": [
       ".git",
-      ".github/"
+      ".github",
+      "docs",
+      "CMakeLists.txt"
     ]
   }
 }
