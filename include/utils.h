@@ -4,7 +4,7 @@
 #include <string>
 #include "logger.h"
 
-namespace utils {
+namespace blegc {
 
   static bool isNull(const NimBLEUUID& uuid) { return uuid.bitSize() == 0; }
 

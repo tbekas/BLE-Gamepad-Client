@@ -18,7 +18,7 @@ struct BLEOutgoingSignalAdapter {
   /// varies depending on the input.
   size_t bufferLen{};
 
-  bool isEnabled() const { return !utils::isNull(serviceUUID); }
+  bool isEnabled() const { return !blegc::isNull(serviceUUID); }
   bool isDisabled() const { return !isEnabled(); }
   explicit operator std::string() const;
 };

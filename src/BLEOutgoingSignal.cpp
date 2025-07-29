@@ -19,19 +19,19 @@ BLEOutgoingSignal<T>::BLEOutgoingSignal()
       _storeMutex(nullptr) {}
 
 template <typename T>
-bool BLEOutgoingSignal<T>::init(NimBLEAddress address, BLEOutgoingSignalAdapter<T>& config) {
+bool BLEOutgoingSignal<T>::init(NimBLEAddress address, BLEOutgoingSignalAdapter<T>& adapter) {
   if (_initialized) {
     return false;
   }
 
   _address = address;
 
-  _store.capacity = config.bufferLen > 0 ? config.bufferLen : 8;
+  _store.capacity = adapter.bufferLen > 0 ? adapter.bufferLen : 8;
   _store.pBuffer = new uint8_t[_store.capacity];
   _store.pSendBuffer = new uint8_t[_store.capacity];
 
-  _encoder = config.encoder;
-  _pChar = utils::findCharacteristic(_address, config.serviceUUID, config.characteristicUUID,
+  _encoder = adapter.encoder;
+  _pChar = blegc::findCharacteristic(_address, adapter.serviceUUID, adapter.characteristicUUID,
                                      [](NimBLERemoteCharacteristic* c) { return c->canWrite(); });
   if (!_pChar) {
     return false;
@@ -129,7 +129,7 @@ void BLEOutgoingSignal<T>::_sendDataFn(void* pvParameters) {
       continue;
     }
 
-    BLEGC_LOGT("Writing value. %s", utils::remoteCharToStr(self->_pChar).c_str());
+    BLEGC_LOGT("Writing value. %s", blegc::remoteCharToStr(self->_pChar).c_str());
 
     self->_pChar->writeValue(self->_store.pSendBuffer, used);
   }
