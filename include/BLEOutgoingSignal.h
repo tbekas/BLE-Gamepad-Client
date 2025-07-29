@@ -33,4 +33,4 @@ class BLEOutgoingSignal {
 
 template class BLEOutgoingSignal<BLEVibrationsCommand>;
 
-using VibrationsSignal = BLEOutgoingSignal<BLEVibrationsCommand>;
+using BLEVibrationsSignal = BLEOutgoingSignal<BLEVibrationsCommand>;

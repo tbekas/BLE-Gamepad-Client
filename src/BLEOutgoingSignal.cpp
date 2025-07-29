@@ -4,7 +4,7 @@
 #include <bitset>
 #include <functional>
 #include "BLEOutgoingSignalAdapter.h"
-#include "BLEHelpers.h"
+#include "utils.h"
 #include "logger.h"
 
 constexpr size_t maxCapacity = 1024;
@@ -31,7 +31,7 @@ bool BLEOutgoingSignal<T>::init(NimBLEAddress address, BLEOutgoingSignalAdapter<
   _store.pSendBuffer = new uint8_t[_store.capacity];
 
   _encoder = config.encoder;
-  _pChar = BLEHelpers::findCharacteristic(_address, config.serviceUUID, config.characteristicUUID,
+  _pChar = utils::findCharacteristic(_address, config.serviceUUID, config.characteristicUUID,
                                      [](NimBLERemoteCharacteristic* c) { return c->canWrite(); });
   if (!_pChar) {
     return false;
@@ -129,7 +129,7 @@ void BLEOutgoingSignal<T>::_sendDataFn(void* pvParameters) {
       continue;
     }
 
-    BLEGC_LOGT("Writing value. %s", Utils::remoteCharToStr(_pChar));
+    BLEGC_LOGT("Writing value. %s", utils::remoteCharToStr(self->_pChar).c_str());
 
     self->_pChar->writeValue(self->_store.pSendBuffer, used);
   }

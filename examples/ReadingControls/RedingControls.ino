@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include <BLEControllerRegistry.h>
+#include <BLEController.h>
 
-Controller controller;
+BLEController controller;
 
 void setup(void) {
   Serial.begin(115200);
@@ -9,7 +9,7 @@ void setup(void) {
 }
 
 void loop() {
-  ControlsEvent e;
+  BLEControlsEvent e;
 
   if (controller.isConnected()) {
     controller.readControls(e);

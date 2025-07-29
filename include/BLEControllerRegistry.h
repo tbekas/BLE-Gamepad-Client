@@ -8,8 +8,8 @@
 #include "BLEControllerAdapter.h"
 #include "BLEControllerInternal.h"
 
-#define CTRL_CONFIG_MATCH_TYPE uint64_t
-#define MAX_CTRL_CONFIG_COUNT sizeof(CTRL_CONFIG_MATCH_TYPE)
+#define CTRL_ADAPTER_MATCH_TYPE uint64_t
+#define MAX_CTRL_ADAPTER_COUNT sizeof(CTRL_ADAPTER_MATCH_TYPE)
 
 enum BLEClientStatusMsgKind : uint8_t {
  BLEClientConnected = 0,
@@ -31,7 +31,7 @@ class BLEControllerRegistry {
   static void enableAutoScan();
   static void disableAutoScan();
   static bool isAutoScanEnabled();
-  static bool addControllerConfig(const BLEControllerAdapter& config);
+  static bool addControllerAdapter(const BLEControllerAdapter& config);
 
   friend class BLEClientCallbacksImpl;
   friend class BLEScanCallbacksImpl;
@@ -49,7 +49,7 @@ class BLEControllerRegistry {
   static QueueHandle_t _clientStatusQueue;
   static TaskHandle_t _clientStatusConsumerTask;
   static SemaphoreHandle_t _connectionSlots;
-  static std::map<NimBLEAddress, CTRL_CONFIG_MATCH_TYPE> _configMatch;
+  static std::map<NimBLEAddress, CTRL_ADAPTER_MATCH_TYPE> _adapterMatch;
   static std::list<BLEControllerInternal> _controllers;
-  static std::deque<BLEControllerAdapter> _configs;
+  static std::deque<BLEControllerAdapter> _adapters;
 };

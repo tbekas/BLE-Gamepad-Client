@@ -3,6 +3,6 @@
 #include "BLEControllerAdapter.h"
 namespace xbox {
 
-extern const BLEControllerAdapter controllerConfig;
+extern const BLEControllerAdapter controllerAdapter;
 
 }

@@ -37,7 +37,7 @@ jobs:
           [env]
           platform = espressif32
           framework = arduino
-          build_flags = -D CONFIG_BLEGC_LOG_LEVEL=5
+          build_flags = -D CONFIG_BT_BLEGC_LOG_LEVEL=5
 
           [env:esp32dev]
           board = esp32dev
@@ -52,6 +52,6 @@ jobs:
           board = esp32-c6-devkitm-1
           platform = https://github.com/pioarduino/platform-espressif32/releases/download/54.03.21/platform-espressif32.zip
         EOF
-        pio ci -c platformio.ini -l . -e esp32c6
+        pio ci -c platformio.ini -l .
       env:
         PLATFORMIO_CI_SRC: ${{ matrix.example }}

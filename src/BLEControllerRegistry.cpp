@@ -19,7 +19,7 @@ BLEClientStatus::operator std::string() const {
 }
 
 /**
- * @brief Initializes a BLEGamepadClient.
+ * @brief Initializes a BLEControllerRegistry.
  * @return True if successful.
  */
 bool BLEControllerRegistry::init() {
@@ -37,7 +37,7 @@ bool BLEControllerRegistry::init() {
   configASSERT(_clientStatusConsumerTask);
 
   // default config - lowest priority
-  _configs.push_front(xbox::controllerConfig);
+  _adapters.push_front(xbox::controllerAdapter);
 
   if (!NimBLEDevice::isInitialized()) {
     NimBLEDevice::init(CONFIG_BT_BLEGC_DEVICE_NAME);
@@ -56,7 +56,7 @@ bool BLEControllerRegistry::init() {
 }
 
 /**
- * @brief Deinitializes a BLEGamepadClient.
+ * @brief Deinitializes a BLEControllerRegistry.
  * @return True if successful.
  */
 bool BLEControllerRegistry::deinit() {
@@ -102,7 +102,7 @@ bool BLEControllerRegistry::deinit() {
 }
 
 /**
- * @brief Checks if BLEGamepadClient is initialized.
+ * @brief Checks if BLEControllerRegistry is initialized.
  * @return True if initialized; false otherwise.
  */
 bool BLEControllerRegistry::isInitialized() {
@@ -151,9 +151,9 @@ bool BLEControllerRegistry::isAutoScanEnabled() {
  * @param config Configuration to be registered.
  * @return True if successful.
  */
-bool BLEControllerRegistry::addControllerConfig(const BLEControllerAdapter& config) {
-  if (_configs.size() >= MAX_CTRL_CONFIG_COUNT) {
-    BLEGC_LOGE("Reached maximum number of configs: %d", MAX_CTRL_CONFIG_COUNT);
+bool BLEControllerRegistry::addControllerAdapter(const BLEControllerAdapter& config) {
+  if (_adapters.size() >= MAX_CTRL_ADAPTER_COUNT) {
+    BLEGC_LOGE("Reached maximum number of configs: %d", MAX_CTRL_ADAPTER_COUNT);
     return false;
   }
   if (config.controls.isDisabled() && config.battery.isDisabled() && config.vibrations.isDisabled()) {
@@ -161,7 +161,7 @@ bool BLEControllerRegistry::addControllerConfig(const BLEControllerAdapter& conf
     return false;
   }
 
-  _configs.push_back(config);
+  _adapters.push_back(config);
   return true;
 }
 
@@ -276,15 +276,15 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
           break;
         }
 
-        auto configMatch = std::bitset<MAX_CTRL_CONFIG_COUNT>(_configMatch[msg.address]);
-        const int configsSize = _configs.size();
+        auto configMatch = std::bitset<MAX_CTRL_ADAPTER_COUNT>(_adapterMatch[msg.address]);
+        const int configsSize = _adapters.size();
         // reverse iteration order
         for (int i = configsSize - 1; i >= 0; i--) {
           if (!configMatch[i]) {
             continue;
           }
 
-          auto& config = _configs[i];
+          auto& config = _adapters[i];
 
           if (!pCtrl->init(config)) {
             BLEGC_LOGW("Failed to initialize controller, address: %s", std::string(msg.address).c_str());
@@ -346,6 +346,6 @@ bool BLEControllerRegistry::_autoScanEnabled{true};
 QueueHandle_t BLEControllerRegistry::_clientStatusQueue{nullptr};
 TaskHandle_t BLEControllerRegistry::_clientStatusConsumerTask{nullptr};
 SemaphoreHandle_t BLEControllerRegistry::_connectionSlots{nullptr};
-std::map<NimBLEAddress, uint64_t> BLEControllerRegistry::_configMatch{};
+std::map<NimBLEAddress, uint64_t> BLEControllerRegistry::_adapterMatch{};
 std::list<BLEControllerInternal> BLEControllerRegistry::_controllers{};
-std::deque<BLEControllerAdapter> BLEControllerRegistry::_configs{};
+std::deque<BLEControllerAdapter> BLEControllerRegistry::_adapters{};

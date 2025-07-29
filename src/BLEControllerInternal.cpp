@@ -2,7 +2,7 @@
 #include <NimBLEAddress.h>
 #include "BLEControllerAdapter.h"
 #include "BLEIncomingSignal.h"
-#include "BLEHelpers.h"
+#include "utils.h"
 #include "logger.h"
 
 BLEControllerInternal::BLEControllerInternal(const NimBLEAddress allowedAddress)
@@ -18,7 +18,7 @@ bool BLEControllerInternal::init(BLEControllerAdapter& config) {
     return false;
   }
 
-  if (!BLEHelpers::discoverAttributes(_address)) {
+  if (!utils::discoverAttributes(_address)) {
     return false;
   }
 
@@ -102,14 +102,14 @@ void BLEControllerInternal::onDisconnect(const OnDisconnect& callback) {
   _onDisconnect = callback;
 }
 
-ControlsSignal& BLEControllerInternal::getControls() {
+BLEControlsSignal& BLEControllerInternal::getControls() {
   return _controls;
 }
 
-BatterySignal& BLEControllerInternal::getBattery() {
+BLEBatterySignal& BLEControllerInternal::getBattery() {
   return _battery;
 }
 
-VibrationsSignal& BLEControllerInternal::getVibrations() {
+BLEVibrationsSignal& BLEControllerInternal::getVibrations() {
   return _vibrations;
 }

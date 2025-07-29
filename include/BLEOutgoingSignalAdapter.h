@@ -3,7 +3,7 @@
 #include <NimBLEUUID.h>
 #include <functional>
 #include <string>
-#include "BLEHelpers.h"
+#include "utils.h"
 
 template <typename T>
 using BLESignalEncoder = std::function<size_t(const T& value, uint8_t buffer[], size_t bufferLen)>;
@@ -18,7 +18,7 @@ struct BLEOutgoingSignalAdapter {
   /// varies depending on the input.
   size_t bufferLen{};
 
-  bool isEnabled() const { return !BLEHelpers::isNull(serviceUUID); }
+  bool isEnabled() const { return !utils::isNull(serviceUUID); }
   bool isDisabled() const { return !isEnabled(); }
   explicit operator std::string() const;
 };

@@ -4,8 +4,8 @@
 #include <string>
 #include "logger.h"
 
-class BLEHelpers {
- public:
+namespace utils {
+
   static bool isNull(const NimBLEUUID& uuid) { return uuid.bitSize() == 0; }
 
   static std::string remoteCharToStr(const NimBLERemoteCharacteristic* pChar) {
@@ -29,24 +29,24 @@ class BLEHelpers {
       return false;
     }
 
-#if CONFIG_BLEGC_LOG_LEVEL >= 4
+#if CONFIG_BT_BLEGC_LOG_LEVEL >= 4
     for (auto& pService : pClient->getServices(false)) {
       BLEGC_LOGD("Discovered service %s", std::string(pService->getUUID()).c_str());
       for (auto& pChar : pService->getCharacteristics(false)) {
-        BLEGC_LOGD("Discovered characteristic %s", Utils::remoteCharToStr(pChar).c_str());
+        BLEGC_LOGD("Discovered characteristic %s", remoteCharToStr(pChar).c_str());
       }
     }
 #endif
     return true;
   }
 
-  using CharacteristicFilter = std::function<bool(NimBLERemoteCharacteristic*)>;
+  using BLECharacteristicFilter = std::function<bool(NimBLERemoteCharacteristic*)>;
 
   static NimBLERemoteCharacteristic* findCharacteristic(
       const NimBLEAddress address,
       const NimBLEUUID& serviceUUID,
       const NimBLEUUID& characteristicUUID = NimBLEUUID(),
-      const CharacteristicFilter& filter = [](NimBLERemoteCharacteristic*) { return true; }) {
+      const BLECharacteristicFilter& filter = [](NimBLERemoteCharacteristic*) { return true; }) {
     BLEGC_LOGD("Looking up for characteristic, service uuid: %s, characteristic uuid: %s.",
                std::string(serviceUUID).c_str(),
                isNull(characteristicUUID) ? "null" : std::string(characteristicUUID).c_str());

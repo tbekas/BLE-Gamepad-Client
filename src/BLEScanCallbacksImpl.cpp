@@ -12,10 +12,10 @@ void BLEScanCallbacksImpl::onResult(const NimBLEAdvertisedDevice* pAdvertisedDev
                std::string(pAdvertisedDevice->getAddress()).c_str(), pAdvertisedDevice->getAddressType(),
                pAdvertisedDevice->getName().c_str());
 
-    auto configMatch = std::bitset<MAX_CTRL_CONFIG_COUNT>();
+    auto configMatch = std::bitset<MAX_CTRL_ADAPTER_COUNT>();
 
-    for (int i = 0; i < BLEControllerRegistry::_configs.size(); i++) {
-      auto& config = BLEControllerRegistry::_configs[i];
+    for (int i = 0; i < BLEControllerRegistry::_adapters.size(); i++) {
+      auto& config = BLEControllerRegistry::_adapters[i];
 
       if (pAdvertisedDevice->haveName() && !config.deviceName.empty() &&
           pAdvertisedDevice->getName() == config.deviceName) {
@@ -48,7 +48,7 @@ void BLEScanCallbacksImpl::onResult(const NimBLEAdvertisedDevice* pAdvertisedDev
       return;
     }
 
-    BLEControllerRegistry::_configMatch[pAdvertisedDevice->getAddress()] = configMatch.to_ulong();
+    BLEControllerRegistry::_adapterMatch[pAdvertisedDevice->getAddress()] = configMatch.to_ulong();
 
     auto* pClient = NimBLEDevice::getClientByPeerAddress(pAdvertisedDevice->getAddress());
     if (pClient) {

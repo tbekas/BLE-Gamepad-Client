@@ -26,9 +26,9 @@ class BLEControllerInternal {
   void setLastAddress(NimBLEAddress address);
   void onConnect(const OnConnect& callback);
   void onDisconnect(const OnDisconnect& callback);
-  ControlsSignal& getControls();
-  BatterySignal& getBattery();
-  VibrationsSignal& getVibrations();
+  BLEControlsSignal& getControls();
+  BLEBatterySignal& getBattery();
+  BLEVibrationsSignal& getVibrations();
 
  private:
   bool _initialized;
@@ -37,7 +37,7 @@ class BLEControllerInternal {
   NimBLEAddress _lastAddress;
   OnConnect _onConnect{};
   OnDisconnect _onDisconnect{};
-  ControlsSignal _controls{};
-  BatterySignal _battery{};
-  VibrationsSignal _vibrations{};
+  BLEControlsSignal _controls{};
+  BLEBatterySignal _battery{};
+  BLEVibrationsSignal _vibrations{};
 };

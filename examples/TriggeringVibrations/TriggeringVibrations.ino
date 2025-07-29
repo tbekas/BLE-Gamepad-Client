@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include <BLEControllerRegistry.h>
+#include <BLEController.h>
 
-Controller controller;
+BLEController controller;
 
 void setup(void) {
   Serial.begin(115200);
@@ -12,7 +12,7 @@ int i = 0;
 
 void loop() {
   if (controller.isConnected()) {
-    VibrationsCommand cmd;
+    BLEVibrationsCommand cmd;
 
     switch (i % 4) {
       case 0: cmd.rightMotor = 1.0f; break; // 1.0f = max power for the motor

@@ -40,5 +40,5 @@ class BLEIncomingSignal {
 template class BLEIncomingSignal<BLEControlsEvent>;
 template class BLEIncomingSignal<BLEBatteryEvent>;
 
-using ControlsSignal = BLEIncomingSignal<BLEControlsEvent>;
-using BatterySignal = BLEIncomingSignal<BLEBatteryEvent>;
+using BLEControlsSignal = BLEIncomingSignal<BLEControlsEvent>;
+using BLEBatterySignal = BLEIncomingSignal<BLEBatteryEvent>;

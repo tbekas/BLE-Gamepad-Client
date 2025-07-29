@@ -144,7 +144,7 @@ size_t encodeVibrationsCommand(const BLEVibrationsCommand& c, uint8_t outBuffer[
   return vibrationsPayloadLen;
 }
 
-BLEControllerAdapter makeControllerConfig() {
+BLEControllerAdapter makeControllerAdapter() {
   BLEControllerAdapter config;
   config.deviceName = "Xbox Wireless Controller";
   config.controls.serviceUUID = hidServiceUUID;
@@ -157,4 +157,4 @@ BLEControllerAdapter makeControllerConfig() {
   return config;
 }
 
-const BLEControllerAdapter xbox::controllerConfig = makeControllerConfig();
+const BLEControllerAdapter xbox::controllerAdapter = makeControllerAdapter();
