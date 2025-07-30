@@ -1,6 +1,8 @@
 name: Deploy documentation
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -16,8 +18,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Install CMake
         run: |
           sudo apt update
