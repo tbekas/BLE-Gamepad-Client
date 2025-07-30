@@ -55,3 +55,10 @@ jobs:
         pio ci -c platformio.ini -l .
       env:
         PLATFORMIO_CI_SRC: ${{ matrix.example }}
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/arduino-lint-action@v2
+        with:
+          project-type: 'library'
