@@ -10,7 +10,7 @@ the [lib_deps](https://docs.platformio.org/en/latest/projectconf/sections/env/op
 of [platformio.ini](https://docs.platformio.org/en/latest/projectconf/index.html) file.
 
 ```yaml
-tbekas/BLE-Gamepad-Client@^0.3.0
+tbekas/BLE-Gamepad-Client@^0.3.1
 ```
 
 # Example usage
@@ -41,7 +41,7 @@ void loop() {
 # More examples
 
 Checkout the code examples in
-the [examples directory](https://github.com/tbekas/BLE-Gamepad-Client/tree/0.3.0/examples).
+the [examples directory](https://github.com/tbekas/BLE-Gamepad-Client/tree/0.3.1/examples).
 
 # Supported gamepads
 
