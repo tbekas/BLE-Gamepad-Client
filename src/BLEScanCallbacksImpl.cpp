@@ -68,13 +68,15 @@ void BLEScanCallbacksImpl::onResult(const NimBLEAdvertisedDevice* pAdvertisedDev
 
     BLEGC_LOGI("Attempting to connect to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
 
-    if (!pClient->connect(true, true, false)) {
+    if (!pClient->connect(true, true, true)) {
       BLEGC_LOGE("Failed to initiate connection, address: %s", std::string(pClient->getPeerAddress()).c_str());
       NimBLEDevice::deleteClient(pClient);
       BLEControllerRegistry::_releaseController(pClient->getPeerAddress());
       BLEControllerRegistry::_autoScanCheck();
       return;
     }
+
+    BLEGC_LOGD("connect(...) returned true");
   }
 
   void BLEScanCallbacksImpl::onScanEnd(const NimBLEScanResults& results, int reason) {

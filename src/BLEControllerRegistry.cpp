@@ -337,17 +337,17 @@ void BLEControllerRegistry::_autoScanCheck() {
   const auto isScanning = pScan->isScanning();
 
   if (_autoScanEnabled && isScanning) {
-    BLEGC_LOGD("Auto-scan enabled, scan in progress");
+    BLEGC_LOGD("Auto-scan enabled, scan already in-progress");
     // do nothing
   } else if (_autoScanEnabled && !isScanning) {
     if (uxSemaphoreGetCount(_connectionSlots) == 0) {
-      BLEGC_LOGD("Auto-scan enabled, no available connection slots");
+      BLEGC_LOGD("Auto-scan enabled, no scan in-progress, no available connection slots left");
     } else {
-      BLEGC_LOGD("Auto-scan enabled, starting scan");
+      BLEGC_LOGD("Auto-scan enabled, no scan in-progress, connection slots available -> starting scan");
       pScan->start(CONFIG_BT_BLEGC_SCAN_DURATION_MS);
     }
   } else if (!_autoScanEnabled && isScanning) {
-    BLEGC_LOGD("Auto-scan disabled, stopping scan");
+    BLEGC_LOGD("Auto-scan disabled, scan in-progress -> stopping scan");
     pScan->stop();
   } else if (!_autoScanEnabled && !isScanning) {
     BLEGC_LOGD("Auto-scan disabled, no scan in-progress");
