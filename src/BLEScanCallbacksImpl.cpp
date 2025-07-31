@@ -75,8 +75,6 @@ void BLEScanCallbacksImpl::onResult(const NimBLEAdvertisedDevice* pAdvertisedDev
       BLEControllerRegistry::_autoScanCheck();
       return;
     }
-
-    BLEGC_LOGD("connect(...) returned true");
   }
 
   void BLEScanCallbacksImpl::onScanEnd(const NimBLEScanResults& results, int reason) {
