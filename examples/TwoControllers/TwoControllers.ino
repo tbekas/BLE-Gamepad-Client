@@ -28,6 +28,8 @@ void loop() {
 
     Serial.printf("controller1 lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
       e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);
+  } else {
+    Serial.println("controller1 not connected");
   }
 
   if (controller2.isConnected()) {
@@ -35,6 +37,8 @@ void loop() {
 
     Serial.printf("controller2 lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
       e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);
+  } else {
+    Serial.println("controller2 not connected");
   }
 
   delay(100);

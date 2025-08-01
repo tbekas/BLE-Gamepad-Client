@@ -9,14 +9,14 @@ void setup(void) {
 }
 
 void loop() {
-  BLEControlsEvent e;
-
   if (controller.isConnected()) {
+    BLEControlsEvent e;
     controller.readControls(e);
 
     Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
       e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);
+  } else {
+    Serial.println("controller not connected");
   }
-
   delay(100);
 }
