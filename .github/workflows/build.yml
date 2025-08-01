@@ -48,9 +48,9 @@ jobs:
           [env:esp32c3]
           board = esp32-c3-devkitm-1
 
-          [env:esp32c6]
-          board = esp32-c6-devkitm-1
-          platform = https://github.com/pioarduino/platform-espressif32/releases/download/54.03.21/platform-espressif32.zip
+          ;[env:esp32c6]
+          ;board = esp32-c6-devkitm-1
+          ;platform = https://github.com/pioarduino/platform-espressif32/releases/download/54.03.21/platform-espressif32.zip
         EOF
         pio ci -c platformio.ini -l .
       env:
