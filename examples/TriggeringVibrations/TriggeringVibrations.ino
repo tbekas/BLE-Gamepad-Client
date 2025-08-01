@@ -23,7 +23,13 @@ void loop() {
 
     cmd.durationMs = 500;
     controller.writeVibrations(cmd);
+
+    Serial.printf("rm: %.2f, lm: %.2f, ltm: %.2f, rtm: %.2f\n",
+      cmd.rightMotor, cmd.leftMotor, cmd.leftTriggerMotor, cmd.rightTriggerMotor);
+  } else {
+    Serial.println("controller not connected");
   }
+
   i++;
   delay(1000);
 }
