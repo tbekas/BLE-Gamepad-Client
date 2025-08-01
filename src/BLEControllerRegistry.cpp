@@ -11,6 +11,8 @@
 #include "logger.h"
 #include "xbox.h"
 
+static auto* LOG_TAG = "BLEControllerRegistry";
+
 BLEScanCallbacksImpl scanCallbacks;
 
 BLEClientStatus::operator std::string() const {
@@ -167,11 +169,11 @@ void BLEControllerRegistry::deleteBonds() {
  */
 bool BLEControllerRegistry::addControllerAdapter(const BLEControllerAdapter& adapter) {
   if (_adapters.size() >= MAX_CTRL_ADAPTER_COUNT) {
-    BLEGC_LOGE("Reached maximum number of adapter: %d", MAX_CTRL_ADAPTER_COUNT);
+    BLEGC_LOGE(LOG_TAG, "Reached maximum number of adapter: %d", MAX_CTRL_ADAPTER_COUNT);
     return false;
   }
   if (adapter.controls.isDisabled() && adapter.battery.isDisabled() && adapter.vibrations.isDisabled()) {
-    BLEGC_LOGE("Invalid adapter, at least one of [`controls`, `battery`, `vibrations`] has to be enabled");
+    BLEGC_LOGE(LOG_TAG, "Invalid adapter, at least one of [`controls`, `battery`, `vibrations`] has to be enabled");
     return false;
   }
 
@@ -181,11 +183,11 @@ bool BLEControllerRegistry::addControllerAdapter(const BLEControllerAdapter& ada
 
 BLEControllerInternal* BLEControllerRegistry::_createController(NimBLEAddress allowedAddress) {
   if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
-    BLEGC_LOGE("Cannot create controller");
+    BLEGC_LOGE(LOG_TAG, "Cannot create controller");
     return nullptr;
   }
 
-  BLEGC_LOGD("Creating a new controller instance, address: %s", std::string(allowedAddress).c_str());
+  BLEGC_LOGD(LOG_TAG, "Creating a new controller instance, address: %s", std::string(allowedAddress).c_str());
   _controllers.emplace_back(allowedAddress);
   auto& ctrl = _controllers.back();
 
@@ -205,7 +207,7 @@ BLEControllerInternal* BLEControllerRegistry::_getController(NimBLEAddress addre
 
 bool BLEControllerRegistry::_reserveController(const NimBLEAddress address) {
   if (xSemaphoreTake(_connectionSlots, 0) != pdTRUE) {
-    BLEGC_LOGD("No connections slots left");
+    BLEGC_LOGD(LOG_TAG, "No connections slots left");
     return false;
   }
 
@@ -245,10 +247,10 @@ bool BLEControllerRegistry::_reserveController(const NimBLEAddress address) {
     }
   }
 
-  BLEGC_LOGD("No suitable controller available");
+  BLEGC_LOGD(LOG_TAG, "No suitable controller available");
 
   if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
-    BLEGC_LOGE("Failed to release connection slot");
+    BLEGC_LOGE(LOG_TAG, "Failed to release connection slot");
     return false;
   }
 
@@ -258,7 +260,7 @@ bool BLEControllerRegistry::_reserveController(const NimBLEAddress address) {
 bool BLEControllerRegistry::_releaseController(const NimBLEAddress address) {
   auto* pCtrl = _getController(address);
   if (pCtrl == nullptr) {
-    BLEGC_LOGE("Controller not found, address: %s", std::string(address).c_str());
+    BLEGC_LOGE(LOG_TAG, "Controller not found, address: %s", std::string(address).c_str());
     return false;
   }
 
@@ -266,7 +268,7 @@ bool BLEControllerRegistry::_releaseController(const NimBLEAddress address) {
   pCtrl->setAddress(NimBLEAddress());
 
   if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
-    BLEGC_LOGE("Failed to release connection slot");
+    BLEGC_LOGE(LOG_TAG, "Failed to release connection slot");
     return false;
   }
   return true;
@@ -276,17 +278,17 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
   while (true) {
     BLEClientStatus msg{};
     if (xQueueReceive(_clientStatusQueue, &msg, portMAX_DELAY) != pdTRUE) {
-      BLEGC_LOGE("Failed to receive client status message");
+      BLEGC_LOGE(LOG_TAG, "Failed to receive client status message");
       return;
     }
 
-    BLEGC_LOGD("Handling client status message %s", std::string(msg).c_str());
+    BLEGC_LOGD(LOG_TAG, "Handling client status message %s", std::string(msg).c_str());
 
     switch (msg.kind) {
       case BLEClientConnected: {
         auto* pCtrl = _getController(msg.address);
         if (pCtrl == nullptr) {
-          BLEGC_LOGE("Controller not found, address: %s", std::string(msg.address).c_str());
+          BLEGC_LOGE(LOG_TAG, "Controller not found, address: %s", std::string(msg.address).c_str());
           break;
         }
 
@@ -301,12 +303,12 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
           auto& config = _adapters[i];
 
           if (!pCtrl->init(config)) {
-            BLEGC_LOGW("Failed to initialize controller, address: %s", std::string(msg.address).c_str());
+            BLEGC_LOGW(LOG_TAG, "Failed to initialize controller, address: %s", std::string(msg.address).c_str());
             // this config failed, try another one
             continue;
           }
 
-          BLEGC_LOGD("Controller sucesfuly initialized");
+          BLEGC_LOGD(LOG_TAG, "Controller sucesfuly initialized");
           break;
         }
         // TODO: disconnect and tmp ban?
@@ -314,15 +316,15 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
       case BLEClientDisconnected:
         auto* pCtrl = _getController(msg.address);
         if (pCtrl == nullptr) {
-          BLEGC_LOGE("Controller not found, address: %s", std::string(msg.address).c_str());
+          BLEGC_LOGE(LOG_TAG, "Controller not found, address: %s", std::string(msg.address).c_str());
           break;
         }
 
         if (pCtrl->isInitialized()) {
           if (!pCtrl->deinit(true)) {
-            BLEGC_LOGW("Controller failed to deinitialize, address: %s", std::string(msg.address).c_str());
+            BLEGC_LOGW(LOG_TAG, "Controller failed to deinitialize, address: %s", std::string(msg.address).c_str());
           }
-          BLEGC_LOGD("Controller sucesfuly deinitialized");
+          BLEGC_LOGD(LOG_TAG, "Controller sucesfuly deinitialized");
         }
 
         _releaseController(msg.address);
@@ -337,20 +339,20 @@ void BLEControllerRegistry::_autoScanCheck() {
   const auto isScanning = pScan->isScanning();
 
   if (_autoScanEnabled && isScanning) {
-    BLEGC_LOGD("Auto-scan enabled, scan already in-progress");
+    BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, scan already in-progress");
     // do nothing
   } else if (_autoScanEnabled && !isScanning) {
     if (uxSemaphoreGetCount(_connectionSlots) == 0) {
-      BLEGC_LOGD("Auto-scan enabled, no scan in-progress, no available connection slots left");
+      BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, no scan in-progress, no available connection slots left");
     } else {
-      BLEGC_LOGD("Auto-scan enabled, no scan in-progress, connection slots available -> starting scan");
+      BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, no scan in-progress, connection slots available -> starting scan");
       pScan->start(CONFIG_BT_BLEGC_SCAN_DURATION_MS);
     }
   } else if (!_autoScanEnabled && isScanning) {
-    BLEGC_LOGD("Auto-scan disabled, scan in-progress -> stopping scan");
+    BLEGC_LOGD(LOG_TAG, "Auto-scan disabled, scan in-progress -> stopping scan");
     pScan->stop();
   } else if (!_autoScanEnabled && !isScanning) {
-    BLEGC_LOGD("Auto-scan disabled, no scan in-progress");
+    BLEGC_LOGD(LOG_TAG, "Auto-scan disabled, no scan in-progress");
     // do nothing
   }
 }

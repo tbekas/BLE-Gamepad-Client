@@ -1,6 +1,7 @@
 #pragma once
 
 #include <nimconfig.h>
+#include <nimble/console/console.h>
 
 #ifndef CONFIG_BT_BLEGC_LOG_LEVEL
 #if defined(ARDUINO_ARCH_ESP32) && defined(CORE_DEBUG_LEVEL)
@@ -11,7 +12,7 @@
 #endif
 
 #ifndef CONFIG_BT_BLEGC_LOGGER
-#define CONFIG_BT_BLEGC_LOGGER Serial.printf
+#define CONFIG_BT_BLEGC_LOGGER console_printf
 #endif
 
 #ifndef CONFIG_BT_BLEGC_SCAN_DURATION_MS

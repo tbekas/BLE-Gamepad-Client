@@ -5,10 +5,12 @@
 #include "BLEClientCallbacksImpl.h"
 #include <bitset>
 
+static auto* LOG_TAG = "BLEScanCallbacksImpl";
+
 BLEClientCallbacksImpl clientCallbacks;
 
 void BLEScanCallbacksImpl::onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
-    BLEGC_LOGD("Device discovered, address: %s, address type: %d, name: %s",
+    BLEGC_LOGD(LOG_TAG, "Device discovered, address: %s, address type: %d, name: %s",
                std::string(pAdvertisedDevice->getAddress()).c_str(), pAdvertisedDevice->getAddressType(),
                pAdvertisedDevice->getName().c_str());
 
@@ -40,7 +42,7 @@ void BLEScanCallbacksImpl::onResult(const NimBLEAdvertisedDevice* pAdvertisedDev
     }
 
     if (configMatch.none()) {
-      BLEGC_LOGD("No config found for a device");
+      BLEGC_LOGD(LOG_TAG, "No config found for a device");
       return;
     }
 
@@ -52,11 +54,11 @@ void BLEScanCallbacksImpl::onResult(const NimBLEAdvertisedDevice* pAdvertisedDev
 
     auto* pClient = NimBLEDevice::getClientByPeerAddress(pAdvertisedDevice->getAddress());
     if (pClient) {
-      BLEGC_LOGD("Reusing existing client for a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
+      BLEGC_LOGD(LOG_TAG, "Reusing existing client for a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
     } else {
       pClient = NimBLEDevice::createClient(pAdvertisedDevice->getAddress());
       if (!pClient) {
-        BLEGC_LOGE("Failed to create client for a device, address: %s",
+        BLEGC_LOGE(LOG_TAG, "Failed to create client for a device, address: %s",
                    std::string(pAdvertisedDevice->getAddress()).c_str());
         BLEControllerRegistry::_releaseController(pAdvertisedDevice->getAddress());
         BLEControllerRegistry::_autoScanCheck();
@@ -66,10 +68,10 @@ void BLEScanCallbacksImpl::onResult(const NimBLEAdvertisedDevice* pAdvertisedDev
       pClient->setClientCallbacks(&clientCallbacks, false);
     }
 
-    BLEGC_LOGI("Attempting to connect to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
+    BLEGC_LOGI(LOG_TAG, "Attempting to connect to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
 
     if (!pClient->connect(true, true, true)) {
-      BLEGC_LOGE("Failed to initiate connection, address: %s", std::string(pClient->getPeerAddress()).c_str());
+      BLEGC_LOGE(LOG_TAG, "Failed to initiate connection, address: %s", std::string(pClient->getPeerAddress()).c_str());
       NimBLEDevice::deleteClient(pClient);
       BLEControllerRegistry::_releaseController(pClient->getPeerAddress());
       BLEControllerRegistry::_autoScanCheck();
@@ -78,6 +80,6 @@ void BLEScanCallbacksImpl::onResult(const NimBLEAdvertisedDevice* pAdvertisedDev
   }
 
   void BLEScanCallbacksImpl::onScanEnd(const NimBLEScanResults& results, int reason) {
-    BLEGC_LOGD("Scan ended, reason: 0x%04x %s", reason, NimBLEUtils::returnCodeToString(reason));
+    BLEGC_LOGD(LOG_TAG, "Scan ended, reason: 0x%04x %s", reason, NimBLEUtils::returnCodeToString(reason));
     BLEControllerRegistry::_autoScanCheck();
   }
