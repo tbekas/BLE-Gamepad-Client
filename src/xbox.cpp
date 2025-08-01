@@ -6,6 +6,8 @@
 #include "BLEVibrationsCommand.h"
 #include "logger.h"
 
+static auto* LOG_TAG = "xbox";
+
 const NimBLEUUID hidServiceUUID((uint16_t)0x1812);
 const NimBLEUUID batteryServiceUUID((uint16_t)0x180f);
 
@@ -45,12 +47,12 @@ inline bool decodeButton(uint8_t byte, int bit) {
 
 inline void printBits(uint8_t byte, int label) {
   auto bits = std::bitset<8>(byte);
-  BLEGC_LOGI("Byte %d: %s", label, bits.to_string().c_str());
+  BLEGC_LOGI(LOG_TAG, "Byte %d: %s", label, bits.to_string().c_str());
 }
 
 size_t decodeControlsEvent(BLEControlsEvent& e, uint8_t payload[], size_t payloadLen) {
   if (payloadLen != controlsPayloadLen) {
-    BLEGC_LOGE("Expected %d bytes, was %d bytes", controlsPayloadLen, payloadLen);
+    BLEGC_LOGE(LOG_TAG, "Expected %d bytes, was %d bytes", controlsPayloadLen, payloadLen);
     return 0;
   }
 
@@ -100,7 +102,7 @@ size_t decodeControlsEvent(BLEControlsEvent& e, uint8_t payload[], size_t payloa
 
 size_t decodeBatteryEvent(BLEBatteryEvent& e, uint8_t payload[], size_t payloadLen) {
   if (payloadLen != batteryPayloadLen) {
-    BLEGC_LOGE("Expected %d bytes, was %d bytes", batteryPayloadLen, payloadLen);
+    BLEGC_LOGE(LOG_TAG, "Expected %d bytes, was %d bytes", batteryPayloadLen, payloadLen);
     return 0;
   }
 
@@ -122,7 +124,7 @@ inline uint8_t encodeDuration(uint32_t durationMs) {
 
 size_t encodeVibrationsCommand(const BLEVibrationsCommand& c, uint8_t outBuffer[], size_t bufferLen) {
   if (bufferLen < vibrationsPayloadLen) {
-    BLEGC_LOGW("Expected buffer of at least %d bytes, was %d bytes", vibrationsPayloadLen, bufferLen);
+    BLEGC_LOGW(LOG_TAG, "Expected buffer of at least %d bytes, was %d bytes", vibrationsPayloadLen, bufferLen);
     return 0;
   }
 

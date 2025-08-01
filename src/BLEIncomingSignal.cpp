@@ -8,6 +8,8 @@
 #include "utils.h"
 #include "logger.h"
 
+static auto* LOG_TAG = "BLEIncomingSignal";
+
 template <typename T>
 BLEIncomingSignal<T>::BLEIncomingSignal()
     : _initialized(false),
@@ -43,14 +45,14 @@ bool BLEIncomingSignal<T>::init(NimBLEAddress address, BLEIncomingSignalAdapter<
   auto handlerFn = std::bind(&BLEIncomingSignal<T>::_handleNotify, this, std::placeholders::_1, std::placeholders::_2,
                              std::placeholders::_3, std::placeholders::_4);
 
-  BLEGC_LOGD("Subscribing to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
+  BLEGC_LOGD(LOG_TAG, "Subscribing to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
 
   if (!_pChar->subscribe(true, handlerFn, true)) {
-    BLEGC_LOGE("Failed to subscribe to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
+    BLEGC_LOGE(LOG_TAG, "Failed to subscribe to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
     return false;
   }
 
-  BLEGC_LOGD("Successfully subscribed to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
+  BLEGC_LOGD(LOG_TAG, "Successfully subscribed to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
 
   _initialized = true;
   return true;
@@ -66,10 +68,10 @@ bool BLEIncomingSignal<T>::deinit(bool disconnected) {
   if (!disconnected) {
     if (_pChar) {
       if (!_pChar->unsubscribe()) {
-        BLEGC_LOGW("Failed to unsubscribe from notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
+        BLEGC_LOGW(LOG_TAG, "Failed to unsubscribe from notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
         result = false;
       } else {
-        BLEGC_LOGD("Successfully unsubscribed from notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
+        BLEGC_LOGD(LOG_TAG, "Successfully unsubscribed from notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
       }
     }
   }
@@ -125,14 +127,14 @@ void BLEIncomingSignal<T>::_callConsumerFn(void* pvParameters) {
 
 template <typename T>
 void BLEIncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify) {
-  BLEGC_LOGT("Received a notification. %s", blegc::remoteCharToStr(pChar).c_str());
+  BLEGC_LOGT(LOG_TAG, "Received a notification. %s", blegc::remoteCharToStr(pChar).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   auto result = _decoder(_store.event, pData, length) > 0;
   configASSERT(xSemaphoreGive(_storeMutex));
 
   if (!result) {
-    BLEGC_LOGE("Decoding failed. %s", blegc::remoteCharToStr(pChar).c_str());
+    BLEGC_LOGE(LOG_TAG, "Decoding failed. %s", blegc::remoteCharToStr(pChar).c_str());
   }
 
   if (_onUpdateSet && result) {

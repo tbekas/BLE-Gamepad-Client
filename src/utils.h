@@ -6,6 +6,8 @@
 
 namespace blegc {
 
+  static auto* LOG_TAG = "utils";
+
   static bool isNull(const NimBLEUUID& uuid) { return uuid.bitSize() == 0; }
 
   static std::string remoteCharToStr(const NimBLERemoteCharacteristic* pChar) {
@@ -21,19 +23,19 @@ namespace blegc {
   static bool discoverAttributes(const NimBLEAddress address) {
     auto* pClient = BLEDevice::getClientByPeerAddress(address);
     if (!pClient) {
-      BLEGC_LOGE("BLE client not found, address %s", std::string(address).c_str());
+      BLEGC_LOGE(LOG_TAG, "BLE client not found, address %s", std::string(address).c_str());
       return false;
     }
     if (!pClient->discoverAttributes()) {
-      BLEGC_LOGE("Failed to discover attributes, address %s", std::string(address).c_str());
+      BLEGC_LOGE(LOG_TAG, "Failed to discover attributes, address %s", std::string(address).c_str());
       return false;
     }
 
 #if CONFIG_BT_BLEGC_LOG_LEVEL >= 4
     for (auto& pService : pClient->getServices(false)) {
-      BLEGC_LOGD("Discovered service %s", std::string(pService->getUUID()).c_str());
+      BLEGC_LOGD(LOG_TAG, "Discovered service %s", std::string(pService->getUUID()).c_str());
       for (auto& pChar : pService->getCharacteristics(false)) {
-        BLEGC_LOGD("Discovered characteristic %s", remoteCharToStr(pChar).c_str());
+        BLEGC_LOGD(LOG_TAG, "Discovered characteristic %s", remoteCharToStr(pChar).c_str());
       }
     }
 #endif
@@ -47,19 +49,19 @@ namespace blegc {
       const NimBLEUUID& serviceUUID,
       const NimBLEUUID& characteristicUUID = NimBLEUUID(),
       const BLECharacteristicFilter& filter = [](NimBLERemoteCharacteristic*) { return true; }) {
-    BLEGC_LOGD("Looking up for characteristic, service uuid: %s, characteristic uuid: %s.",
+    BLEGC_LOGD(LOG_TAG, "Looking up for characteristic, service uuid: %s, characteristic uuid: %s.",
                std::string(serviceUUID).c_str(),
                isNull(characteristicUUID) ? "null" : std::string(characteristicUUID).c_str());
 
     auto* pBleClient = NimBLEDevice::getClientByPeerAddress(address);
     if (!pBleClient) {
-      BLEGC_LOGE("BLE client not found, address %s", std::string(address).c_str());
+      BLEGC_LOGE(LOG_TAG, "BLE client not found, address %s", std::string(address).c_str());
       return nullptr;
     }
 
     auto* pService = pBleClient->getService(serviceUUID);
     if (!pService) {
-      BLEGC_LOGE("Service not found, service uuid: %s", std::string(serviceUUID).c_str());
+      BLEGC_LOGE(LOG_TAG, "Service not found, service uuid: %s", std::string(serviceUUID).c_str());
       return nullptr;
     }
 
@@ -75,7 +77,7 @@ namespace blegc {
       return pChar;
     }
 
-    BLEGC_LOGE("Characteristic not found, service uuid: %s, characteristic uuid: %s.", std::string(serviceUUID).c_str(),
+    BLEGC_LOGE(LOG_TAG, "Characteristic not found, service uuid: %s, characteristic uuid: %s.", std::string(serviceUUID).c_str(),
                isNull(characteristicUUID) ? "null" : std::string(characteristicUUID).c_str());
 
     return nullptr;

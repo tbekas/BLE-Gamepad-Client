@@ -7,6 +7,8 @@
 #include "utils.h"
 #include "logger.h"
 
+static auto* LOG_TAG = "BLEOutgoingSignal";
+
 constexpr size_t maxCapacity = 1024;
 
 template <typename T>
@@ -95,7 +97,7 @@ void BLEOutgoingSignal<T>::write(const T& value) {
   configASSERT(xSemaphoreGive(_storeMutex));
 
   if (!result) {
-    BLEGC_LOGE("Encoding failed");
+    BLEGC_LOGE(LOG_TAG, "Encoding failed");
     return;
   }
 
@@ -120,16 +122,16 @@ void BLEOutgoingSignal<T>::_sendDataFn(void* pvParameters) {
     configASSERT(xSemaphoreGive(self->_storeMutex));
 
     if (!result) {
-      BLEGC_LOGE("Encoding failed");
+      BLEGC_LOGE(LOG_TAG, "Encoding failed");
       continue;
     }
 
     if (!self->_pChar) {
-      BLEGC_LOGE("Remote characteristic not initialized");
+      BLEGC_LOGE(LOG_TAG, "Remote characteristic not initialized");
       continue;
     }
 
-    BLEGC_LOGT("Writing value. %s", blegc::remoteCharToStr(self->_pChar).c_str());
+    BLEGC_LOGT(LOG_TAG, "Writing value. %s", blegc::remoteCharToStr(self->_pChar).c_str());
 
     self->_pChar->writeValue(self->_store.pSendBuffer, used);
   }
