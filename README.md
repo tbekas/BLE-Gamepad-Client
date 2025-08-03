@@ -6,7 +6,7 @@ Controller is supported.
 # Arduino Library
 
 * Open Arduino Library Manager: Tools -> Manage Libraries.
-* Search for `BLE-Gamepad-Client` and install it
+* Search for `BLE-Gamepad-Client` and install it.
 
 # PlatformIO dependency
 
