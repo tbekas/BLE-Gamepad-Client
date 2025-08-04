@@ -3,6 +3,11 @@
 This library enables connecting BLE (Bluetooth Low Energy) gamepads to ESP32 boards. Currently, only the Xbox Wireless
 Controller is supported.
 
+# Arduino Library
+
+* Open Arduino Library Manager: Tools -> Manage Libraries.
+* Search for `BLE-Gamepad-Client` and install it.
+
 # PlatformIO dependency
 
 Add the following line to
@@ -27,13 +32,15 @@ void setup(void) {
 }
 
 void loop() {
-  BLEControlsEvent e;
-
   if (controller.isConnected()) {
+    BLEControlsEvent e;
     controller.readControls(e);
-    Serial.printf("lx: %.2f, ly: %.2f\n", e.leftStickX, e.leftStickY);
-  }
 
+    Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
+      e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);
+  } else {
+    Serial.println("controller not connected");
+  }
   delay(100);
 }
 ```
