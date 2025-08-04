@@ -45,6 +45,14 @@ void loop() {
 }
 ```
 
+# Step-by-step tutorials
+
+### How to Connect an Xbox Controller to ESP32 Using Arduino IDE
+[![How to Connect an Xbox Controller to ESP32 Using Arduino IDE](https://img.youtube.com/vi/5oH3JBZrI9c/mqdefault.jpg)](https://www.youtube.com/watch?v=5oH3JBZrI9c)
+
+### How to Connect an Xbox Controller to ESP32 Using VSCode and PlatformIO
+[![How to Connect an Xbox Controller to ESP32 Using VSCode and PlatformIO](https://img.youtube.com/vi/eePqTX-07oo/mqdefault.jpg)](https://www.youtube.com/watch?v=eePqTX-07oo)
+
 # More examples
 
 Checkout the code examples in
