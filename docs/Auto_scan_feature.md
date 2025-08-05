@@ -1,4 +1,4 @@
-# Auto scan feature
+# Auto-scan feature
 
 The auto-scan feature (enabled by default) simplifies connecting BLE controllers by automatically managing the scanning
 process in the background. It starts scanning whenever there are any initialized `BLEController` instances that are not
