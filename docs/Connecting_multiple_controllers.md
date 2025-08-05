@@ -35,9 +35,29 @@ This ensures that each physical controller is always mapped to the correct insta
 
 If you don’t know the MAC address of your controller, you can use
 the [nRF Connect for Mobile](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-mobile) app to scan
-nearby BLE devices.
-Alternatively, you can enable debug logging by setting `CORE_DEBUG_LEVEL` to `4`, and check the MAC address in the
-serial logs during the connection process.
+nearby BLE devices. 
+
+Alternatively, you can register an `onConnect` callback on the `BLEController` instance and log the
+controller’s MAC address to the serial output when it connects.
+
+```cpp
+#include <BLEController.h>
+#include <Arduino.h>
+
+void onConnect(NimBLEAddress address) {
+  Serial.printf("controller connected, address: %s\n", address.toString().c_str());
+}
+
+void setup(void) {
+  Serial.begin(115200);
+  controller.begin();
+  controller.onConnect(onConnect);
+}
+
+void loop() {
+  // Code omitted for brevity
+}
+```
 
 # Connecting more than 3 devices
 
