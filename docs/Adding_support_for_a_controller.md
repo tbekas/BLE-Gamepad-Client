@@ -55,4 +55,4 @@ void loop() {
 ```
 
 You can find a more advanced example in the repository:
-[xbox.cpp](https://github.com/tbekas/BLE-Gamepad-Client/tree/0.3.2/src/xbox.cpp)
+[xbox.cpp](https://github.com/tbekas/BLE-Gamepad-Client/tree/0.3.3/src/xbox.cpp)
