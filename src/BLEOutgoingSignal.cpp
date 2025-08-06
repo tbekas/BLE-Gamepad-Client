@@ -41,7 +41,6 @@ bool BLEOutgoingSignal<T>::init(NimBLEAddress address, BLEOutgoingSignalAdapter<
 
   _storeMutex = xSemaphoreCreateMutex();
   configASSERT(_storeMutex);
-  configASSERT(xSemaphoreGive(_storeMutex));
   xTaskCreate(_sendDataFn, "_sendDataFn", 10000, this, 0, &_sendDataTask);
   configASSERT(_sendDataTask);
 
