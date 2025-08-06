@@ -31,7 +31,6 @@ bool BLEIncomingSignal<T>::init(NimBLEAddress address, BLEIncomingSignalAdapter<
 
   _storeMutex = xSemaphoreCreateMutex();
   configASSERT(_storeMutex);
-  configASSERT(xSemaphoreGive(_storeMutex));
   xTaskCreate(_callConsumerFn, "_callConsumerFn", 10000, this, 0, &_callOnUpdateTask);
   configASSERT(_callOnUpdateTask);
 
