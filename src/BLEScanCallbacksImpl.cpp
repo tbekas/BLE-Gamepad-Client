@@ -19,9 +19,8 @@ void BLEScanCallbacksImpl::onResult(const NimBLEAdvertisedDevice* pAdvertisedDev
     for (int i = 0; i < BLEControllerRegistry::_adapters.size(); i++) {
       auto& config = BLEControllerRegistry::_adapters[i];
 
-      if (pAdvertisedDevice->haveName() && !config.deviceName.empty() &&
-          pAdvertisedDevice->getName() == config.deviceName) {
-        configMatch[i] = true;
+      if (!config.deviceName.empty()) {
+        configMatch[i] = pAdvertisedDevice->haveName() && pAdvertisedDevice->getName() == config.deviceName;
         continue;
       }
 

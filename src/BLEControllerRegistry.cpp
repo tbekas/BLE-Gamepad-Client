@@ -10,6 +10,7 @@
 #include "config.h"
 #include "logger.h"
 #include "xbox.h"
+#include "steam.h"
 
 static auto* LOG_TAG = "BLEControllerRegistry";
 
@@ -39,6 +40,7 @@ bool BLEControllerRegistry::init() {
   configASSERT(_clientStatusConsumerTask);
 
   // default adapter - lowest priority in front
+  // _adapters.push_front(blegc::steamControllerAdapter);
   _adapters.push_front(blegc::xboxControllerAdapter);
 
   if (!NimBLEDevice::isInitialized()) {
