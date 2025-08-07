@@ -30,7 +30,7 @@ bool BLEController::begin() {
     return false;
   }
 
-  _pCtrl = BLEControllerRegistry::_createController(_allowedAddress);
+  _pCtrl = BLEControllerRegistry::createController(_allowedAddress);
   if (!_pCtrl) {
     return false;
   }

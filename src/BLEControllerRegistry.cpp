@@ -38,9 +38,6 @@ bool BLEControllerRegistry::init() {
                           &_clientStatusConsumerTask, CONFIG_BT_NIMBLE_PINNED_TO_CORE);
   configASSERT(_clientStatusConsumerTask);
 
-  // default adapter - lowest priority in front
-  _adapters.push_front(blegc::xboxControllerAdapter);
-
   if (!NimBLEDevice::isInitialized()) {
     NimBLEDevice::init(CONFIG_BT_BLEGC_DEVICE_NAME);
     NimBLEDevice::setPower(CONFIG_BT_BLEGC_POWER_DBM);
@@ -51,11 +48,6 @@ bool BLEControllerRegistry::init() {
   if (_deleteBonds) {
     NimBLEDevice::deleteAllBonds();
   }
-
-  auto* pScan = NimBLEDevice::getScan();
-  pScan->setScanCallbacks(&scanCallbacks, false);
-  pScan->setActiveScan(true);
-  pScan->setMaxResults(0);
 
   _initialized = true;
   return true;
@@ -161,27 +153,8 @@ void BLEControllerRegistry::deleteBonds() {
     NimBLEDevice::deleteAllBonds();
   }
 }
-/**
- * @brief Registers an adapter for a new controller type. Adapter is used to set up a connection and to
- * decode raw data coming from the controller.
- * @param adapter Adapter to be added.
- * @return True if successful.
- */
-bool BLEControllerRegistry::addControllerAdapter(const BLEControllerAdapter& adapter) {
-  if (_adapters.size() >= MAX_CTRL_ADAPTER_COUNT) {
-    BLEGC_LOGE(LOG_TAG, "Reached maximum number of adapter: %d", MAX_CTRL_ADAPTER_COUNT);
-    return false;
-  }
-  if (adapter.controls.isDisabled() && adapter.battery.isDisabled() && adapter.vibrations.isDisabled()) {
-    BLEGC_LOGE(LOG_TAG, "Invalid adapter, at least one of [`controls`, `battery`, `vibrations`] has to be enabled");
-    return false;
-  }
 
-  _adapters.push_back(adapter);
-  return true;
-}
-
-BLEControllerInternal* BLEControllerRegistry::_createController(NimBLEAddress allowedAddress) {
+BLEControllerInternal* BLEControllerRegistry::createController(NimBLEAddress allowedAddress) {
   if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
     BLEGC_LOGE(LOG_TAG, "Cannot create controller");
     return nullptr;
@@ -205,7 +178,7 @@ BLEControllerInternal* BLEControllerRegistry::_getController(NimBLEAddress addre
   return nullptr;
 }
 
-bool BLEControllerRegistry::_reserveController(const NimBLEAddress address) {
+bool BLEControllerRegistry::reserveController(const NimBLEAddress address) {
   if (xSemaphoreTake(_connectionSlots, 0) != pdTRUE) {
     BLEGC_LOGD(LOG_TAG, "No connections slots left");
     return false;
@@ -257,7 +230,7 @@ bool BLEControllerRegistry::_reserveController(const NimBLEAddress address) {
   return false;
 }
 
-bool BLEControllerRegistry::_releaseController(const NimBLEAddress address) {
+bool BLEControllerRegistry::releaseController(const NimBLEAddress address) {
   auto* pCtrl = _getController(address);
   if (pCtrl == nullptr) {
     BLEGC_LOGE(LOG_TAG, "Controller not found, address: %s", std::string(address).c_str());
@@ -327,7 +300,7 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
           BLEGC_LOGD(LOG_TAG, "Controller sucesfuly deinitialized");
         }
 
-        _releaseController(msg.address);
+        releaseController(msg.address);
         _autoScanCheck();
         break;
     }
@@ -335,26 +308,7 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
 }
 
 void BLEControllerRegistry::_autoScanCheck() {
-  auto* pScan = NimBLEDevice::getScan();
-  const auto isScanning = pScan->isScanning();
 
-  if (_autoScanEnabled && isScanning) {
-    BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, scan already in-progress");
-    // do nothing
-  } else if (_autoScanEnabled && !isScanning) {
-    if (uxSemaphoreGetCount(_connectionSlots) == 0) {
-      BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, no scan in-progress, no available connection slots left");
-    } else {
-      BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, no scan in-progress, connection slots available -> starting scan");
-      pScan->start(CONFIG_BT_BLEGC_SCAN_DURATION_MS);
-    }
-  } else if (!_autoScanEnabled && isScanning) {
-    BLEGC_LOGD(LOG_TAG, "Auto-scan disabled, scan in-progress -> stopping scan");
-    pScan->stop();
-  } else if (!_autoScanEnabled && !isScanning) {
-    BLEGC_LOGD(LOG_TAG, "Auto-scan disabled, no scan in-progress");
-    // do nothing
-  }
 }
 
 bool BLEControllerRegistry::_initialized{false};

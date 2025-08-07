@@ -17,7 +17,7 @@ void BLEClientCallbacksImpl::onConnectFail(NimBLEClient* pClient, int reason) {
   BLEGC_LOGE(LOG_TAG, "Failed connecting to a device, address: %s, reason: 0x%04x %s",
              std::string(pClient->getPeerAddress()).c_str(), reason, NimBLEUtils::returnCodeToString(reason));
   NimBLEDevice::deleteClient(pClient);
-  BLEControllerRegistry::_releaseController(pClient->getPeerAddress());
+  BLEControllerRegistry::releaseController(pClient->getPeerAddress());
   BLEControllerRegistry::_autoScanCheck();
 }
 

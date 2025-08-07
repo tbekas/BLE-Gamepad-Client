@@ -1,85 +1,61 @@
 #include "BLEScanCallbacksImpl.h"
-#include "logger.h"
+#include <bitset>
+#include "BLEClientCallbacksImpl.h"
 #include "BLEControllerRegistry.h"
 #include "config.h"
-#include "BLEClientCallbacksImpl.h"
-#include <bitset>
+#include "logger.h"
 
 static auto* LOG_TAG = "BLEScanCallbacksImpl";
 
 BLEClientCallbacksImpl clientCallbacks;
 
+BLEScanCallbacksImpl::BLEScanCallbacksImpl(BLEAdapterRegistry& adapterRegistry,
+                                           BLEControllerRegistry& controllerRegistry)
+    : _adapterRegistry(adapterRegistry), _controllerRegistry(controllerRegistry) {}
+
 void BLEScanCallbacksImpl::onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
-    BLEGC_LOGD(LOG_TAG, "Device discovered, address: %s, address type: %d, name: %s",
-               std::string(pAdvertisedDevice->getAddress()).c_str(), pAdvertisedDevice->getAddressType(),
-               pAdvertisedDevice->getName().c_str());
+  BLEGC_LOGD(LOG_TAG, "Device discovered, address: %s, address type: %d, name: %s",
+             std::string(pAdvertisedDevice->getAddress()).c_str(), pAdvertisedDevice->getAddressType(),
+             pAdvertisedDevice->getName().c_str());
 
-    auto configMatch = std::bitset<MAX_CTRL_ADAPTER_COUNT>();
+  if (!_adapterRegistry.matchAdapters(pAdvertisedDevice)) {
+    BLEGC_LOGD(LOG_TAG, "No adapters found for a device");
+    return;
+  }
 
-    for (int i = 0; i < BLEControllerRegistry::_adapters.size(); i++) {
-      auto& config = BLEControllerRegistry::_adapters[i];
+  if (!BLEControllerRegistry::reserveController(pAdvertisedDevice->getAddress())) {
+    return;
+  }
 
-      if (pAdvertisedDevice->haveName() && !config.deviceName.empty() &&
-          pAdvertisedDevice->getName() == config.deviceName) {
-        configMatch[i] = true;
-        continue;
-      }
-
-      if (config.controls.isEnabled() && pAdvertisedDevice->isAdvertisingService(config.controls.serviceUUID)) {
-        configMatch[i] = true;
-        continue;
-      }
-
-      if (config.battery.isEnabled() && pAdvertisedDevice->isAdvertisingService(config.battery.serviceUUID)) {
-        configMatch[i] = true;
-        continue;
-      }
-
-      if (config.vibrations.isEnabled() && pAdvertisedDevice->isAdvertisingService(config.vibrations.serviceUUID)) {
-        configMatch[i] = true;
-        continue;
-      }
-    }
-
-    if (configMatch.none()) {
-      BLEGC_LOGD(LOG_TAG, "No config found for a device");
-      return;
-    }
-
-    if (!BLEControllerRegistry::_reserveController(pAdvertisedDevice->getAddress())) {
-      return;
-    }
-
-    BLEControllerRegistry::_adapterMatch[pAdvertisedDevice->getAddress()] = configMatch.to_ulong();
-
-    auto* pClient = NimBLEDevice::getClientByPeerAddress(pAdvertisedDevice->getAddress());
-    if (pClient) {
-      BLEGC_LOGD(LOG_TAG, "Reusing existing client for a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
-    } else {
-      pClient = NimBLEDevice::createClient(pAdvertisedDevice->getAddress());
-      if (!pClient) {
-        BLEGC_LOGE(LOG_TAG, "Failed to create client for a device, address: %s",
-                   std::string(pAdvertisedDevice->getAddress()).c_str());
-        BLEControllerRegistry::_releaseController(pAdvertisedDevice->getAddress());
-        BLEControllerRegistry::_autoScanCheck();
-        return;
-      }
-      pClient->setConnectTimeout(CONFIG_BT_BLEGC_CONN_TIMEOUT_MS);
-      pClient->setClientCallbacks(&clientCallbacks, false);
-    }
-
-    BLEGC_LOGI(LOG_TAG, "Attempting to connect to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
-
-    if (!pClient->connect(true, true, true)) {
-      BLEGC_LOGE(LOG_TAG, "Failed to initiate connection, address: %s", std::string(pClient->getPeerAddress()).c_str());
-      NimBLEDevice::deleteClient(pClient);
-      BLEControllerRegistry::_releaseController(pClient->getPeerAddress());
+  auto* pClient = NimBLEDevice::getClientByPeerAddress(pAdvertisedDevice->getAddress());
+  if (pClient) {
+    BLEGC_LOGD(LOG_TAG, "Reusing existing client for a device, address: %s",
+               std::string(pClient->getPeerAddress()).c_str());
+  } else {
+    pClient = NimBLEDevice::createClient(pAdvertisedDevice->getAddress());
+    if (!pClient) {
+      BLEGC_LOGE(LOG_TAG, "Failed to create client for a device, address: %s",
+                 std::string(pAdvertisedDevice->getAddress()).c_str());
+      BLEControllerRegistry::releaseController(pAdvertisedDevice->getAddress());
       BLEControllerRegistry::_autoScanCheck();
       return;
     }
+    pClient->setConnectTimeout(CONFIG_BT_BLEGC_CONN_TIMEOUT_MS);
+    pClient->setClientCallbacks(&clientCallbacks, false);
   }
 
-  void BLEScanCallbacksImpl::onScanEnd(const NimBLEScanResults& results, int reason) {
-    BLEGC_LOGD(LOG_TAG, "Scan ended, reason: 0x%04x %s", reason, NimBLEUtils::returnCodeToString(reason));
+  BLEGC_LOGI(LOG_TAG, "Attempting to connect to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
+
+  if (!pClient->connect(true, true, true)) {
+    BLEGC_LOGE(LOG_TAG, "Failed to initiate connection, address: %s", std::string(pClient->getPeerAddress()).c_str());
+    NimBLEDevice::deleteClient(pClient);
+    BLEControllerRegistry::releaseController(pClient->getPeerAddress());
     BLEControllerRegistry::_autoScanCheck();
+    return;
   }
+}
+
+void BLEScanCallbacksImpl::onScanEnd(const NimBLEScanResults& results, int reason) {
+  BLEGC_LOGD(LOG_TAG, "Scan ended, reason: 0x%04x %s", reason, NimBLEUtils::returnCodeToString(reason));
+  BLEControllerRegistry::_autoScanCheck();
+}
