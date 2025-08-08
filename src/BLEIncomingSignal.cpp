@@ -18,7 +18,7 @@ BLEIncomingSignal<T>::BLEIncomingSignal()
       _decoder([](T&, uint8_t[], size_t) { return 1; }),
       _address(),
       _pChar(nullptr),
-      _callOnUpdateTask(nullptr),
+      _onUpdateTask(nullptr),
       _storeMutex(nullptr),
       _store({.event = T()}) {}
 
@@ -31,8 +31,8 @@ bool BLEIncomingSignal<T>::init(NimBLEAddress address, BLEIncomingSignalAdapter<
 
   _storeMutex = xSemaphoreCreateMutex();
   configASSERT(_storeMutex);
-  xTaskCreate(_callConsumerFn, "_callConsumerFn", 10000, this, 0, &_callOnUpdateTask);
-  configASSERT(_callOnUpdateTask);
+  xTaskCreate(_onUpdateTaskFn, "_onUpdateTask", 10000, this, 0, &_onUpdateTask);
+  configASSERT(_onUpdateTask);
 
   _decoder = adapter.decoder;
   _pChar = blegc::findCharacteristic(_address, adapter.serviceUUID, adapter.characteristicUUID,
@@ -75,8 +75,8 @@ bool BLEIncomingSignal<T>::deinit(bool disconnected) {
     }
   }
 
-  if (_callOnUpdateTask != nullptr) {
-    vTaskDelete(_callOnUpdateTask);
+  if (_onUpdateTask != nullptr) {
+    vTaskDelete(_onUpdateTask);
   }
   if (_storeMutex != nullptr) {
     vSemaphoreDelete(_storeMutex);
@@ -111,7 +111,7 @@ void BLEIncomingSignal<T>::onUpdate(const OnUpdate<T>& onUpdate) {
 }
 
 template <typename T>
-void BLEIncomingSignal<T>::_callConsumerFn(void* pvParameters) {
+void BLEIncomingSignal<T>::_onUpdateTaskFn(void* pvParameters) {
   auto* self = static_cast<BLEIncomingSignal*>(pvParameters);
 
   while (true) {
@@ -137,6 +137,6 @@ void BLEIncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar, uint
   }
 
   if (_onUpdateSet && result) {
-    xTaskNotifyGive(_callOnUpdateTask);
+    xTaskNotifyGive(_onUpdateTask);
   }
 }

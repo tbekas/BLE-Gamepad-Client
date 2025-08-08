@@ -1,6 +1,7 @@
 #include "BLEController.h"
 #include <NimBLEDevice.h>
-#include "BLEControllerRegistry.h"
+#include "BLEGamepadClient.h"
+#include "logger.h"
 
 BLEController::BLEController() : BLEController(NimBLEAddress()) {}
 
@@ -20,8 +21,8 @@ BLEController::BLEController(const NimBLEAddress address)
  * @return True if initialization was successful.
  */
 bool BLEController::begin() {
-  if (!BLEControllerRegistry::isInitialized()) {
-    if (!BLEControllerRegistry::init()) {
+  if (!BLEGamepadClient::isInitialized()) {
+    if (!BLEGamepadClient::init()) {
       return false;
     }
   }
@@ -30,7 +31,7 @@ bool BLEController::begin() {
     return false;
   }
 
-  _pCtrl = BLEControllerRegistry::createController(_allowedAddress);
+  _pCtrl = BLEGamepadClient::_controllerRegistry.createController(_allowedAddress);
   if (!_pCtrl) {
     return false;
   }

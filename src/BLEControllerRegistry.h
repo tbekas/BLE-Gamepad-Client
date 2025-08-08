@@ -1,50 +1,53 @@
 #pragma once
 
 #include <NimBLEDevice.h>
-
 #include <list>
 
-#include "BLEController.h"
-#include "BLEControllerAdapter.h"
+#include "BLEControllerAdapterRegistry.h"
 #include "BLEControllerInternal.h"
-#include "BLEGamepadClient.h"
 
-enum BLEClientStatusMsgKind : uint8_t {
- BLEClientConnected = 0,
- BLEClientDisconnected = 1
-};
+enum BLEClientStatusMsgKind : uint8_t { BLEClientConnected = 0, BLEClientDisconnected = 1 };
 
 struct BLEClientStatus {
- NimBLEAddress address;
- BLEClientStatusMsgKind kind;
+  NimBLEAddress address;
+  BLEClientStatusMsgKind kind;
 
- explicit operator std::string() const;
+  explicit operator std::string() const;
 };
 
 class BLEControllerRegistry {
  public:
-  static bool init();
-  static bool deinit();
-  static bool isInitialized();
+  BLEControllerRegistry(TaskHandle_t& autoScanTask, BLEControllerAdapterRegistry& adapterRegistry);
 
-  friend class BLEClientCallbacksImpl;
-  friend class BLEScanCallbacksImpl;
-  friend class BLEController;
-  friend class BLEGamepadClient;
+  bool init();
+  bool deinit();
+  bool isInitialized();
+  BLEControllerInternal* createController(NimBLEAddress allowedAddress);
+  void connectController(NimBLEAddress address);
+  unsigned int getAvailableConnectionSlotCount() const;
 
-  static BLEControllerInternal* createController(NimBLEAddress allowedAddress);
-  static bool reserveController(NimBLEAddress address);
-  static bool releaseController(NimBLEAddress address);
  private:
-  static BLEControllerInternal* _getController(NimBLEAddress address);
-  static void _clientStatusConsumerFn(void* pvParameters);
-  static void _autoScanCheck();
-  static bool _initialized;
-  static bool _autoScanEnabled;
-  static bool _deleteBonds;
-  static QueueHandle_t _clientStatusQueue;
-  static TaskHandle_t _clientStatusConsumerTask;
-  static SemaphoreHandle_t _connectionSlots;
-  static std::list<BLEControllerInternal> _controllers;
+  class ClientCallbacks final : public NimBLEClientCallbacks {
+   public:
+    explicit ClientCallbacks(BLEControllerRegistry& controllerRegistry);
+    void onConnect(NimBLEClient* pClient) override;
+    void onConnectFail(NimBLEClient* pClient, int reason) override;
+    void onAuthenticationComplete(NimBLEConnInfo& connInfo) override;
+    void onDisconnect(NimBLEClient* pClient, int reason) override;
+    BLEControllerRegistry& _controllerRegistry;
+  };
 
+  BLEControllerInternal* _getController(NimBLEAddress address);
+  bool _reserveController(NimBLEAddress address);
+  bool _releaseController(NimBLEAddress address);
+  static void _clientStatusConsumerFn(void* pvParameters);
+
+  bool _initialized;
+  TaskHandle_t& _autoScanTask;
+  BLEControllerAdapterRegistry& _adapterRegistry;
+  QueueHandle_t _clientStatusQueue;
+  TaskHandle_t _clientStatusConsumerTask;
+  SemaphoreHandle_t _connectionSlots;
+  std::list<BLEControllerInternal> _controllers;
+  ClientCallbacks _clientCallbacks;
 };

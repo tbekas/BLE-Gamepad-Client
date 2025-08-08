@@ -7,12 +7,6 @@
 template <typename T>
 class BLEOutgoingSignal {
  public:
-  struct Store {
-    uint8_t* pBuffer{};
-    uint8_t* pSendBuffer{};
-    size_t used{};
-    size_t capacity{};
-  };
   BLEOutgoingSignal();
   ~BLEOutgoingSignal() = default;
   bool init(NimBLEAddress address, BLEOutgoingSignalAdapter<T>& adapter);
@@ -21,6 +15,12 @@ class BLEOutgoingSignal {
   void write(const T& value);
 
  private:
+  struct Store {
+    uint8_t* pBuffer{};
+    uint8_t* pSendBuffer{};
+    size_t used{};
+    size_t capacity{};
+  };
   static void _sendDataFn(void* pvParameters);
   bool _initialized;
   BLESignalEncoder<T> _encoder;

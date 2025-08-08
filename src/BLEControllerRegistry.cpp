@@ -5,20 +5,24 @@
 #include <NimBLEScan.h>
 #include <NimBLEUtils.h>
 #include <bitset>
-#include "BLEClientCallbacksImpl.h"
-#include "BLEScanCallbacksImpl.h"
 #include "config.h"
 #include "logger.h"
-#include "xbox.h"
 
 static auto* LOG_TAG = "BLEControllerRegistry";
-
-BLEScanCallbacksImpl scanCallbacks;
 
 BLEClientStatus::operator std::string() const {
   auto kindStr = kind == BLEClientConnected ? "BLEClientConnected" : "BLEClientDisconnected";
   return "BLEClientStatus address: " + std::string(address) + ", kind: " + kindStr;
 }
+
+BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask, BLEControllerAdapterRegistry& adapterRegistry)
+    : _initialized(false),
+      _autoScanTask(autoScanTask),
+      _adapterRegistry(adapterRegistry),
+      _clientStatusQueue(nullptr),
+      _clientStatusConsumerTask(nullptr),
+      _connectionSlots(nullptr),
+      _clientCallbacks(*this) {}
 
 /**
  * @brief Initializes a BLEControllerRegistry.
@@ -34,20 +38,9 @@ bool BLEControllerRegistry::init() {
   _clientStatusQueue = xQueueCreate(10, sizeof(BLEClientStatus));
   configASSERT(_clientStatusQueue);
 
-  xTaskCreatePinnedToCore(_clientStatusConsumerFn, "_bleConnectionMsgConsumerTask", 10000, nullptr, 0,
+  xTaskCreatePinnedToCore(_clientStatusConsumerFn, "_bleConnectionMsgConsumerTask", 10000, this, 0,
                           &_clientStatusConsumerTask, CONFIG_BT_NIMBLE_PINNED_TO_CORE);
   configASSERT(_clientStatusConsumerTask);
-
-  if (!NimBLEDevice::isInitialized()) {
-    NimBLEDevice::init(CONFIG_BT_BLEGC_DEVICE_NAME);
-    NimBLEDevice::setPower(CONFIG_BT_BLEGC_POWER_DBM);
-    NimBLEDevice::setSecurityAuth(CONFIG_BT_BLEGC_SECURITY_AUTH);
-    NimBLEDevice::setSecurityIOCap(CONFIG_BT_BLEGC_SECURITY_IO_CAP);
-  }
-
-  if (_deleteBonds) {
-    NimBLEDevice::deleteAllBonds();
-  }
 
   _initialized = true;
   return true;
@@ -107,53 +100,6 @@ bool BLEControllerRegistry::isInitialized() {
   return _initialized;
 }
 
-/**
- * @brief Enables the auto-scan feature.
- *
- * Auto-scan automatically starts scanning whenever there are one or more `BLEController` instances that have been
- * initialized with `BLEController::begin()` but are not yet connected. Scanning stops automatically once all `BLEController`
- * instances are connected.
- */
-void BLEControllerRegistry::enableAutoScan() {
-  _autoScanEnabled = true;
-  if (_initialized) {
-    _autoScanCheck();
-  }
-}
-
-/**
- * @brief Disables the auto-scan feature.
- *
- * @copydetails enableAutoScan
- */
-void BLEControllerRegistry::disableAutoScan() {
-  _autoScanEnabled = false;
-  if (_initialized) {
-    _autoScanCheck();
-  }
-}
-
-/**
- * @brief Checks whether the auto-scan feature is enabled.
- *
- * @copydetails enableAutoScan
- *
- * @return True if auto-scan is enabled; false otherwise.
- */
-bool BLEControllerRegistry::isAutoScanEnabled() {
-  return _autoScanEnabled;
-}
-
-/**
- * @brief Deletes all stored bonding information.
- */
-void BLEControllerRegistry::deleteBonds() {
-  _deleteBonds = true;
-  if (_initialized) {
-    NimBLEDevice::deleteAllBonds();
-  }
-}
-
 BLEControllerInternal* BLEControllerRegistry::createController(NimBLEAddress allowedAddress) {
   if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
     BLEGC_LOGE(LOG_TAG, "Cannot create controller");
@@ -164,8 +110,39 @@ BLEControllerInternal* BLEControllerRegistry::createController(NimBLEAddress all
   _controllers.emplace_back(allowedAddress);
   auto& ctrl = _controllers.back();
 
-  _autoScanCheck();
+  xTaskNotifyGive(_autoScanTask);
   return &ctrl;
+}
+void BLEControllerRegistry::connectController(NimBLEAddress address) {
+  if (!_reserveController(address)) {
+    return;
+  }
+
+  auto* pClient = NimBLEDevice::getClientByPeerAddress(address);
+  if (pClient) {
+    BLEGC_LOGD(LOG_TAG, "Reusing existing client for a device, address: %s",
+               std::string(pClient->getPeerAddress()).c_str());
+  } else {
+    pClient = NimBLEDevice::createClient(address);
+    if (!pClient) {
+      BLEGC_LOGE(LOG_TAG, "Failed to create client for a device, address: %s", std::string(address).c_str());
+      _releaseController(address);
+      xTaskNotifyGive(_autoScanTask);
+      return;
+    }
+    pClient->setConnectTimeout(CONFIG_BT_BLEGC_CONN_TIMEOUT_MS);
+    pClient->setClientCallbacks(&_clientCallbacks, false);
+  }
+
+  BLEGC_LOGI(LOG_TAG, "Attempting to connect to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
+
+  if (!pClient->connect(true, true, true)) {
+    BLEGC_LOGE(LOG_TAG, "Failed to initiate connection, address: %s", std::string(pClient->getPeerAddress()).c_str());
+    NimBLEDevice::deleteClient(pClient);
+    _releaseController(pClient->getPeerAddress());
+    xTaskNotifyGive(_autoScanTask);
+    return;
+  }
 }
 
 BLEControllerInternal* BLEControllerRegistry::_getController(NimBLEAddress address) {
@@ -178,7 +155,7 @@ BLEControllerInternal* BLEControllerRegistry::_getController(NimBLEAddress addre
   return nullptr;
 }
 
-bool BLEControllerRegistry::reserveController(const NimBLEAddress address) {
+bool BLEControllerRegistry::_reserveController(const NimBLEAddress address) {
   if (xSemaphoreTake(_connectionSlots, 0) != pdTRUE) {
     BLEGC_LOGD(LOG_TAG, "No connections slots left");
     return false;
@@ -230,7 +207,7 @@ bool BLEControllerRegistry::reserveController(const NimBLEAddress address) {
   return false;
 }
 
-bool BLEControllerRegistry::releaseController(const NimBLEAddress address) {
+bool BLEControllerRegistry::_releaseController(const NimBLEAddress address) {
   auto* pCtrl = _getController(address);
   if (pCtrl == nullptr) {
     BLEGC_LOGE(LOG_TAG, "Controller not found, address: %s", std::string(address).c_str());
@@ -247,10 +224,20 @@ bool BLEControllerRegistry::releaseController(const NimBLEAddress address) {
   return true;
 }
 
+unsigned int BLEControllerRegistry::getAvailableConnectionSlotCount() const {
+  if (!_initialized) {
+    return 0;
+  }
+
+  return uxSemaphoreGetCount(_connectionSlots);
+}
+
 void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
+  auto* self = static_cast<BLEControllerRegistry*>(pvParameters);
+
   while (true) {
     BLEClientStatus msg{};
-    if (xQueueReceive(_clientStatusQueue, &msg, portMAX_DELAY) != pdTRUE) {
+    if (xQueueReceive(self->_clientStatusQueue, &msg, portMAX_DELAY) != pdTRUE) {
       BLEGC_LOGE(LOG_TAG, "Failed to receive client status message");
       return;
     }
@@ -259,35 +246,42 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
 
     switch (msg.kind) {
       case BLEClientConnected: {
-        auto* pCtrl = _getController(msg.address);
+        auto* pCtrl = self->_getController(msg.address);
         if (pCtrl == nullptr) {
           BLEGC_LOGE(LOG_TAG, "Controller not found, address: %s", std::string(msg.address).c_str());
           break;
         }
 
-        auto configMatch = std::bitset<MAX_CTRL_ADAPTER_COUNT>(_adapterMatch[msg.address]);
-        const int configsSize = _adapters.size();
-        // reverse iteration order
-        for (int i = configsSize - 1; i >= 0; i--) {
-          if (!configMatch[i]) {
+        auto adapterMatch = std::bitset<MAX_CTRL_ADAPTER_COUNT>(self->_adapterRegistry.getMatchedAdapters(msg.address));
+        const unsigned int adapterCount = self->_adapterRegistry.getAdapterCount();
+        configASSERT(adapterCount > 0);
+
+        // iterate over adapters from back to front
+        unsigned int i = adapterCount;
+        do {
+          i--;
+
+          if (!adapterMatch[i]) {
             continue;
           }
 
-          auto& config = _adapters[i];
+          auto& adapter = self->_adapterRegistry.getAdapter(i);
 
-          if (!pCtrl->init(config)) {
+          if (!pCtrl->init(adapter)) {
             BLEGC_LOGW(LOG_TAG, "Failed to initialize controller, address: %s", std::string(msg.address).c_str());
             // this config failed, try another one
             continue;
           }
 
-          BLEGC_LOGD(LOG_TAG, "Controller sucesfuly initialized");
+          BLEGC_LOGD(LOG_TAG, "Controller successfully initialized");
           break;
-        }
+
+        } while (i > 0);
+
         // TODO: disconnect and tmp ban?
       } break;
       case BLEClientDisconnected:
-        auto* pCtrl = _getController(msg.address);
+        auto* pCtrl = self->_getController(msg.address);
         if (pCtrl == nullptr) {
           BLEGC_LOGE(LOG_TAG, "Controller not found, address: %s", std::string(msg.address).c_str());
           break;
@@ -297,26 +291,55 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
           if (!pCtrl->deinit(true)) {
             BLEGC_LOGW(LOG_TAG, "Controller failed to deinitialize, address: %s", std::string(msg.address).c_str());
           }
-          BLEGC_LOGD(LOG_TAG, "Controller sucesfuly deinitialized");
+          BLEGC_LOGD(LOG_TAG, "Controller successfully deinitialized");
         }
 
-        releaseController(msg.address);
-        _autoScanCheck();
+        self->_releaseController(msg.address);
+        xTaskNotifyGive(self->_autoScanTask);
         break;
     }
   }
 }
 
-void BLEControllerRegistry::_autoScanCheck() {
+BLEControllerRegistry::ClientCallbacks::ClientCallbacks(BLEControllerRegistry& controllerRegistry)
+    : _controllerRegistry(controllerRegistry) {}
 
+void BLEControllerRegistry::ClientCallbacks::onConnect(NimBLEClient* pClient) {
+  BLEGC_LOGD(LOG_TAG, "Connected to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
+  if (!pClient->secureConnection(true)) {  // async = true
+    BLEGC_LOGE(LOG_TAG, "Failed to initiate secure connection, address: %s",
+               std::string(pClient->getPeerAddress()).c_str());
+    // TODO: disconnect and tmp ban?
+  }
 }
 
-bool BLEControllerRegistry::_initialized{false};
-bool BLEControllerRegistry::_autoScanEnabled{true};
-bool BLEControllerRegistry::_deleteBonds{false};
-QueueHandle_t BLEControllerRegistry::_clientStatusQueue{nullptr};
-TaskHandle_t BLEControllerRegistry::_clientStatusConsumerTask{nullptr};
-SemaphoreHandle_t BLEControllerRegistry::_connectionSlots{nullptr};
-std::map<NimBLEAddress, uint64_t> BLEControllerRegistry::_adapterMatch{};
-std::list<BLEControllerInternal> BLEControllerRegistry::_controllers{};
-std::deque<BLEControllerAdapter> BLEControllerRegistry::_adapters{};
+void BLEControllerRegistry::ClientCallbacks::onConnectFail(NimBLEClient* pClient, int reason) {
+  BLEGC_LOGE(LOG_TAG, "Failed connecting to a device, address: %s, reason: 0x%04x %s",
+             std::string(pClient->getPeerAddress()).c_str(), reason, NimBLEUtils::returnCodeToString(reason));
+  NimBLEDevice::deleteClient(pClient);
+  _controllerRegistry._releaseController(pClient->getPeerAddress());
+  xTaskNotifyGive(_controllerRegistry._autoScanTask);
+}
+
+void BLEControllerRegistry::ClientCallbacks::onAuthenticationComplete(NimBLEConnInfo& connInfo) {
+  if (connInfo.isBonded()) {
+    BLEGC_LOGI(LOG_TAG, "Bonded successfully with a device, address: %s", std::string(connInfo.getAddress()).c_str());
+    BLEClientStatus msg = {connInfo.getAddress(), BLEClientConnected};
+    if (xQueueSend(_controllerRegistry._clientStatusQueue, &msg, 0) != pdPASS) {
+      BLEGC_LOGE(LOG_TAG, "Failed to send client status message");
+    }
+  } else {
+    BLEGC_LOGW(LOG_TAG, "Failed to bond with a device, address: %s", std::string(connInfo.getAddress()).c_str());
+    // TODO: disconnect and tmp ban?
+  }
+  xTaskNotifyGive(_controllerRegistry._autoScanTask);
+}
+
+void BLEControllerRegistry::ClientCallbacks::onDisconnect(NimBLEClient* pClient, int reason) {
+  BLEGC_LOGI(LOG_TAG, "Device disconnected, address: %s, reason: 0x%04x %s",
+             std::string(pClient->getPeerAddress()).c_str(), reason, NimBLEUtils::returnCodeToString(reason));
+  BLEClientStatus msg = {pClient->getPeerAddress(), BLEClientDisconnected};
+  if (xQueueSend(_controllerRegistry._clientStatusQueue, &msg, 0) != pdPASS) {
+    BLEGC_LOGE(LOG_TAG, "Failed to send client status message");
+  }
+}
