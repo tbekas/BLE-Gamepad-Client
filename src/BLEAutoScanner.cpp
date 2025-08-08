@@ -1,5 +1,10 @@
 #include "BLEAutoScanner.h"
 
+#include <NimBLEDevice.h>
+#include "BLEControllerAdapterRegistry.h"
+#include "BLEControllerRegistry.h"
+#include "logger.h"
+
 static auto* LOG_TAG = "BLEAutoScanner";
 
 BLEAutoScanner::BLEAutoScanner(TaskHandle_t& autoScanTask,

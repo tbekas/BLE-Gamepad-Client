@@ -1,5 +1,11 @@
 #include "BLEGamepadClient.h"
 
+#include <NimBLEDevice.h>
+#include "BLEAutoScanner.h"
+#include "BLEControllerAdapterRegistry.h"
+#include "BLEControllerRegistry.h"
+#include "logger.h"
+
 static auto* LOG_TAG = "BLEGamepadClient";
 
 bool BLEGamepadClient::_initialized(false);

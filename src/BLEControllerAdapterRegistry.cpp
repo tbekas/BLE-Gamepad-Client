@@ -77,7 +77,7 @@ bool BLEControllerAdapterRegistry::addAdapter(const BLEControllerAdapter& adapte
     BLEGC_LOGE(LOG_TAG, "Reached maximum number of adapters: %d", MAX_CTRL_ADAPTER_COUNT);
     return false;
   }
-  if (adapter.controls.isDisabled() && adapter.battery.isDisabled() && adapter.vibrations.isDisabled()) {
+  if (!adapter.controls.isEnabled() && !adapter.battery.isEnabled() && !adapter.vibrations.isEnabled()) {
     BLEGC_LOGE(LOG_TAG, "Invalid adapter, at least one of [`controls`, `battery`, `vibrations`] has to be enabled");
     return false;
   }

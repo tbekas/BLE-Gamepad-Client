@@ -1,12 +1,10 @@
 #include "BLEIncomingSignal.h"
 
 #include <NimBLEDevice.h>
-#include <NimBLERemoteCharacteristic.h>
 #include <bitset>
 #include <functional>
-#include "BLEIncomingSignalAdapter.h"
-#include "utils.h"
 #include "logger.h"
+#include "utils.h"
 
 static auto* LOG_TAG = "BLEIncomingSignal";
 
@@ -23,7 +21,7 @@ BLEIncomingSignal<T>::BLEIncomingSignal()
       _store({.event = T()}) {}
 
 template <typename T>
-bool BLEIncomingSignal<T>::init(NimBLEAddress address, BLEIncomingSignalAdapter<T>& adapter) {
+bool BLEIncomingSignal<T>::init(NimBLEAddress address, Adapter& adapter) {
   if (_initialized) {
     return false;
   }
@@ -125,7 +123,10 @@ void BLEIncomingSignal<T>::_onUpdateTaskFn(void* pvParameters) {
 }
 
 template <typename T>
-void BLEIncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify) {
+void BLEIncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
+                                         uint8_t* pData,
+                                         size_t length,
+                                         bool isNotify) {
   BLEGC_LOGT(LOG_TAG, "Received a notification. %s", blegc::remoteCharToStr(pChar).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
@@ -139,4 +140,13 @@ void BLEIncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar, uint
   if (_onUpdateSet && result) {
     xTaskNotifyGive(_onUpdateTask);
   }
+}
+
+template <typename T>
+bool BLEIncomingSignal<T>::Adapter::isEnabled() const {
+  return !blegc::isNull(serviceUUID);
+}
+template <typename T>
+BLEIncomingSignal<T>::Adapter::operator std::string() const {
+  return "service uuid: " + std::string(serviceUUID) + ", characteristic uuid: " + std::string(characteristicUUID);
 }

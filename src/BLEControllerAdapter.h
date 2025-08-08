@@ -3,13 +3,13 @@
 #include <string>
 #include "BLEBatteryEvent.h"
 #include "BLEControlsEvent.h"
-#include "BLEIncomingSignalAdapter.h"
-#include "BLEOutgoingSignalAdapter.h"
+#include "BLEIncomingSignal.h"
+#include "BLEOutgoingSignal.h"
 #include "BLEVibrationsCommand.h"
 
-using BLEControlsAdapter = BLEIncomingSignalAdapter<BLEControlsEvent>;
-using BLEBatteryAdapter = BLEIncomingSignalAdapter<BLEBatteryEvent>;
-using BLEVibrationsAdapter = BLEOutgoingSignalAdapter<BLEVibrationsCommand>;
+using BLEControlsAdapter = BLEIncomingSignal<BLEControlsEvent>::Adapter;
+using BLEBatteryAdapter = BLEIncomingSignal<BLEBatteryEvent>::Adapter;
+using BLEVibrationsAdapter = BLEOutgoingSignal<BLEVibrationsCommand>::Adapter;
 
 struct BLEControllerAdapter {
   std::string deviceName{};

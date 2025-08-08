@@ -1,11 +1,10 @@
 #include "BLEOutgoingSignal.h"
+
 #include <NimBLEDevice.h>
-#include <NimBLERemoteCharacteristic.h>
 #include <bitset>
 #include <functional>
-#include "BLEOutgoingSignalAdapter.h"
-#include "utils.h"
 #include "logger.h"
+#include "utils.h"
 
 static auto* LOG_TAG = "BLEOutgoingSignal";
 
@@ -21,7 +20,7 @@ BLEOutgoingSignal<T>::BLEOutgoingSignal()
       _storeMutex(nullptr) {}
 
 template <typename T>
-bool BLEOutgoingSignal<T>::init(NimBLEAddress address, BLEOutgoingSignalAdapter<T>& adapter) {
+bool BLEOutgoingSignal<T>::init(NimBLEAddress address, Adapter& adapter) {
   if (_initialized) {
     return false;
   }
@@ -134,4 +133,14 @@ void BLEOutgoingSignal<T>::_sendDataFn(void* pvParameters) {
 
     self->_pChar->writeValue(self->_store.pSendBuffer, used);
   }
+}
+
+template <typename T>
+bool BLEOutgoingSignal<T>::Adapter::isEnabled() const {
+  return !blegc::isNull(serviceUUID);
+}
+
+template <typename T>
+BLEOutgoingSignal<T>::Adapter::operator std::string() const {
+  return "service uuid: " + std::string(serviceUUID) + ", characteristic uuid: " + std::string(characteristicUUID);
 }

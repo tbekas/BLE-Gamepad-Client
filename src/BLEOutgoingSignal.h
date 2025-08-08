@@ -1,15 +1,29 @@
 #pragma once
 
 #include <NimBLEDevice.h>
-#include "BLEOutgoingSignalAdapter.h"
 #include "BLEVibrationsCommand.h"
 
 template <typename T>
 class BLEOutgoingSignal {
  public:
+  using Encoder = std::function<size_t(const T& value, uint8_t buffer[], size_t bufferLen)>;
+
+  struct Adapter {
+    NimBLEUUID serviceUUID{};
+    NimBLEUUID characteristicUUID{};
+    Encoder encoder{};
+
+    /// @brief Optional. Specifies the size of the buffer for the encoded payload. Leave undefined if the encoded size
+    /// varies depending on the input.
+    size_t bufferLen{};
+
+    bool isEnabled() const;
+    explicit operator std::string() const;
+  };
+
   BLEOutgoingSignal();
   ~BLEOutgoingSignal() = default;
-  bool init(NimBLEAddress address, BLEOutgoingSignalAdapter<T>& adapter);
+  bool init(NimBLEAddress address, Adapter& adapter);
   bool deinit(bool disconnected);
   bool isInitialized() const;
   void write(const T& value);
@@ -23,7 +37,7 @@ class BLEOutgoingSignal {
   };
   static void _sendDataFn(void* pvParameters);
   bool _initialized;
-  BLESignalEncoder<T> _encoder;
+  Encoder _encoder;
   NimBLEAddress _address;
   NimBLERemoteCharacteristic* _pChar;
   TaskHandle_t _sendDataTask;
