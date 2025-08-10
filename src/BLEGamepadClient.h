@@ -2,7 +2,7 @@
 
 #include "BLEAutoScanner.h"
 #include "BLEController.h"
-#include "BLEControllerMatcher.h"
+#include "BLEDeviceMatcher.h"
 #include "BLEControllerRegistry.h"
 
 class BLEGamepadClient {
@@ -25,6 +25,6 @@ class BLEGamepadClient {
   static bool _deleteBonds;
   static TaskHandle_t _autoScanTask;
   static BLEAutoScanner _autoScanner;
-  static BLEControllerMatcher _matcher;
+  static BLEDeviceMatcher _matcher;
   static BLEControllerRegistry _controllerRegistry;
 };

@@ -15,7 +15,7 @@ BLEClientStatus::operator std::string() const {
   return "BLEClientStatus address: " + std::string(address) + ", kind: " + kindStr;
 }
 
-BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask, BLEControllerMatcher& matcher)
+BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask, BLEDeviceMatcher& matcher)
     : _initialized(false),
       _autoScanTask(autoScanTask),
       _matcher(matcher),

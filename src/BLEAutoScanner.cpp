@@ -1,7 +1,7 @@
 #include "BLEAutoScanner.h"
 
 #include <NimBLEDevice.h>
-#include "BLEControllerMatcher.h"
+#include "BLEDeviceMatcher.h"
 #include "BLEControllerRegistry.h"
 #include "logger.h"
 
@@ -9,7 +9,7 @@ static auto* LOG_TAG = "BLEAutoScanner";
 
 BLEAutoScanner::BLEAutoScanner(TaskHandle_t& autoScanTask,
                                BLEControllerRegistry& controllerRegistry,
-                               BLEControllerMatcher& matcher)
+                               BLEDeviceMatcher& matcher)
     : _autoScanTask(autoScanTask),
       _matcher(matcher),
       _controllerRegistry(controllerRegistry),

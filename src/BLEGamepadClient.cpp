@@ -2,7 +2,7 @@
 
 #include <NimBLEDevice.h>
 #include "BLEAutoScanner.h"
-#include "BLEControllerMatcher.h"
+#include "BLEDeviceMatcher.h"
 #include "BLEControllerRegistry.h"
 #include "logger.h"
 
@@ -11,7 +11,7 @@ static auto* LOG_TAG = "BLEGamepadClient";
 bool BLEGamepadClient::_initialized(false);
 bool BLEGamepadClient::_deleteBonds(false);
 TaskHandle_t BLEGamepadClient::_autoScanTask;
-BLEControllerMatcher BLEGamepadClient::_matcher;
+BLEDeviceMatcher BLEGamepadClient::_matcher;
 BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_autoScanTask, _matcher);
 BLEAutoScanner BLEGamepadClient::_autoScanner(_autoScanTask, _controllerRegistry, _matcher);
 

@@ -1,12 +1,12 @@
-#include "BLEControllerMatcher.h"
+#include "BLEDeviceMatcher.h"
 
 #include <bitset>
 #include "logger.h"
 #include "xbox.h"
 
-static auto* LOG_TAG = "BLEControllerMatcher";
+static auto* LOG_TAG = "BLEDeviceMatcher";
 
-bool BLEControllerMatcher::init() {
+bool BLEDeviceMatcher::init() {
   if (_initialized) {
     return false;
   }
@@ -17,7 +17,7 @@ bool BLEControllerMatcher::init() {
   _initialized = true;
   return true;
 }
-bool BLEControllerMatcher::deinit() {
+bool BLEDeviceMatcher::deinit() {
   if (!_initialized) {
     return false;
   }
@@ -27,11 +27,11 @@ bool BLEControllerMatcher::deinit() {
   _initialized = false;
   return true;
 }
-bool BLEControllerMatcher::isInitialized() const {
+bool BLEDeviceMatcher::isInitialized() const {
   return _initialized;
 }
 
-CTRL_MODEL_MATCH_TYPE BLEControllerMatcher::matchModels(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
+CTRL_MODEL_MATCH_TYPE BLEDeviceMatcher::matchModels(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
   auto modelMatch = std::bitset<MAX_CTRL_MODEL_COUNT>();
 
   for (int i = 0; i < _models.size(); i++) {
@@ -64,7 +64,7 @@ CTRL_MODEL_MATCH_TYPE BLEControllerMatcher::matchModels(const NimBLEAdvertisedDe
   return value;
 }
 
-CTRL_MODEL_MATCH_TYPE BLEControllerMatcher::getMatchedModels(NimBLEAddress address) {
+CTRL_MODEL_MATCH_TYPE BLEDeviceMatcher::getMatchedModels(NimBLEAddress address) {
   if (_matchedModels.contains(address)) {
     return _matchedModels[address];
   }
@@ -72,7 +72,7 @@ CTRL_MODEL_MATCH_TYPE BLEControllerMatcher::getMatchedModels(NimBLEAddress addre
   return 0;
 }
 
-bool BLEControllerMatcher::addModel(const BLEControllerModel& model) {
+bool BLEDeviceMatcher::addModel(const BLEControllerModel& model) {
   if (_models.size() >= MAX_CTRL_MODEL_COUNT) {
     BLEGC_LOGE(LOG_TAG, "Reached maximum number of models: %d", MAX_CTRL_MODEL_COUNT);
     return false;
@@ -85,10 +85,10 @@ bool BLEControllerMatcher::addModel(const BLEControllerModel& model) {
   _models.push_back(model);
   return true;
 }
-BLEControllerModel& BLEControllerMatcher::getModel(const unsigned int index) {
+BLEControllerModel& BLEDeviceMatcher::getModel(const unsigned int index) {
   return _models[index];
 }
 
-unsigned int BLEControllerMatcher::getModelCount() const {
+unsigned int BLEDeviceMatcher::getModelCount() const {
   return _models.size();
 }
