@@ -2,7 +2,7 @@
 
 #include <NimBLEDevice.h>
 #include "BLEAutoScanner.h"
-#include "BLEControllerModelRegistry.h"
+#include "BLEControllerMatcher.h"
 #include "BLEControllerRegistry.h"
 #include "logger.h"
 
@@ -10,9 +10,9 @@ static auto* LOG_TAG = "BLEGamepadClient";
 
 bool BLEGamepadClient::_initialized(false);
 TaskHandle_t BLEGamepadClient::_autoScanTask;
-BLEControllerModelRegistry BLEGamepadClient::_modelRegistry;
-BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_autoScanTask, _modelRegistry);
-BLEAutoScanner BLEGamepadClient::_autoScanner(_autoScanTask, _controllerRegistry, _modelRegistry);
+BLEControllerMatcher BLEGamepadClient::_matcher;
+BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_autoScanTask, _matcher);
+BLEAutoScanner BLEGamepadClient::_autoScanner(_autoScanTask, _controllerRegistry, _matcher);
 
 bool BLEGamepadClient::init() {
   if (_initialized) {
@@ -28,18 +28,18 @@ bool BLEGamepadClient::init() {
     NimBLEDevice::setSecurityIOCap(CONFIG_BT_BLEGC_SECURITY_IO_CAP);
   }
 
-  if (!_modelRegistry.init()) {
+  if (!_matcher.init()) {
     return false;
   }
 
   if (!_controllerRegistry.init()) {
-    _modelRegistry.deinit();
+    _matcher.deinit();
     return false;
   }
 
   if (!_autoScanner.init()) {
     _controllerRegistry.deinit();
-    _modelRegistry.deinit();
+    _matcher.deinit();
     return false;
   }
 
@@ -58,7 +58,7 @@ bool BLEGamepadClient::deinit() {
 
   result = result && _autoScanner.deinit();
   result = result && _controllerRegistry.deinit();
-  result = result && _modelRegistry.deinit();
+  result = result && _matcher.deinit();
 
   _initialized = false;
   return result;
@@ -114,5 +114,5 @@ void BLEGamepadClient::deleteBonds() {
  * @return True if successful.
  */
 bool BLEGamepadClient::addControllerModel(const BLEControllerModel& model) {
-  return _modelRegistry.addModel(model);
+  return _matcher.addModel(model);
 }

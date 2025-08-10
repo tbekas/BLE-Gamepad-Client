@@ -4,7 +4,7 @@
 #include <list>
 
 #include "BLEControllerInternal.h"
-#include "BLEControllerModelRegistry.h"
+#include "BLEControllerMatcher.h"
 
 enum BLEClientStatusMsgKind : uint8_t { BLEClientConnected = 0, BLEClientDisconnected = 1 };
 
@@ -17,7 +17,7 @@ struct BLEClientStatus {
 
 class BLEControllerRegistry {
  public:
-  BLEControllerRegistry(TaskHandle_t& autoScanTask, BLEControllerModelRegistry& modelRegistry);
+  BLEControllerRegistry(TaskHandle_t& autoScanTask, BLEControllerMatcher& matcher);
 
   bool init();
   bool deinit();
@@ -44,7 +44,7 @@ class BLEControllerRegistry {
 
   bool _initialized;
   TaskHandle_t& _autoScanTask;
-  BLEControllerModelRegistry& _modelRegistry;
+  BLEControllerMatcher& _matcher;
   QueueHandle_t _clientStatusQueue;
   TaskHandle_t _clientStatusConsumerTask;
   SemaphoreHandle_t _connectionSlots;

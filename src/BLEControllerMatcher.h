@@ -8,10 +8,10 @@
 #define CTRL_MODEL_MATCH_TYPE uint64_t
 #define MAX_CTRL_MODEL_COUNT sizeof(CTRL_MODEL_MATCH_TYPE)
 
-class BLEControllerModelRegistry {
+class BLEControllerMatcher {
  public:
-  BLEControllerModelRegistry() = default;
-  ~BLEControllerModelRegistry() = default;
+  BLEControllerMatcher() = default;
+  ~BLEControllerMatcher() = default;
 
   bool init();
   bool deinit();
