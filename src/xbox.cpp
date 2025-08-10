@@ -1,7 +1,7 @@
 #include "xbox.h"
 #include <bitset>
 #include "BLEBatteryEvent.h"
-#include "BLEControllerAdapter.h"
+#include "BLEControllerModel.h"
 #include "BLEControlsEvent.h"
 #include "BLEVibrationsCommand.h"
 #include "logger.h"
@@ -146,9 +146,9 @@ size_t encodeVibrationsCommand(const BLEVibrationsCommand& c, uint8_t outBuffer[
   return vibrationsPayloadLen;
 }
 
-BLEControllerAdapter makeControllerAdapter() {
-  BLEControllerAdapter config;
-  config.deviceName = "Xbox Wireless Controller";
+BLEControllerModel makeControllerModel() {
+  BLEControllerModel config;
+  config.advertisedName = "Xbox Wireless Controller";
   config.controls.serviceUUID = hidServiceUUID;
   config.controls.decoder = decodeControlsEvent;
   config.battery.serviceUUID = batteryServiceUUID;
@@ -159,4 +159,4 @@ BLEControllerAdapter makeControllerAdapter() {
   return config;
 }
 
-const BLEControllerAdapter blegc::xboxControllerAdapter = makeControllerAdapter();
+const BLEControllerModel blegc::xboxControllerModel = makeControllerModel();

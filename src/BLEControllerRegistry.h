@@ -3,8 +3,8 @@
 #include <NimBLEDevice.h>
 #include <list>
 
-#include "BLEControllerAdapterRegistry.h"
 #include "BLEControllerInternal.h"
+#include "BLEControllerModelRegistry.h"
 
 enum BLEClientStatusMsgKind : uint8_t { BLEClientConnected = 0, BLEClientDisconnected = 1 };
 
@@ -17,7 +17,7 @@ struct BLEClientStatus {
 
 class BLEControllerRegistry {
  public:
-  BLEControllerRegistry(TaskHandle_t& autoScanTask, BLEControllerAdapterRegistry& adapterRegistry);
+  BLEControllerRegistry(TaskHandle_t& autoScanTask, BLEControllerModelRegistry& modelRegistry);
 
   bool init();
   bool deinit();
@@ -44,7 +44,7 @@ class BLEControllerRegistry {
 
   bool _initialized;
   TaskHandle_t& _autoScanTask;
-  BLEControllerAdapterRegistry& _adapterRegistry;
+  BLEControllerModelRegistry& _modelRegistry;
   QueueHandle_t _clientStatusQueue;
   TaskHandle_t _clientStatusConsumerTask;
   SemaphoreHandle_t _connectionSlots;

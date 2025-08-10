@@ -2,7 +2,7 @@
 
 #include <NimBLEDevice.h>
 #include "BLEAutoScanner.h"
-#include "BLEControllerAdapterRegistry.h"
+#include "BLEControllerModelRegistry.h"
 #include "BLEControllerRegistry.h"
 #include "logger.h"
 
@@ -10,9 +10,9 @@ static auto* LOG_TAG = "BLEGamepadClient";
 
 bool BLEGamepadClient::_initialized(false);
 TaskHandle_t BLEGamepadClient::_autoScanTask;
-BLEControllerAdapterRegistry BLEGamepadClient::_adapterRegistry;
-BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_autoScanTask, _adapterRegistry);
-BLEAutoScanner BLEGamepadClient::_autoScanner(_autoScanTask, _controllerRegistry, _adapterRegistry);
+BLEControllerModelRegistry BLEGamepadClient::_modelRegistry;
+BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_autoScanTask, _modelRegistry);
+BLEAutoScanner BLEGamepadClient::_autoScanner(_autoScanTask, _controllerRegistry, _modelRegistry);
 
 bool BLEGamepadClient::init() {
   if (_initialized) {
@@ -28,18 +28,18 @@ bool BLEGamepadClient::init() {
     NimBLEDevice::setSecurityIOCap(CONFIG_BT_BLEGC_SECURITY_IO_CAP);
   }
 
-  if (!_adapterRegistry.init()) {
+  if (!_modelRegistry.init()) {
     return false;
   }
 
   if (!_controllerRegistry.init()) {
-    _adapterRegistry.deinit();
+    _modelRegistry.deinit();
     return false;
   }
 
   if (!_autoScanner.init()) {
     _controllerRegistry.deinit();
-    _adapterRegistry.deinit();
+    _modelRegistry.deinit();
     return false;
   }
 
@@ -58,7 +58,7 @@ bool BLEGamepadClient::deinit() {
 
   result = result && _autoScanner.deinit();
   result = result && _controllerRegistry.deinit();
-  result = result && _adapterRegistry.deinit();
+  result = result && _modelRegistry.deinit();
 
   _initialized = false;
   return result;
@@ -108,11 +108,11 @@ void BLEGamepadClient::deleteBonds() {
 }
 
 /**
- * @brief Registers an adapter for a new controller type. Adapter is used to set up a connection and to
+ * @brief Registers an model for a new controller type. Model is used to set up a connection and to
  * decode raw data coming from the controller.
- * @param adapter Adapter to be added.
+ * @param model Model to be added.
  * @return True if successful.
  */
-bool BLEGamepadClient::addControllerAdapter(const BLEControllerAdapter& adapter) {
-  return _adapterRegistry.addAdapter(adapter);
+bool BLEGamepadClient::addControllerModel(const BLEControllerModel& model) {
+  return _modelRegistry.addModel(model);
 }

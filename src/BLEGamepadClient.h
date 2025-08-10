@@ -1,9 +1,9 @@
 #pragma once
 
 #include "BLEAutoScanner.h"
-#include "BLEControllerAdapterRegistry.h"
-#include "BLEControllerRegistry.h"
 #include "BLEController.h"
+#include "BLEControllerModelRegistry.h"
+#include "BLEControllerRegistry.h"
 
 class BLEGamepadClient {
  public:
@@ -16,14 +16,14 @@ class BLEGamepadClient {
   static void disableAutoScan();
   static bool isAutoScanEnabled();
   static void deleteBonds();
-  static bool addControllerAdapter(const BLEControllerAdapter& adapter);
+  static bool addControllerModel(const BLEControllerModel& model);
 
- friend class BLEController;
+  friend class BLEController;
 
  private:
   static bool _initialized;
   static TaskHandle_t _autoScanTask;
   static BLEAutoScanner _autoScanner;
-  static BLEControllerAdapterRegistry _adapterRegistry;
+  static BLEControllerModelRegistry _modelRegistry;
   static BLEControllerRegistry _controllerRegistry;
 };

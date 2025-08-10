@@ -1,7 +1,7 @@
 #pragma once
 
-#include <nimconfig.h>
 #include <nimble/console/console.h>
+#include <nimconfig.h>
 
 #ifndef CONFIG_BT_BLEGC_LOG_LEVEL
 #if defined(ARDUINO_ARCH_ESP32) && defined(CORE_DEBUG_LEVEL)

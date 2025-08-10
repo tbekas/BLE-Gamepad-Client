@@ -2,7 +2,7 @@
 
 #include <NimBLEAddress.h>
 #include "BLEBatteryEvent.h"
-#include "BLEControllerAdapter.h"
+#include "BLEControllerModel.h"
 #include "BLEControlsEvent.h"
 #include "BLEIncomingSignal.h"
 #include "BLEOutgoingSignal.h"
@@ -16,7 +16,7 @@ class BLEControllerInternal {
  public:
   explicit BLEControllerInternal(NimBLEAddress allowedAddress);
   ~BLEControllerInternal() = default;
-  bool init(BLEControllerAdapter& adapter);
+  bool init(BLEControllerModel& model);
   bool deinit(bool disconnected);
   bool isInitialized() const;
   NimBLEAddress getAddress() const;

@@ -13,7 +13,7 @@ class BLEIncomingSignal {
  public:
   using Decoder = std::function<size_t(T&, uint8_t payload[], size_t payloadLen)>;
 
-  struct Adapter {
+  struct Model {
     NimBLEUUID serviceUUID{};
     NimBLEUUID characteristicUUID{};
     Decoder decoder{};
@@ -22,10 +22,9 @@ class BLEIncomingSignal {
     explicit operator std::string() const;
   };
 
-
   BLEIncomingSignal();
   ~BLEIncomingSignal() = default;
-  bool init(NimBLEAddress address, Adapter& adapter);
+  bool init(NimBLEAddress address, Model& model);
   bool deinit(bool disconnected);
   bool isInitialized() const;
   void read(T& out);

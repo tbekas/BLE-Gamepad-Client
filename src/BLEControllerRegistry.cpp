@@ -15,10 +15,10 @@ BLEClientStatus::operator std::string() const {
   return "BLEClientStatus address: " + std::string(address) + ", kind: " + kindStr;
 }
 
-BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask, BLEControllerAdapterRegistry& adapterRegistry)
+BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask, BLEControllerModelRegistry& modelRegistry)
     : _initialized(false),
       _autoScanTask(autoScanTask),
-      _adapterRegistry(adapterRegistry),
+      _modelRegistry(modelRegistry),
       _clientStatusQueue(nullptr),
       _clientStatusConsumerTask(nullptr),
       _connectionSlots(nullptr),
@@ -252,22 +252,22 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
           break;
         }
 
-        auto adapterMatch = std::bitset<MAX_CTRL_ADAPTER_COUNT>(self->_adapterRegistry.getMatchedAdapters(msg.address));
-        const unsigned int adapterCount = self->_adapterRegistry.getAdapterCount();
-        configASSERT(adapterCount > 0);
+        auto modelMatch = std::bitset<MAX_CTRL_MODEL_COUNT>(self->_modelRegistry.getMatchedModels(msg.address));
+        const unsigned int modelCount = self->_modelRegistry.getModelCount();
+        configASSERT(modelCount > 0);
 
-        // iterate over adapters from back to front
-        unsigned int i = adapterCount;
+        // iterate over models from back to front
+        unsigned int i = modelCount;
         do {
           i--;
 
-          if (!adapterMatch[i]) {
+          if (!modelMatch[i]) {
             continue;
           }
 
-          auto& adapter = self->_adapterRegistry.getAdapter(i);
+          auto& model = self->_modelRegistry.getModel(i);
 
-          if (!pCtrl->init(adapter)) {
+          if (!pCtrl->init(model)) {
             BLEGC_LOGW(LOG_TAG, "Failed to initialize controller, address: %s", std::string(msg.address).c_str());
             // this config failed, try another one
             continue;

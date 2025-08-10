@@ -1,7 +1,7 @@
 #include "BLEAutoScanner.h"
 
 #include <NimBLEDevice.h>
-#include "BLEControllerAdapterRegistry.h"
+#include "BLEControllerModelRegistry.h"
 #include "BLEControllerRegistry.h"
 #include "logger.h"
 
@@ -9,9 +9,9 @@ static auto* LOG_TAG = "BLEAutoScanner";
 
 BLEAutoScanner::BLEAutoScanner(TaskHandle_t& autoScanTask,
                                BLEControllerRegistry& controllerRegistry,
-                               BLEControllerAdapterRegistry& adapterRegistry)
+                               BLEControllerModelRegistry& modelRegistry)
     : _autoScanTask(autoScanTask),
-      _adapterRegistry(adapterRegistry),
+      _modelRegistry(modelRegistry),
       _controllerRegistry(controllerRegistry),
       _scanCallbacks(*this) {}
 
@@ -93,8 +93,8 @@ void BLEAutoScanner::ScanCallbacks::onResult(const NimBLEAdvertisedDevice* pAdve
              std::string(pAdvertisedDevice->getAddress()).c_str(), pAdvertisedDevice->getAddressType(),
              pAdvertisedDevice->getName().c_str());
 
-  if (!_autoScanner._adapterRegistry.matchAdapters(pAdvertisedDevice)) {
-    BLEGC_LOGD(LOG_TAG, "No adapters found for a device");
+  if (!_autoScanner._modelRegistry.matchModels(pAdvertisedDevice)) {
+    BLEGC_LOGD(LOG_TAG, "No models found for a device");
     return;
   }
 

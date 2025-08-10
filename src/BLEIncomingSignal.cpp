@@ -21,7 +21,7 @@ BLEIncomingSignal<T>::BLEIncomingSignal()
       _store({.event = T()}) {}
 
 template <typename T>
-bool BLEIncomingSignal<T>::init(NimBLEAddress address, Adapter& adapter) {
+bool BLEIncomingSignal<T>::init(NimBLEAddress address, Model& model) {
   if (_initialized) {
     return false;
   }
@@ -32,8 +32,8 @@ bool BLEIncomingSignal<T>::init(NimBLEAddress address, Adapter& adapter) {
   xTaskCreate(_onUpdateTaskFn, "_onUpdateTask", 10000, this, 0, &_onUpdateTask);
   configASSERT(_onUpdateTask);
 
-  _decoder = adapter.decoder;
-  _pChar = blegc::findCharacteristic(_address, adapter.serviceUUID, adapter.characteristicUUID,
+  _decoder = model.decoder;
+  _pChar = blegc::findCharacteristic(_address, model.serviceUUID, model.characteristicUUID,
                                      [](NimBLERemoteCharacteristic* c) { return c->canNotify(); });
   if (!_pChar) {
     return false;
@@ -143,10 +143,10 @@ void BLEIncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
 }
 
 template <typename T>
-bool BLEIncomingSignal<T>::Adapter::isEnabled() const {
+bool BLEIncomingSignal<T>::Model::isEnabled() const {
   return !blegc::isNull(serviceUUID);
 }
 template <typename T>
-BLEIncomingSignal<T>::Adapter::operator std::string() const {
+BLEIncomingSignal<T>::Model::operator std::string() const {
   return "service uuid: " + std::string(serviceUUID) + ", characteristic uuid: " + std::string(characteristicUUID);
 }
