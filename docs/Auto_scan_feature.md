@@ -16,6 +16,6 @@ started again.
 
 # Changing the default behavior
 
-You can disable auto-scan by calling the static method `BLEControllerRegistry::disableAutoScan()` before initializing
+You can disable auto-scan by calling the static method `BLEGamepadClient::disableAutoScan()` before initializing
 any `BLEController` instance with `begin()`. If you do so, you will need to manually manage scanning—i.e., starting and
 stopping it as needed.

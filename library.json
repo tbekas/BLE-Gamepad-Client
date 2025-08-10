@@ -17,7 +17,7 @@
   "license": "Apache-2.0",
   "frameworks": "arduino",
   "platforms": "espressif32",
-  "headers": "BLEController.h",
+  "headers": "BLEGamepadClient.h",
   "dependencies": {
     "h2zero/NimBLE-Arduino": "^2.3.2"
   },

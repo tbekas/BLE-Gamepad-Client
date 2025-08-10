@@ -8,7 +8,7 @@ class BLEOutgoingSignal {
  public:
   using Encoder = std::function<size_t(const T& value, uint8_t buffer[], size_t bufferLen)>;
 
-  struct Model {
+  struct Spec {
     NimBLEUUID serviceUUID{};
     NimBLEUUID characteristicUUID{};
     Encoder encoder{};
@@ -23,7 +23,7 @@ class BLEOutgoingSignal {
 
   BLEOutgoingSignal();
   ~BLEOutgoingSignal() = default;
-  bool init(NimBLEAddress address, Model& model);
+  bool init(NimBLEAddress address, Spec& spec);
   bool deinit(bool disconnected);
   bool isInitialized() const;
   void write(const T& value);

@@ -3,7 +3,7 @@
 To add support for a controller model that is not yet supported, you need to provide an instance of the
 `BLEControllerModel` struct and register it using `BLEControllerRegistry::addControllerModel()`.
 
-Below is a simplified example of an adapter. The `myDecodeControls` function reads the first two bytes from the
+Below is a simplified example of a model. The `myDecodeControls` function reads the first two bytes from the
 `payload` array, scales them from the original range of `0–255` to a normalized range of `-1.0f` to `1.0f`, and assigns
 the resulting values to the corresponding `BLEControlsEvent` members representing left stick deflection.
 

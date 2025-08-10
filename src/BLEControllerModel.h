@@ -7,13 +7,13 @@
 #include "BLEOutgoingSignal.h"
 #include "BLEVibrationsCommand.h"
 
-using BLEControlsModel = BLEIncomingSignal<BLEControlsEvent>::Model;
-using BLEBatteryModel = BLEIncomingSignal<BLEBatteryEvent>::Model;
-using BLEVibrationsModel = BLEOutgoingSignal<BLEVibrationsCommand>::Model;
+using BLEControlsSpec = BLEIncomingSignal<BLEControlsEvent>::Spec;
+using BLEBatterySpec = BLEIncomingSignal<BLEBatteryEvent>::Spec;
+using BLEVibrationsSpec = BLEOutgoingSignal<BLEVibrationsCommand>::Spec;
 
 struct BLEControllerModel {
   std::string advertisedName{};
-  BLEControlsModel controls{};
-  BLEBatteryModel battery{};
-  BLEVibrationsModel vibrations{};
+  BLEControlsSpec controls{};
+  BLEBatterySpec battery{};
+  BLEVibrationsSpec vibrations{};
 };

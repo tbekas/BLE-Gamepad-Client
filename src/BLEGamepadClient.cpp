@@ -108,7 +108,7 @@ void BLEGamepadClient::deleteBonds() {
 }
 
 /**
- * @brief Registers an model for a new controller type. Model is used to set up a connection and to
+ * @brief Registers a model for a new controller type. Model is used to set up a connection and to
  * decode raw data coming from the controller.
  * @param model Model to be added.
  * @return True if successful.

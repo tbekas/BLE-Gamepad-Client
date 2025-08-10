@@ -22,7 +22,7 @@ tbekas/BLE-Gamepad-Client@^0.3.3
 
 ```cpp
 #include <Arduino.h>
-#include <BLEController.h>
+#include <BLEGamepadClient.h>
 
 BLEController controller;
 

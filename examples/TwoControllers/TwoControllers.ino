@@ -4,7 +4,7 @@
  */
 
 #include <Arduino.h>
-#include <BLEController.h>
+#include <BLEGamepadClient.h>
 
 BLEController controller1;
 BLEController controller2("5f:7a:30:78:22:2a"); // MAC address is an optional parameter

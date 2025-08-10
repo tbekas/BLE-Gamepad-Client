@@ -4,7 +4,7 @@ Connecting two or more controllers is as simple as creating multiple `BLEControl
 using `BLEController::begin()`.
 
 ```cpp
-#include <BLEController.h>
+#include <BLEGamepadClient.h>
 
 BLEController controller1;
 BLEController controller2;

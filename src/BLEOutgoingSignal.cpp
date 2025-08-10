@@ -20,19 +20,19 @@ BLEOutgoingSignal<T>::BLEOutgoingSignal()
       _storeMutex(nullptr) {}
 
 template <typename T>
-bool BLEOutgoingSignal<T>::init(NimBLEAddress address, Model& model) {
+bool BLEOutgoingSignal<T>::init(NimBLEAddress address, Spec& spec) {
   if (_initialized) {
     return false;
   }
 
   _address = address;
 
-  _store.capacity = model.bufferLen > 0 ? model.bufferLen : 8;
+  _store.capacity = spec.bufferLen > 0 ? spec.bufferLen : 8;
   _store.pBuffer = new uint8_t[_store.capacity];
   _store.pSendBuffer = new uint8_t[_store.capacity];
 
-  _encoder = model.encoder;
-  _pChar = blegc::findCharacteristic(_address, model.serviceUUID, model.characteristicUUID,
+  _encoder = spec.encoder;
+  _pChar = blegc::findCharacteristic(_address, spec.serviceUUID, spec.characteristicUUID,
                                      [](NimBLERemoteCharacteristic* c) { return c->canWrite(); });
   if (!_pChar) {
     return false;
@@ -136,11 +136,11 @@ void BLEOutgoingSignal<T>::_sendDataFn(void* pvParameters) {
 }
 
 template <typename T>
-bool BLEOutgoingSignal<T>::Model::isEnabled() const {
+bool BLEOutgoingSignal<T>::Spec::isEnabled() const {
   return !blegc::isNull(serviceUUID);
 }
 
 template <typename T>
-BLEOutgoingSignal<T>::Model::operator std::string() const {
+BLEOutgoingSignal<T>::Spec::operator std::string() const {
   return "service uuid: " + std::string(serviceUUID) + ", characteristic uuid: " + std::string(characteristicUUID);
 }

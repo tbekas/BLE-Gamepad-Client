@@ -147,16 +147,16 @@ size_t encodeVibrationsCommand(const BLEVibrationsCommand& c, uint8_t outBuffer[
 }
 
 BLEControllerModel makeControllerModel() {
-  BLEControllerModel config;
-  config.advertisedName = "Xbox Wireless Controller";
-  config.controls.serviceUUID = hidServiceUUID;
-  config.controls.decoder = decodeControlsEvent;
-  config.battery.serviceUUID = batteryServiceUUID;
-  config.battery.decoder = decodeBatteryEvent;
-  config.vibrations.serviceUUID = hidServiceUUID;
-  config.vibrations.encoder = encodeVibrationsCommand;
-  config.vibrations.bufferLen = vibrationsPayloadLen;
-  return config;
+  BLEControllerModel m;
+  m.advertisedName = "Xbox Wireless Controller";
+  m.controls.serviceUUID = hidServiceUUID;
+  m.controls.decoder = decodeControlsEvent;
+  m.battery.serviceUUID = batteryServiceUUID;
+  m.battery.decoder = decodeBatteryEvent;
+  m.vibrations.serviceUUID = hidServiceUUID;
+  m.vibrations.encoder = encodeVibrationsCommand;
+  m.vibrations.bufferLen = vibrationsPayloadLen;
+  return m;
 }
 
 const BLEControllerModel blegc::xboxControllerModel = makeControllerModel();
