@@ -9,6 +9,7 @@
 static auto* LOG_TAG = "BLEGamepadClient";
 
 bool BLEGamepadClient::_initialized(false);
+bool BLEGamepadClient::_deleteBonds(false);
 TaskHandle_t BLEGamepadClient::_autoScanTask;
 BLEControllerMatcher BLEGamepadClient::_matcher;
 BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_autoScanTask, _matcher);
@@ -26,6 +27,10 @@ bool BLEGamepadClient::init() {
     NimBLEDevice::setPower(CONFIG_BT_BLEGC_POWER_DBM);
     NimBLEDevice::setSecurityAuth(CONFIG_BT_BLEGC_SECURITY_AUTH);
     NimBLEDevice::setSecurityIOCap(CONFIG_BT_BLEGC_SECURITY_IO_CAP);
+  }
+
+  if (_deleteBonds) {
+    NimBLEDevice::deleteAllBonds();
   }
 
   if (!_matcher.init()) {
@@ -104,7 +109,11 @@ bool BLEGamepadClient::isAutoScanEnabled() {
  * @brief Deletes all stored bonding information.
  */
 void BLEGamepadClient::deleteBonds() {
-  // TODO
+  if (!_initialized) {
+    _deleteBonds = true;
+    return;
+  }
+  NimBLEDevice::deleteAllBonds();
 }
 
 /**

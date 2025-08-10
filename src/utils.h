@@ -13,13 +13,40 @@ static bool isNull(const NimBLEUUID& uuid) {
 }
 
 static std::string remoteCharToStr(const NimBLERemoteCharacteristic* pChar) {
-  auto str = pChar->toString();
-
-  std::string::size_type pos = str.find('\n');
-  if (pos != std::string::npos) {
-    return str.substr(0, pos);
+  std::string res = "Characteristic: uuid: " + std::string(pChar->getUUID());
+  res += std::to_string(pChar->getHandle());
+  res += ", can: [";
+  if (pChar->canBroadcast()) {
+    res += "broadcast, ";
   }
-  return str;
+  if (pChar->canRead()) {
+    res += "read, ";
+  }
+  if (pChar->canWriteNoResponse()) {
+    res += "writeNoResponse, ";
+  }
+  if (pChar->canWrite()) {
+    res += "write, ";
+  }
+  if (pChar->canNotify()) {
+    res += "notify, ";
+  }
+  if (pChar->canIndicate()) {
+    res += "indicate, ";
+  }
+  if (pChar->canWriteSigned()) {
+    res += "writeSigned, ";
+  }
+  if (pChar->hasExtendedProps()) {
+    res += "haveExtendedProperties, ";
+  }
+  auto pos  = res.rfind(", ");
+  if (pos == res.size() - 2) {
+    res.erase(pos);
+  }
+  res += "]";
+
+  return res;
 }
 
 static bool discoverAttributes(const NimBLEAddress address) {
