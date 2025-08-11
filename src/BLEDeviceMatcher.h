@@ -6,7 +6,7 @@
 #include "BLEControllerModel.h"
 
 #define CTRL_MODEL_MATCH_TYPE uint64_t
-#define MAX_CTRL_MODEL_COUNT sizeof(CTRL_MODEL_MATCH_TYPE)
+#define MAX_CTRL_MODEL_COUNT sizeof(CTRL_MODEL_MATCH_TYPE) * 8
 
 class BLEDeviceMatcher {
  public:
