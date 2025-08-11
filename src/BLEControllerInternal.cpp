@@ -1,9 +1,9 @@
 #include "BLEControllerInternal.h"
 #include <NimBLEAddress.h>
-#include "BLEControllerAdapter.h"
+#include "BLEControllerModel.h"
 #include "BLEIncomingSignal.h"
-#include "utils.h"
 #include "logger.h"
+#include "utils.h"
 
 BLEControllerInternal::BLEControllerInternal(const NimBLEAddress allowedAddress)
     : _initialized(false),
@@ -13,7 +13,7 @@ BLEControllerInternal::BLEControllerInternal(const NimBLEAddress allowedAddress)
       _onConnect([](NimBLEAddress) {}),
       _onDisconnect([](NimBLEAddress) {}) {}
 
-bool BLEControllerInternal::init(BLEControllerAdapter& adapter) {
+bool BLEControllerInternal::init(BLEControllerModel& model) {
   if (_initialized) {
     return false;
   }
@@ -22,14 +22,14 @@ bool BLEControllerInternal::init(BLEControllerAdapter& adapter) {
     return false;
   }
 
-  if (adapter.controls.isEnabled()) {
-    if (!_controls.init(_address, adapter.controls)) {
+  if (model.controls.isEnabled()) {
+    if (!_controls.init(_address, model.controls)) {
       return false;
     }
   }
 
-  if (adapter.battery.isEnabled()) {
-    if (!_battery.init(_address, adapter.battery)) {
+  if (model.battery.isEnabled()) {
+    if (!_battery.init(_address, model.battery)) {
       if (_controls.isInitialized()) {
         _controls.deinit(false);
       }
@@ -37,8 +37,8 @@ bool BLEControllerInternal::init(BLEControllerAdapter& adapter) {
     }
   }
 
-  if (adapter.vibrations.isEnabled()) {
-    if (!_vibrations.init(_address, adapter.vibrations)) {
+  if (model.vibrations.isEnabled()) {
+    if (!_vibrations.init(_address, model.vibrations)) {
       if (_battery.isInitialized()) {
         _battery.deinit(false);
       }

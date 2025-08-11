@@ -1,8 +1,8 @@
 #pragma once
 
-#include "BLEControllerAdapter.h"
+#include "BLEControllerModel.h"
 namespace blegc {
 
-extern const BLEControllerAdapter xboxControllerAdapter;
+extern const BLEControllerModel xboxControllerModel;
 
 }

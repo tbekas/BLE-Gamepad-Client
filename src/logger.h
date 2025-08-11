@@ -3,7 +3,7 @@
 #include "config.h"
 
 #if CONFIG_BT_BLEGC_LOG_LEVEL >= 5
-#define BLEGC_LOGT(tag, format, ...) CONFIG_BT_BLEGC_LOGGER("T %s: " format "\n", ##__VA_ARGS__)
+#define BLEGC_LOGT(tag, format, ...) CONFIG_BT_BLEGC_LOGGER("T %s: " format "\n", tag, ##__VA_ARGS__)
 #else
 #define BLEGC_LOGT(tag, format, ...) (void)0
 #endif

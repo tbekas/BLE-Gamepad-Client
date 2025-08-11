@@ -1,12 +1,10 @@
 #include "BLEIncomingSignal.h"
 
 #include <NimBLEDevice.h>
-#include <NimBLERemoteCharacteristic.h>
 #include <bitset>
 #include <functional>
-#include "BLEIncomingSignalAdapter.h"
-#include "utils.h"
 #include "logger.h"
+#include "utils.h"
 
 static auto* LOG_TAG = "BLEIncomingSignal";
 
@@ -18,12 +16,12 @@ BLEIncomingSignal<T>::BLEIncomingSignal()
       _decoder([](T&, uint8_t[], size_t) { return 1; }),
       _address(),
       _pChar(nullptr),
-      _callOnUpdateTask(nullptr),
+      _onUpdateTask(nullptr),
       _storeMutex(nullptr),
       _store({.event = T()}) {}
 
 template <typename T>
-bool BLEIncomingSignal<T>::init(NimBLEAddress address, BLEIncomingSignalAdapter<T>& adapter) {
+bool BLEIncomingSignal<T>::init(NimBLEAddress address, Spec& spec) {
   if (_initialized) {
     return false;
   }
@@ -31,17 +29,17 @@ bool BLEIncomingSignal<T>::init(NimBLEAddress address, BLEIncomingSignalAdapter<
 
   _storeMutex = xSemaphoreCreateMutex();
   configASSERT(_storeMutex);
-  xTaskCreate(_callConsumerFn, "_callConsumerFn", 10000, this, 0, &_callOnUpdateTask);
-  configASSERT(_callOnUpdateTask);
+  xTaskCreate(_onUpdateTaskFn, "_onUpdateTask", 10000, this, 0, &_onUpdateTask);
+  configASSERT(_onUpdateTask);
 
-  _decoder = adapter.decoder;
-  _pChar = blegc::findCharacteristic(_address, adapter.serviceUUID, adapter.characteristicUUID,
+  _decoder = spec.decoder;
+  _pChar = blegc::findCharacteristic(_address, spec.serviceUUID, spec.characteristicUUID,
                                      [](NimBLERemoteCharacteristic* c) { return c->canNotify(); });
   if (!_pChar) {
     return false;
   }
 
-  auto handlerFn = std::bind(&BLEIncomingSignal<T>::_handleNotify, this, std::placeholders::_1, std::placeholders::_2,
+  auto handlerFn = std::bind(&BLEIncomingSignal::_handleNotify, this, std::placeholders::_1, std::placeholders::_2,
                              std::placeholders::_3, std::placeholders::_4);
 
   BLEGC_LOGD(LOG_TAG, "Subscribing to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
@@ -75,8 +73,8 @@ bool BLEIncomingSignal<T>::deinit(bool disconnected) {
     }
   }
 
-  if (_callOnUpdateTask != nullptr) {
-    vTaskDelete(_callOnUpdateTask);
+  if (_onUpdateTask != nullptr) {
+    vTaskDelete(_onUpdateTask);
   }
   if (_storeMutex != nullptr) {
     vSemaphoreDelete(_storeMutex);
@@ -111,7 +109,7 @@ void BLEIncomingSignal<T>::onUpdate(const OnUpdate<T>& onUpdate) {
 }
 
 template <typename T>
-void BLEIncomingSignal<T>::_callConsumerFn(void* pvParameters) {
+void BLEIncomingSignal<T>::_onUpdateTaskFn(void* pvParameters) {
   auto* self = static_cast<BLEIncomingSignal*>(pvParameters);
 
   while (true) {
@@ -125,7 +123,10 @@ void BLEIncomingSignal<T>::_callConsumerFn(void* pvParameters) {
 }
 
 template <typename T>
-void BLEIncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify) {
+void BLEIncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
+                                         uint8_t* pData,
+                                         size_t length,
+                                         bool isNotify) {
   BLEGC_LOGT(LOG_TAG, "Received a notification. %s", blegc::remoteCharToStr(pChar).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
@@ -137,6 +138,15 @@ void BLEIncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar, uint
   }
 
   if (_onUpdateSet && result) {
-    xTaskNotifyGive(_callOnUpdateTask);
+    xTaskNotifyGive(_onUpdateTask);
   }
+}
+
+template <typename T>
+bool BLEIncomingSignal<T>::Spec::isEnabled() const {
+  return !blegc::isNull(serviceUUID);
+}
+template <typename T>
+BLEIncomingSignal<T>::Spec::operator std::string() const {
+  return "service uuid: " + std::string(serviceUUID) + ", characteristic uuid: " + std::string(characteristicUUID);
 }

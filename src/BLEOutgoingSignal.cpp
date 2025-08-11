@@ -1,11 +1,10 @@
 #include "BLEOutgoingSignal.h"
+
 #include <NimBLEDevice.h>
-#include <NimBLERemoteCharacteristic.h>
 #include <bitset>
 #include <functional>
-#include "BLEOutgoingSignalAdapter.h"
-#include "utils.h"
 #include "logger.h"
+#include "utils.h"
 
 static auto* LOG_TAG = "BLEOutgoingSignal";
 
@@ -21,19 +20,19 @@ BLEOutgoingSignal<T>::BLEOutgoingSignal()
       _storeMutex(nullptr) {}
 
 template <typename T>
-bool BLEOutgoingSignal<T>::init(NimBLEAddress address, BLEOutgoingSignalAdapter<T>& adapter) {
+bool BLEOutgoingSignal<T>::init(NimBLEAddress address, Spec& spec) {
   if (_initialized) {
     return false;
   }
 
   _address = address;
 
-  _store.capacity = adapter.bufferLen > 0 ? adapter.bufferLen : 8;
+  _store.capacity = spec.bufferLen > 0 ? spec.bufferLen : 8;
   _store.pBuffer = new uint8_t[_store.capacity];
   _store.pSendBuffer = new uint8_t[_store.capacity];
 
-  _encoder = adapter.encoder;
-  _pChar = blegc::findCharacteristic(_address, adapter.serviceUUID, adapter.characteristicUUID,
+  _encoder = spec.encoder;
+  _pChar = blegc::findCharacteristic(_address, spec.serviceUUID, spec.characteristicUUID,
                                      [](NimBLERemoteCharacteristic* c) { return c->canWrite(); });
   if (!_pChar) {
     return false;
@@ -134,4 +133,14 @@ void BLEOutgoingSignal<T>::_sendDataFn(void* pvParameters) {
 
     self->_pChar->writeValue(self->_store.pSendBuffer, used);
   }
+}
+
+template <typename T>
+bool BLEOutgoingSignal<T>::Spec::isEnabled() const {
+  return !blegc::isNull(serviceUUID);
+}
+
+template <typename T>
+BLEOutgoingSignal<T>::Spec::operator std::string() const {
+  return "service uuid: " + std::string(serviceUUID) + ", characteristic uuid: " + std::string(characteristicUUID);
 }

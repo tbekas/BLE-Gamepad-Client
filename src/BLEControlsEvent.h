@@ -42,11 +42,11 @@ struct BLEControlsEvent : BLEBaseEvent {
   float rightStickX{0.0f};
 
   /**
-  * @brief Right stick deflection along the Y-axis. Takes values between -1.0 and 1.0. No deflection should yield 0.0,
-  * unless affected by stick drift. Positive values represent upward deflection, and negative values downward.
-  *
-  * @copydetails leftStickX
-  */
+   * @brief Right stick deflection along the Y-axis. Takes values between -1.0 and 1.0. No deflection should yield 0.0,
+   * unless affected by stick drift. Positive values represent upward deflection, and negative values downward.
+   *
+   * @copydetails leftStickX
+   */
   float rightStickY{0.0f};
 
   /// @brief Button activated when pressing down on the left stick, also known as the L3 button.
