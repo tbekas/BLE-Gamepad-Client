@@ -22,13 +22,13 @@ bool BLEControllerInternal::init(BLEControllerModel& model) {
     return false;
   }
 
-  if (model.controls.isEnabled()) {
+  if (!model.controls.empty()) {
     if (!_controls.init(_address, model.controls)) {
       return false;
     }
   }
 
-  if (model.battery.isEnabled()) {
+  if (!model.battery.empty()) {
     if (!_battery.init(_address, model.battery)) {
       if (_controls.isInitialized()) {
         _controls.deinit(false);

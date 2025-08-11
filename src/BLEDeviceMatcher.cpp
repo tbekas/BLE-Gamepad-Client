@@ -3,6 +3,7 @@
 #include <bitset>
 #include "logger.h"
 #include "xbox.h"
+#include "steam.h"
 
 static auto* LOG_TAG = "BLEDeviceMatcher";
 
@@ -12,6 +13,7 @@ bool BLEDeviceMatcher::init() {
   }
 
   // default models - lowest priority in front
+  _models.push_front(blegc::steamControllerModel);
   _models.push_front(blegc::xboxControllerModel);
 
   _initialized = true;
@@ -35,25 +37,28 @@ CTRL_MODEL_MATCH_TYPE BLEDeviceMatcher::matchModels(const NimBLEAdvertisedDevice
   auto modelMatch = std::bitset<MAX_CTRL_MODEL_COUNT>();
 
   for (int i = 0; i < _models.size(); i++) {
-    auto& config = _models[i];
+    auto& model = _models[i];
 
-    if (pAdvertisedDevice->haveName() && !config.advertisedName.empty() &&
-        pAdvertisedDevice->getName() == config.advertisedName) {
-      modelMatch[i] = true;
+    if (!model.advertisedName.empty()) {
+      modelMatch[i] = pAdvertisedDevice->haveName() && model.advertisedName == pAdvertisedDevice->getName();
       continue;
     }
 
-    if (config.controls.isEnabled() && pAdvertisedDevice->isAdvertisingService(config.controls.serviceUUID)) {
-      modelMatch[i] = true;
-      continue;
+    for (auto& spec : model.controls) {
+      if (pAdvertisedDevice->isAdvertisingService(spec.serviceUUID)) {
+        modelMatch[i] = true;
+        break; // TODO break out of 2 loops
+      }
     }
 
-    if (config.battery.isEnabled() && pAdvertisedDevice->isAdvertisingService(config.battery.serviceUUID)) {
-      modelMatch[i] = true;
-      continue;
+    for (auto& spec : model.battery) {
+      if (pAdvertisedDevice->isAdvertisingService(spec.serviceUUID)) {
+        modelMatch[i] = true;
+        break; // TODO break out of 2 loops
+      }
     }
 
-    if (config.vibrations.isEnabled() && pAdvertisedDevice->isAdvertisingService(config.vibrations.serviceUUID)) {
+    if (model.vibrations.isEnabled() && pAdvertisedDevice->isAdvertisingService(model.vibrations.serviceUUID)) {
       modelMatch[i] = true;
       continue;
     }
@@ -73,8 +78,8 @@ bool BLEDeviceMatcher::addModel(const BLEControllerModel& model) {
     BLEGC_LOGE(LOG_TAG, "Reached maximum number of models: %d", MAX_CTRL_MODEL_COUNT);
     return false;
   }
-  if (!model.controls.isEnabled() && !model.battery.isEnabled() && !model.vibrations.isEnabled()) {
-    BLEGC_LOGE(LOG_TAG, "Invalid model, at least one of [`controls`, `battery`, `vibrations`] has to be enabled");
+  if (model.controls.empty() && model.battery.empty() && !model.vibrations.isEnabled()) {
+    BLEGC_LOGE(LOG_TAG, "Invalid model, at least one of [`controls`, `battery`, `vibrations`] has to be defined");
     return false;
   }
 

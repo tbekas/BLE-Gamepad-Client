@@ -2,6 +2,7 @@
 
 #include <NimBLEDevice.h>
 #include <functional>
+#include <list>
 #include "BLEBatteryEvent.h"
 #include "BLEControlsEvent.h"
 
@@ -24,7 +25,7 @@ class BLEIncomingSignal {
 
   BLEIncomingSignal();
   ~BLEIncomingSignal() = default;
-  bool init(NimBLEAddress address, Spec& spec);
+  bool init(NimBLEAddress address, std::list<Spec>& spec);
   bool deinit(bool disconnected);
   bool isInitialized() const;
   void read(T& out);
@@ -35,13 +36,12 @@ class BLEIncomingSignal {
     T event;
   };
   static void _onUpdateTaskFn(void* pvParameters);
-  void _handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify);
+  void _handleNotify(Decoder* decoder, NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify);
   bool _initialized;
   OnUpdate<T> _onUpdate;
   bool _onUpdateSet;
-  Decoder _decoder;
   NimBLEAddress _address;
-  NimBLERemoteCharacteristic* _pChar;
+  std::vector<NimBLERemoteCharacteristic*> _chars;
   TaskHandle_t _onUpdateTask;
   SemaphoreHandle_t _storeMutex;
   Store _store;

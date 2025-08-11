@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <list>
 #include "BLEBatteryEvent.h"
 #include "BLEControlsEvent.h"
 #include "BLEIncomingSignal.h"
@@ -13,7 +14,7 @@ using BLEVibrationsSpec = BLEOutgoingSignal<BLEVibrationsCommand>::Spec;
 
 struct BLEControllerModel {
   std::string advertisedName{};
-  BLEControlsSpec controls{};
-  BLEBatterySpec battery{};
+  std::list<BLEControlsSpec> controls{};
+  std::list<BLEBatterySpec> battery{};
   BLEVibrationsSpec vibrations{};
 };
