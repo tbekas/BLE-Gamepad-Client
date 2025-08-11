@@ -12,8 +12,16 @@ static bool isNull(const NimBLEUUID& uuid) {
   return uuid.bitSize() == 0;
 }
 
+static std::string remoteSvcToStr(const NimBLERemoteService* pSvc) {
+  std::string res = "Service: uuid: " + std::string(pSvc->getUUID());
+  res += ", handle: ";
+  res += std::to_string(pSvc->getHandle());
+  return res;
+}
+
 static std::string remoteCharToStr(const NimBLERemoteCharacteristic* pChar) {
   std::string res = "Characteristic: uuid: " + std::string(pChar->getUUID());
+  res += ", handle: ";
   res += std::to_string(pChar->getHandle());
   res += ", can: [";
   if (pChar->canBroadcast()) {
@@ -62,9 +70,9 @@ static bool discoverAttributes(const NimBLEAddress address) {
 
 #if CONFIG_BT_BLEGC_LOG_LEVEL >= 4
   for (auto& pService : pClient->getServices(false)) {
-    BLEGC_LOGD(LOG_TAG, "Discovered service %s", std::string(pService->getUUID()).c_str());
+    BLEGC_LOGD(LOG_TAG, "Discovered %s", remoteSvcToStr(pService).c_str());
     for (auto& pChar : pService->getCharacteristics(false)) {
-      BLEGC_LOGD(LOG_TAG, "Discovered characteristic %s", remoteCharToStr(pChar).c_str());
+      BLEGC_LOGD(LOG_TAG, "Discovered %s", remoteCharToStr(pChar).c_str());
     }
   }
 #endif
