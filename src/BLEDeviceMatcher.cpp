@@ -64,12 +64,8 @@ CTRL_MODEL_MATCH_TYPE BLEDeviceMatcher::matchModels(const NimBLEAdvertisedDevice
   return value;
 }
 
-CTRL_MODEL_MATCH_TYPE BLEDeviceMatcher::getMatchedModels(NimBLEAddress address) {
-  if (_matchedModels.contains(address)) {
-    return _matchedModels[address];
-  }
-
-  return 0;
+CTRL_MODEL_MATCH_TYPE BLEDeviceMatcher::getMatchedModels(const NimBLEAddress address) {
+  return _matchedModels[address];
 }
 
 bool BLEDeviceMatcher::addModel(const BLEControllerModel& model) {
