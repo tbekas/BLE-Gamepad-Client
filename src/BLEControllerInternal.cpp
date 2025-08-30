@@ -22,13 +22,13 @@ bool BLEControllerInternal::init(BLEControllerModel& model) {
     return false;
   }
 
-  if (model.controls.isEnabled()) {
+  if (model.controls.enabled) {
     if (!_controls.init(_address, model.controls)) {
       return false;
     }
   }
 
-  if (model.battery.isEnabled()) {
+  if (model.battery.enabled) {
     if (!_battery.init(_address, model.battery)) {
       if (_controls.isInitialized()) {
         _controls.deinit(false);
@@ -37,7 +37,7 @@ bool BLEControllerInternal::init(BLEControllerModel& model) {
     }
   }
 
-  if (model.vibrations.isEnabled()) {
+  if (model.vibrations.enabled) {
     if (!_vibrations.init(_address, model.vibrations)) {
       if (_battery.isInitialized()) {
         _battery.deinit(false);

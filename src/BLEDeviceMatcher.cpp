@@ -43,17 +43,17 @@ CTRL_MODEL_MATCH_TYPE BLEDeviceMatcher::matchModels(const NimBLEAdvertisedDevice
       continue;
     }
 
-    if (config.controls.isEnabled() && pAdvertisedDevice->isAdvertisingService(config.controls.serviceUUID)) {
+    if (config.controls.enabled && pAdvertisedDevice->isAdvertisingService(config.controls.serviceUUID)) {
       modelMatch[i] = true;
       continue;
     }
 
-    if (config.battery.isEnabled() && pAdvertisedDevice->isAdvertisingService(config.battery.serviceUUID)) {
+    if (config.battery.enabled && pAdvertisedDevice->isAdvertisingService(config.battery.serviceUUID)) {
       modelMatch[i] = true;
       continue;
     }
 
-    if (config.vibrations.isEnabled() && pAdvertisedDevice->isAdvertisingService(config.vibrations.serviceUUID)) {
+    if (config.vibrations.enabled && pAdvertisedDevice->isAdvertisingService(config.vibrations.serviceUUID)) {
       modelMatch[i] = true;
       continue;
     }
@@ -73,7 +73,7 @@ bool BLEDeviceMatcher::addModel(const BLEControllerModel& model) {
     BLEGC_LOGE(LOG_TAG, "Reached maximum number of models: %d", MAX_CTRL_MODEL_COUNT);
     return false;
   }
-  if (!model.controls.isEnabled() && !model.battery.isEnabled() && !model.vibrations.isEnabled()) {
+  if (!model.controls.enabled && !model.battery.enabled && !model.vibrations.enabled) {
     BLEGC_LOGE(LOG_TAG, "Invalid model, at least one of [`controls`, `battery`, `vibrations`] has to be enabled");
     return false;
   }

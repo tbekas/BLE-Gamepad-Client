@@ -9,15 +9,15 @@ class BLEOutgoingSignal {
   using Encoder = std::function<size_t(const T& value, uint8_t buffer[], size_t bufferLen)>;
 
   struct Spec {
+    bool enabled{false};
     NimBLEUUID serviceUUID{};
     NimBLEUUID characteristicUUID{};
+    unsigned int idx{0};
     Encoder encoder{};
 
     /// @brief Optional. Specifies the size of the buffer for the encoded payload. Leave undefined if the encoded size
     /// varies depending on the input.
     size_t bufferLen{};
-
-    bool isEnabled() const;
     explicit operator std::string() const;
   };
 
