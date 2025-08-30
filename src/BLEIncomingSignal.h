@@ -14,11 +14,12 @@ class BLEIncomingSignal {
   using Decoder = std::function<size_t(T&, uint8_t payload[], size_t payloadLen)>;
 
   struct Spec {
+    bool enabled{false};
     NimBLEUUID serviceUUID{};
     NimBLEUUID characteristicUUID{};
-    Decoder decoder{};
+    unsigned int idx{0};
 
-    bool isEnabled() const;
+    Decoder decoder{};
     explicit operator std::string() const;
   };
 

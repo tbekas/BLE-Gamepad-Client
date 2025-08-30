@@ -33,8 +33,7 @@ bool BLEIncomingSignal<T>::init(NimBLEAddress address, Spec& spec) {
   configASSERT(_onUpdateTask);
 
   _decoder = spec.decoder;
-  _pChar = blegc::findCharacteristic(_address, spec.serviceUUID, spec.characteristicUUID,
-                                     [](NimBLERemoteCharacteristic* c) { return c->canNotify(); });
+  _pChar = blegc::findCharacteristic(_address, spec.serviceUUID, spec.characteristicUUID, BLE_GATT_CHR_PROP_NOTIFY);
   if (!_pChar) {
     return false;
   }
@@ -142,10 +141,6 @@ void BLEIncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
   }
 }
 
-template <typename T>
-bool BLEIncomingSignal<T>::Spec::isEnabled() const {
-  return !blegc::isNull(serviceUUID);
-}
 template <typename T>
 BLEIncomingSignal<T>::Spec::operator std::string() const {
   return "service uuid: " + std::string(serviceUUID) + ", characteristic uuid: " + std::string(characteristicUUID);

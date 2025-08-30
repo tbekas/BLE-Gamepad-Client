@@ -32,8 +32,7 @@ bool BLEOutgoingSignal<T>::init(NimBLEAddress address, Spec& spec) {
   _store.pSendBuffer = new uint8_t[_store.capacity];
 
   _encoder = spec.encoder;
-  _pChar = blegc::findCharacteristic(_address, spec.serviceUUID, spec.characteristicUUID,
-                                     [](NimBLERemoteCharacteristic* c) { return c->canWrite(); });
+  _pChar = blegc::findCharacteristic(_address, spec.serviceUUID, spec.characteristicUUID, BLE_GATT_CHR_PROP_WRITE);
   if (!_pChar) {
     return false;
   }
@@ -133,11 +132,6 @@ void BLEOutgoingSignal<T>::_sendDataFn(void* pvParameters) {
 
     self->_pChar->writeValue(self->_store.pSendBuffer, used);
   }
-}
-
-template <typename T>
-bool BLEOutgoingSignal<T>::Spec::isEnabled() const {
-  return !blegc::isNull(serviceUUID);
 }
 
 template <typename T>

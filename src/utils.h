@@ -19,46 +19,52 @@ static std::string remoteSvcToStr(const NimBLERemoteService* pSvc) {
   return res;
 }
 
+static void writeProperties(std::string& out, const uint8_t p, const std::string& sep) {
+  // clang-format off
+  if (p & BLE_GATT_CHR_PROP_BROADCAST) { out += "broadcast"; out += sep; }
+  if (p & BLE_GATT_CHR_PROP_READ) { out += "read"; out += sep; }
+  if (p & BLE_GATT_CHR_PROP_WRITE_NO_RSP) { out += "writeNoResponse"; out += sep; }
+  if (p & BLE_GATT_CHR_PROP_WRITE) { out += "write"; out += sep; }
+  if (p & BLE_GATT_CHR_PROP_NOTIFY) { out += "notify"; out += sep; }
+  if (p & BLE_GATT_CHR_PROP_INDICATE) { out += "indicate"; out += sep; }
+  if (p & BLE_GATT_CHR_PROP_AUTH_SIGN_WRITE) { out += "writeSigned"; out += sep; }
+  if (p & BLE_GATT_CHR_PROP_EXTENDED) { out += "hasExtendedProps"; out += sep; }
+  // clang-format on
+
+  auto pos = out.rfind(sep);
+  if (pos == out.size() - sep.length()) {
+    out.erase(pos);
+  }
+}
+
+static uint8_t getProperties(const NimBLERemoteCharacteristic* pChar) {
+  uint8_t res = 0;
+  // clang-format off
+  if (pChar->canBroadcast()) { res |= BLE_GATT_CHR_PROP_BROADCAST; }
+  if (pChar->canRead()) { res |= BLE_GATT_CHR_PROP_READ; }
+  if (pChar->canWriteNoResponse()) { res |= BLE_GATT_CHR_PROP_WRITE_NO_RSP; }
+  if (pChar->canWrite()) { res |= BLE_GATT_CHR_PROP_WRITE; }
+  if (pChar->canNotify()) { res |= BLE_GATT_CHR_PROP_NOTIFY; }
+  if (pChar->canIndicate()) { res |= BLE_GATT_CHR_PROP_INDICATE; }
+  if (pChar->canWriteSigned()) { res |= BLE_GATT_CHR_PROP_AUTH_SIGN_WRITE; }
+  if (pChar->hasExtendedProps()) { res |= BLE_GATT_CHR_PROP_EXTENDED; }
+  // clang-format on
+  return res;
+}
+
 static std::string remoteCharToStr(const NimBLERemoteCharacteristic* pChar) {
   std::string res = "Characteristic: uuid: " + std::string(pChar->getUUID());
   res += ", handle: ";
   res += std::to_string(pChar->getHandle());
-  res += ", can: [";
-  if (pChar->canBroadcast()) {
-    res += "broadcast, ";
-  }
-  if (pChar->canRead()) {
-    res += "read, ";
-  }
-  if (pChar->canWriteNoResponse()) {
-    res += "writeNoResponse, ";
-  }
-  if (pChar->canWrite()) {
-    res += "write, ";
-  }
-  if (pChar->canNotify()) {
-    res += "notify, ";
-  }
-  if (pChar->canIndicate()) {
-    res += "indicate, ";
-  }
-  if (pChar->canWriteSigned()) {
-    res += "writeSigned, ";
-  }
-  if (pChar->hasExtendedProps()) {
-    res += "haveExtendedProperties, ";
-  }
-  auto pos  = res.rfind(", ");
-  if (pos == res.size() - 2) {
-    res.erase(pos);
-  }
+  res += ", properties: [";
+  writeProperties(res, getProperties(pChar), ", ");
   res += "]";
 
   return res;
 }
 
 static bool discoverAttributes(const NimBLEAddress address) {
-  auto* pClient = BLEDevice::getClientByPeerAddress(address);
+  auto* pClient = NimBLEDevice::getClientByPeerAddress(address);
   if (!pClient) {
     BLEGC_LOGE(LOG_TAG, "BLE client not found, address %s", std::string(address).c_str());
     return false;
@@ -81,14 +87,17 @@ static bool discoverAttributes(const NimBLEAddress address) {
 
 using BLECharacteristicFilter = std::function<bool(NimBLERemoteCharacteristic*)>;
 
-static NimBLERemoteCharacteristic* findCharacteristic(
-    const NimBLEAddress address,
-    const NimBLEUUID& serviceUUID,
-    const NimBLEUUID& characteristicUUID = NimBLEUUID(),
-    const BLECharacteristicFilter& filter = [](NimBLERemoteCharacteristic*) { return true; }) {
-  BLEGC_LOGD(LOG_TAG, "Looking up for characteristic, service uuid: %s, characteristic uuid: %s.",
+static NimBLERemoteCharacteristic* findCharacteristic(const NimBLEAddress address,
+                                                      const NimBLEUUID& serviceUUID,
+                                                      const NimBLEUUID& characteristicUUID,
+                                                      const uint8_t properties = 0xff,
+                                                      const unsigned int idx = 0) {
+  std::string propStr;
+  writeProperties(propStr, properties, ", ");
+  BLEGC_LOGD(LOG_TAG,
+             "Looking up for characteristic, service uuid: %s, characteristic uuid: %s, properties: [%s], idx: %d.",
              std::string(serviceUUID).c_str(),
-             isNull(characteristicUUID) ? "null" : std::string(characteristicUUID).c_str());
+             isNull(characteristicUUID) ? "null" : std::string(characteristicUUID).c_str(), propStr.c_str(), idx);
 
   auto* pBleClient = NimBLEDevice::getClientByPeerAddress(address);
   if (!pBleClient) {
@@ -102,21 +111,27 @@ static NimBLERemoteCharacteristic* findCharacteristic(
     return nullptr;
   }
 
+  unsigned int _idx = idx;
+
   for (auto* pChar : pService->getCharacteristics(false)) {
     if (!isNull(characteristicUUID) && characteristicUUID != pChar->getUUID()) {
       continue;
     }
 
-    if (!filter(pChar)) {
+    if (!(getProperties(pChar) & properties)) {
+      continue;
+    }
+
+    if (_idx-- != 0) {
       continue;
     }
 
     return pChar;
   }
 
-  BLEGC_LOGE(LOG_TAG, "Characteristic not found, service uuid: %s, characteristic uuid: %s.",
+  BLEGC_LOGE(LOG_TAG, "Characteristic not found, service uuid: %s, characteristic uuid: %s, properties: [%s], idx: %d.",
              std::string(serviceUUID).c_str(),
-             isNull(characteristicUUID) ? "null" : std::string(characteristicUUID).c_str());
+             isNull(characteristicUUID) ? "null" : std::string(characteristicUUID).c_str(), propStr.c_str(), idx);
 
   return nullptr;
 }

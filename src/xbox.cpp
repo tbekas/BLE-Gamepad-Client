@@ -8,8 +8,10 @@
 
 static auto* LOG_TAG = "xbox";
 
-const NimBLEUUID hidServiceUUID((uint16_t)0x1812);
-const NimBLEUUID batteryServiceUUID((uint16_t)0x180f);
+const NimBLEUUID hidServiceUUID(static_cast<uint16_t>(0x1812));
+const NimBLEUUID hidCharacteristicUUID(static_cast<uint16_t>(0x2a4d));
+const NimBLEUUID batteryServiceUUID(static_cast<uint16_t>(0x180f));
+const NimBLEUUID batteryCharacteristicUUID(static_cast<uint16_t>(0x2a19));
 
 constexpr size_t controlsPayloadLen = 16;
 constexpr size_t batteryPayloadLen = 1;
@@ -149,13 +151,23 @@ size_t encodeVibrationsCommand(const BLEVibrationsCommand& c, uint8_t outBuffer[
 BLEControllerModel makeControllerModel() {
   BLEControllerModel m;
   m.advertisedName = "Xbox Wireless Controller";
+
+  m.controls.enabled = true;
   m.controls.serviceUUID = hidServiceUUID;
+  m.controls.characteristicUUID = hidCharacteristicUUID;
   m.controls.decoder = decodeControlsEvent;
+
+  m.battery.enabled = true;
   m.battery.serviceUUID = batteryServiceUUID;
+  m.battery.characteristicUUID = batteryCharacteristicUUID;
   m.battery.decoder = decodeBatteryEvent;
+
+  m.vibrations.enabled = true;
   m.vibrations.serviceUUID = hidServiceUUID;
+  m.vibrations.characteristicUUID = hidCharacteristicUUID;
   m.vibrations.encoder = encodeVibrationsCommand;
   m.vibrations.bufferLen = vibrationsPayloadLen;
+
   return m;
 }
 
