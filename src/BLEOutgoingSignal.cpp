@@ -20,19 +20,19 @@ BLEOutgoingSignal<T>::BLEOutgoingSignal()
       _storeMutex(nullptr) {}
 
 template <typename T>
-bool BLEOutgoingSignal<T>::init(NimBLEAddress address, Spec& spec) {
+bool BLEOutgoingSignal<T>::init(NimBLEClient* pClient, const Spec& spec) {
   if (_initialized) {
     return false;
   }
 
-  _address = address;
+  _address = pClient->getPeerAddress();
 
   _store.capacity = spec.bufferLen > 0 ? spec.bufferLen : 8;
   _store.pBuffer = new uint8_t[_store.capacity];
   _store.pSendBuffer = new uint8_t[_store.capacity];
 
   _encoder = spec.encoder;
-  _pChar = blegc::findCharacteristic(_address, spec.serviceUUID, spec.characteristicUUID, BLE_GATT_CHR_PROP_WRITE);
+  _pChar = blegc::findCharacteristic(pClient, spec.serviceUUID, spec.characteristicUUID, BLE_GATT_CHR_PROP_WRITE);
   if (!_pChar) {
     return false;
   }

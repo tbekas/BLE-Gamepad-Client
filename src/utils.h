@@ -63,14 +63,9 @@ static std::string remoteCharToStr(const NimBLERemoteCharacteristic* pChar) {
   return res;
 }
 
-static bool discoverAttributes(const NimBLEAddress address) {
-  auto* pClient = NimBLEDevice::getClientByPeerAddress(address);
-  if (!pClient) {
-    BLEGC_LOGE(LOG_TAG, "BLE client not found, address %s", std::string(address).c_str());
-    return false;
-  }
+static bool discoverAttributes(NimBLEClient* pClient) {
   if (!pClient->discoverAttributes()) {
-    BLEGC_LOGE(LOG_TAG, "Failed to discover attributes, address %s", std::string(address).c_str());
+    BLEGC_LOGE(LOG_TAG, "Failed to discover attributes, address %s", std::string(pClient->getPeerAddress()).c_str());
     return false;
   }
 
@@ -85,9 +80,7 @@ static bool discoverAttributes(const NimBLEAddress address) {
   return true;
 }
 
-using BLECharacteristicFilter = std::function<bool(NimBLERemoteCharacteristic*)>;
-
-static NimBLERemoteCharacteristic* findCharacteristic(const NimBLEAddress address,
+static NimBLERemoteCharacteristic* findCharacteristic(NimBLEClient* pClient,
                                                       const NimBLEUUID& serviceUUID,
                                                       const NimBLEUUID& characteristicUUID,
                                                       const uint8_t properties = 0xff,
@@ -99,13 +92,7 @@ static NimBLERemoteCharacteristic* findCharacteristic(const NimBLEAddress addres
              std::string(serviceUUID).c_str(),
              isNull(characteristicUUID) ? "null" : std::string(characteristicUUID).c_str(), propStr.c_str(), idx);
 
-  auto* pBleClient = NimBLEDevice::getClientByPeerAddress(address);
-  if (!pBleClient) {
-    BLEGC_LOGE(LOG_TAG, "BLE client not found, address %s", std::string(address).c_str());
-    return nullptr;
-  }
-
-  auto* pService = pBleClient->getService(serviceUUID);
+  auto* pService = pClient->getService(serviceUUID);
   if (!pService) {
     BLEGC_LOGE(LOG_TAG, "Service not found, service uuid: %s", std::string(serviceUUID).c_str());
     return nullptr;

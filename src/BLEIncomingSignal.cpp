@@ -21,11 +21,11 @@ BLEIncomingSignal<T>::BLEIncomingSignal()
       _store({.event = T()}) {}
 
 template <typename T>
-bool BLEIncomingSignal<T>::init(NimBLEAddress address, Spec& spec) {
+bool BLEIncomingSignal<T>::init(NimBLEClient* pClient, const Spec& spec) {
   if (_initialized) {
     return false;
   }
-  _address = address;
+  _address = pClient->getPeerAddress();
 
   _storeMutex = xSemaphoreCreateMutex();
   configASSERT(_storeMutex);
@@ -33,7 +33,7 @@ bool BLEIncomingSignal<T>::init(NimBLEAddress address, Spec& spec) {
   configASSERT(_onUpdateTask);
 
   _decoder = spec.decoder;
-  _pChar = blegc::findCharacteristic(_address, spec.serviceUUID, spec.characteristicUUID, BLE_GATT_CHR_PROP_NOTIFY);
+  _pChar = blegc::findCharacteristic(pClient, spec.serviceUUID, spec.characteristicUUID, BLE_GATT_CHR_PROP_NOTIFY);
   if (!_pChar) {
     return false;
   }

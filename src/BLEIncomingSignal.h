@@ -25,7 +25,7 @@ class BLEIncomingSignal {
 
   BLEIncomingSignal();
   ~BLEIncomingSignal() = default;
-  bool init(NimBLEAddress address, Spec& spec);
+  bool init(NimBLEClient* pClient, const Spec& spec);
   bool deinit(bool disconnected);
   bool isInitialized() const;
   void read(T& out);
