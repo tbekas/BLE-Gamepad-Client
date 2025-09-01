@@ -2,30 +2,17 @@
 
 #include <NimBLEDevice.h>
 #include "BLEVibrationsCommand.h"
+#include "utils.h"
 
 template <typename T>
 class BLEOutgoingSignal {
  public:
   using Encoder = std::function<size_t(const T& value, uint8_t buffer[], size_t bufferLen)>;
 
-  struct Spec {
-    bool enabled{false};
-    NimBLEUUID serviceUUID{};
-    NimBLEUUID characteristicUUID{};
-    unsigned int idx{0};
-    Encoder encoder{};
-
-    /// @brief Optional. Specifies the size of the buffer for the encoded payload. Leave undefined if the encoded size
-    /// varies depending on the input.
-    size_t bufferLen{};
-    explicit operator std::string() const;
-  };
-
-  BLEOutgoingSignal();
-  ~BLEOutgoingSignal() = default;
-  bool init(NimBLEClient* pClient, const Spec& spec);
+  BLEOutgoingSignal(const Encoder& encoder, const blegc::CharacteristicFilter& filter, size_t bufferLen = 1);
+  ~BLEOutgoingSignal();
+  bool init(NimBLEClient* pClient);
   bool deinit(bool disconnected);
-  bool isInitialized() const;
   void write(const T& value);
 
  private:
@@ -36,9 +23,10 @@ class BLEOutgoingSignal {
     size_t capacity{};
   };
   static void _sendDataFn(void* pvParameters);
-  bool _initialized;
-  Encoder _encoder;
-  NimBLEAddress _address;
+
+  const Encoder& _encoder;
+  const blegc::CharacteristicFilter& _filter;
+
   NimBLERemoteCharacteristic* _pChar;
   TaskHandle_t _sendDataTask;
   SemaphoreHandle_t _storeMutex;
@@ -46,5 +34,3 @@ class BLEOutgoingSignal {
 };
 
 template class BLEOutgoingSignal<BLEVibrationsCommand>;
-
-using BLEVibrationsSignal = BLEOutgoingSignal<BLEVibrationsCommand>;

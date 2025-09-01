@@ -1,25 +1,16 @@
 #include "BLEAutoScanner.h"
 
 #include <NimBLEDevice.h>
-#include "BLEDeviceMatcher.h"
 #include "BLEControllerRegistry.h"
 #include "logger.h"
 
 static auto* LOG_TAG = "BLEAutoScanner";
 
 BLEAutoScanner::BLEAutoScanner(TaskHandle_t& autoScanTask,
-                               BLEControllerRegistry& controllerRegistry,
-                               BLEDeviceMatcher& matcher)
+                               BLEControllerRegistry& controllerRegistry)
     : _autoScanTask(autoScanTask),
-      _matcher(matcher),
       _controllerRegistry(controllerRegistry),
-      _scanCallbacks(*this) {}
-
-bool BLEAutoScanner::init() {
-  if (_initialized) {
-    return false;
-  }
-
+      _scanCallbacks(*this) {
   xTaskCreate(_autoScanTaskFn, "_autoScanTaskFn", 10000, this, 0, &_autoScanTask);
   configASSERT(_autoScanTask);
 
@@ -27,21 +18,6 @@ bool BLEAutoScanner::init() {
   pScan->setScanCallbacks(&_scanCallbacks, false);
   pScan->setActiveScan(true);
   pScan->setMaxResults(0);
-
-  _initialized = true;
-  return true;
-}
-bool BLEAutoScanner::deinit() {
-  if (!_initialized) {
-    return false;
-  }
-
-  _initialized = false;
-  return true;
-}
-
-bool BLEAutoScanner::isInitialized() const {
-  return _initialized;
 }
 
 void BLEAutoScanner::enableAutoScan() {
@@ -93,12 +69,7 @@ void BLEAutoScanner::ScanCallbacks::onResult(const NimBLEAdvertisedDevice* pAdve
              std::string(pAdvertisedDevice->getAddress()).c_str(), pAdvertisedDevice->getAddressType(),
              pAdvertisedDevice->getName().c_str());
 
-  if (!_autoScanner._matcher.matchModels(pAdvertisedDevice)) {
-    BLEGC_LOGD(LOG_TAG, "No models found for a device");
-    return;
-  }
-
-  _autoScanner._controllerRegistry.connectController(pAdvertisedDevice->getAddress());
+  _autoScanner._controllerRegistry.tryConnectController(pAdvertisedDevice);
 }
 
 void BLEAutoScanner::ScanCallbacks::onScanEnd(const NimBLEScanResults& results, int reason) {

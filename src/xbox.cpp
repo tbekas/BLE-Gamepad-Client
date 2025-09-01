@@ -1,17 +1,13 @@
 #include "xbox.h"
+#include <NimBLEDevice.h>
 #include <bitset>
 #include "BLEBatteryEvent.h"
-#include "BLEControllerModel.h"
 #include "BLEControlsEvent.h"
+#include "BLEIncomingSignal.h"
 #include "BLEVibrationsCommand.h"
 #include "logger.h"
 
 static auto* LOG_TAG = "xbox";
-
-const NimBLEUUID hidServiceUUID(static_cast<uint16_t>(0x1812));
-const NimBLEUUID hidCharacteristicUUID(static_cast<uint16_t>(0x2a4d));
-const NimBLEUUID batteryServiceUUID(static_cast<uint16_t>(0x180f));
-const NimBLEUUID batteryCharacteristicUUID(static_cast<uint16_t>(0x2a19));
 
 constexpr size_t controlsPayloadLen = 16;
 constexpr size_t batteryPayloadLen = 1;
@@ -126,7 +122,7 @@ inline uint8_t encodeDuration(uint32_t durationMs) {
 
 size_t encodeVibrationsCommand(const BLEVibrationsCommand& c, uint8_t outBuffer[], size_t bufferLen) {
   if (bufferLen < vibrationsPayloadLen) {
-    BLEGC_LOGW(LOG_TAG, "Expected buffer of at least %d bytes, was %d bytes", vibrationsPayloadLen, bufferLen);
+    BLEGC_LOGD(LOG_TAG, "Expected buffer of at least %d bytes, was %d bytes", vibrationsPayloadLen, bufferLen);
     return 0;
   }
 
@@ -148,27 +144,23 @@ size_t encodeVibrationsCommand(const BLEVibrationsCommand& c, uint8_t outBuffer[
   return vibrationsPayloadLen;
 }
 
-BLEControllerModel makeControllerModel() {
-  BLEControllerModel m;
-  m.advertisedName = "Xbox Wireless Controller";
+const NimBLEUUID hidServiceUUID(static_cast<uint16_t>(0x1812));
+const NimBLEUUID hidCharacteristicUUID(static_cast<uint16_t>(0x2a4d));
+const NimBLEUUID batteryServiceUUID(static_cast<uint16_t>(0x180f));
+const NimBLEUUID batteryCharacteristicUUID(static_cast<uint16_t>(0x2a19));
 
-  m.controls.enabled = true;
-  m.controls.serviceUUID = hidServiceUUID;
-  m.controls.characteristicUUID = hidCharacteristicUUID;
-  m.controls.decoder = decodeControlsEvent;
+namespace blegc::xbox {
+const std::string advertisedDeviceName = "Xbox Wireless Controller";
 
-  m.battery.enabled = true;
-  m.battery.serviceUUID = batteryServiceUUID;
-  m.battery.characteristicUUID = batteryCharacteristicUUID;
-  m.battery.decoder = decodeBatteryEvent;
+const CharacteristicFilter controlsCharacteristic(hidServiceUUID, hidCharacteristicUUID, BLE_GATT_CHR_PROP_NOTIFY);
+const CharacteristicFilter batteryCharacteristic(batteryServiceUUID,
+                                                 batteryCharacteristicUUID,
+                                                 BLE_GATT_CHR_PROP_NOTIFY);
+const CharacteristicFilter vibrationsCharacteristic(hidServiceUUID, hidCharacteristicUUID, BLE_GATT_CHR_PROP_WRITE);
 
-  m.vibrations.enabled = true;
-  m.vibrations.serviceUUID = hidServiceUUID;
-  m.vibrations.characteristicUUID = hidCharacteristicUUID;
-  m.vibrations.encoder = encodeVibrationsCommand;
-  m.vibrations.bufferLen = vibrationsPayloadLen;
+const BLEIncomingSignal<BLEControlsEvent>::Decoder controlsDecoder(decodeControlsEvent);
+const BLEIncomingSignal<BLEBatteryEvent>::Decoder batteryDecoder(decodeBatteryEvent);
+const BLEOutgoingSignal<BLEVibrationsCommand>::Encoder vibrationsEncoder(encodeVibrationsCommand);
 
-  return m;
-}
-
-const BLEControllerModel blegc::xboxControllerModel = makeControllerModel();
+const size_t vibrationsBufferLen = vibrationsPayloadLen;
+}  // namespace blegc::xbox

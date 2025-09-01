@@ -9,32 +9,42 @@
 static auto* LOG_TAG = "BLEIncomingSignal";
 
 template <typename T>
-BLEIncomingSignal<T>::BLEIncomingSignal()
-    : _initialized(false),
-      _onUpdate([](T&) {}),
-      _onUpdateSet(false),
-      _decoder([](T&, uint8_t[], size_t) { return 1; }),
-      _address(),
+BLEIncomingSignal<T>::BLEIncomingSignal(const Decoder& decoder, const blegc::CharacteristicFilter& filter)
+    : _decoder(decoder),
+      _filter(filter),
       _pChar(nullptr),
       _onUpdateTask(nullptr),
       _storeMutex(nullptr),
-      _store({.event = T()}) {}
-
-template <typename T>
-bool BLEIncomingSignal<T>::init(NimBLEClient* pClient, const Spec& spec) {
-  if (_initialized) {
-    return false;
-  }
-  _address = pClient->getPeerAddress();
-
+      _store(),
+      _onUpdateCallback(),
+      _onUpdateCallbackSet(false) {
   _storeMutex = xSemaphoreCreateMutex();
   configASSERT(_storeMutex);
   xTaskCreate(_onUpdateTaskFn, "_onUpdateTask", 10000, this, 0, &_onUpdateTask);
   configASSERT(_onUpdateTask);
+}
 
-  _decoder = spec.decoder;
-  _pChar = blegc::findCharacteristic(pClient, spec.serviceUUID, spec.characteristicUUID, BLE_GATT_CHR_PROP_NOTIFY);
+template <typename T>
+BLEIncomingSignal<T>::~BLEIncomingSignal() {
+  if (_onUpdateTask != nullptr) {
+    vTaskDelete(_onUpdateTask);
+    _onUpdateTask = nullptr;
+  }
+  if (_storeMutex != nullptr) {
+    vSemaphoreDelete(_storeMutex);
+    _storeMutex = nullptr;
+  }
+}
+
+template <typename T>
+bool BLEIncomingSignal<T>::init(NimBLEClient* pClient) {
+  _pChar = blegc::findCharacteristic(pClient, _filter);
   if (!_pChar) {
+    return false;
+  }
+
+  if (!_pChar->canNotify()) {
+    BLEGC_LOGE(LOG_TAG, "Characteristic not able to notify. %s", blegc::remoteCharToStr(_pChar).c_str());
     return false;
   }
 
@@ -43,59 +53,18 @@ bool BLEIncomingSignal<T>::init(NimBLEClient* pClient, const Spec& spec) {
 
   BLEGC_LOGD(LOG_TAG, "Subscribing to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
 
-  if (!_pChar->subscribe(true, handlerFn, true)) {
+  if (!_pChar->subscribe(true, handlerFn, false)) {
     BLEGC_LOGE(LOG_TAG, "Failed to subscribe to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
     return false;
   }
 
   BLEGC_LOGD(LOG_TAG, "Successfully subscribed to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
 
-  _initialized = true;
   return true;
 }
 
 template <typename T>
-bool BLEIncomingSignal<T>::deinit(bool disconnected) {
-  if (!_initialized) {
-    return false;
-  }
-
-  bool result = true;
-  if (!disconnected) {
-    if (_pChar) {
-      if (!_pChar->unsubscribe()) {
-        BLEGC_LOGW(LOG_TAG, "Failed to unsubscribe from notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
-        result = false;
-      } else {
-        BLEGC_LOGD(LOG_TAG, "Successfully unsubscribed from notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
-      }
-    }
-  }
-
-  if (_onUpdateTask != nullptr) {
-    vTaskDelete(_onUpdateTask);
-  }
-  if (_storeMutex != nullptr) {
-    vSemaphoreDelete(_storeMutex);
-  }
-
-  _pChar = nullptr;
-
-  _initialized = false;
-  return result;
-}
-
-template <typename T>
-bool BLEIncomingSignal<T>::isInitialized() const {
-  return _initialized;
-}
-
-template <typename T>
 void BLEIncomingSignal<T>::read(T& out) {
-  if (!_initialized) {
-    return;
-  }
-
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   out = _store.event;
   configASSERT(xSemaphoreGive(_storeMutex));
@@ -103,8 +72,8 @@ void BLEIncomingSignal<T>::read(T& out) {
 
 template <typename T>
 void BLEIncomingSignal<T>::onUpdate(const OnUpdate<T>& onUpdate) {
-  _onUpdate = onUpdate;
-  _onUpdateSet = true;
+  _onUpdateCallback = onUpdate;
+  _onUpdateCallbackSet = true;
 }
 
 template <typename T>
@@ -117,7 +86,7 @@ void BLEIncomingSignal<T>::_onUpdateTaskFn(void* pvParameters) {
     configASSERT(xSemaphoreTake(self->_storeMutex, portMAX_DELAY));
     auto eventCopy = self->_store.event;
     configASSERT(xSemaphoreGive(self->_storeMutex));
-    self->_onUpdate(eventCopy);
+    self->_onUpdateCallback(eventCopy);
   }
 }
 
@@ -136,12 +105,7 @@ void BLEIncomingSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
     BLEGC_LOGE(LOG_TAG, "Decoding failed. %s", blegc::remoteCharToStr(pChar).c_str());
   }
 
-  if (_onUpdateSet && result) {
+  if (_onUpdateCallbackSet && result) {
     xTaskNotifyGive(_onUpdateTask);
   }
-}
-
-template <typename T>
-BLEIncomingSignal<T>::Spec::operator std::string() const {
-  return "service uuid: " + std::string(serviceUUID) + ", characteristic uuid: " + std::string(characteristicUUID);
 }

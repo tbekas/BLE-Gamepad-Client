@@ -4,6 +4,7 @@
 #include <functional>
 #include "BLEBatteryEvent.h"
 #include "BLEControlsEvent.h"
+#include "utils.h"
 
 template <typename T>
 using OnUpdate = std::function<void(T& value)>;
@@ -13,43 +14,29 @@ class BLEIncomingSignal {
  public:
   using Decoder = std::function<size_t(T&, uint8_t payload[], size_t payloadLen)>;
 
-  struct Spec {
-    bool enabled{false};
-    NimBLEUUID serviceUUID{};
-    NimBLEUUID characteristicUUID{};
-    unsigned int idx{0};
-
-    Decoder decoder{};
-    explicit operator std::string() const;
-  };
-
-  BLEIncomingSignal();
-  ~BLEIncomingSignal() = default;
-  bool init(NimBLEClient* pClient, const Spec& spec);
-  bool deinit(bool disconnected);
-  bool isInitialized() const;
+  BLEIncomingSignal(const Decoder& decoder, const blegc::CharacteristicFilter& filter);
+  ~BLEIncomingSignal();
+  bool init(NimBLEClient* pClient);
   void read(T& out);
   void onUpdate(const OnUpdate<T>& onUpdate);
 
  private:
   struct Store {
-    T event;
+    T event{};
   };
   static void _onUpdateTaskFn(void* pvParameters);
   void _handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify);
-  bool _initialized;
-  OnUpdate<T> _onUpdate;
-  bool _onUpdateSet;
-  Decoder _decoder;
-  NimBLEAddress _address;
+
+  const Decoder& _decoder;
+  const blegc::CharacteristicFilter& _filter;
+
   NimBLERemoteCharacteristic* _pChar;
   TaskHandle_t _onUpdateTask;
   SemaphoreHandle_t _storeMutex;
   Store _store;
+  OnUpdate<T> _onUpdateCallback;
+  bool _onUpdateCallbackSet;
 };
 
 template class BLEIncomingSignal<BLEControlsEvent>;
 template class BLEIncomingSignal<BLEBatteryEvent>;
-
-using BLEControlsSignal = BLEIncomingSignal<BLEControlsEvent>;
-using BLEBatterySignal = BLEIncomingSignal<BLEBatteryEvent>;

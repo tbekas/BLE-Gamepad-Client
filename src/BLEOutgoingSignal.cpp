@@ -11,47 +11,21 @@ static auto* LOG_TAG = "BLEOutgoingSignal";
 constexpr size_t maxCapacity = 1024;
 
 template <typename T>
-BLEOutgoingSignal<T>::BLEOutgoingSignal()
-    : _initialized(false),
-      _encoder([](const T&, uint8_t[], size_t) { return static_cast<size_t>(0); }),
-      _address(),
-      _pChar(nullptr),
-      _sendDataTask(nullptr),
-      _storeMutex(nullptr) {}
-
-template <typename T>
-bool BLEOutgoingSignal<T>::init(NimBLEClient* pClient, const Spec& spec) {
-  if (_initialized) {
-    return false;
-  }
-
-  _address = pClient->getPeerAddress();
-
-  _store.capacity = spec.bufferLen > 0 ? spec.bufferLen : 8;
+BLEOutgoingSignal<T>::BLEOutgoingSignal(const Encoder& encoder,
+                                        const blegc::CharacteristicFilter& filter,
+                                        size_t bufferLen)
+    : _encoder(encoder), _filter(filter), _pChar(nullptr), _sendDataTask(nullptr), _storeMutex(nullptr), _store() {
+  _store.capacity = bufferLen > 0 ? bufferLen : 8;
   _store.pBuffer = new uint8_t[_store.capacity];
   _store.pSendBuffer = new uint8_t[_store.capacity];
-
-  _encoder = spec.encoder;
-  _pChar = blegc::findCharacteristic(pClient, spec.serviceUUID, spec.characteristicUUID, BLE_GATT_CHR_PROP_WRITE);
-  if (!_pChar) {
-    return false;
-  }
 
   _storeMutex = xSemaphoreCreateMutex();
   configASSERT(_storeMutex);
   xTaskCreate(_sendDataFn, "_sendDataFn", 10000, this, 0, &_sendDataTask);
   configASSERT(_sendDataTask);
-
-  _initialized = true;
-  return true;
 }
-
 template <typename T>
-bool BLEOutgoingSignal<T>::deinit(bool disconnected) {
-  if (!_initialized) {
-    return false;
-  }
-
+BLEOutgoingSignal<T>::~BLEOutgoingSignal() {
   if (_sendDataTask != nullptr) {
     vTaskDelete(_sendDataTask);
   }
@@ -59,26 +33,27 @@ bool BLEOutgoingSignal<T>::deinit(bool disconnected) {
     vSemaphoreDelete(_storeMutex);
   }
 
-  _pChar = nullptr;
-
   delete[] _store.pBuffer;
   delete[] _store.pSendBuffer;
+}
 
-  _initialized = false;
+template <typename T>
+bool BLEOutgoingSignal<T>::init(NimBLEClient* pClient) {
+  _pChar = blegc::findCharacteristic(pClient, _filter);
+  if (!_pChar) {
+    return false;
+  }
+
+  if (!_pChar->canWrite()) {
+    BLEGC_LOGE(LOG_TAG, "Characteristic not able to write. %s", blegc::remoteCharToStr(_pChar).c_str());
+    return false;
+  }
+
   return true;
 }
 
 template <typename T>
-bool BLEOutgoingSignal<T>::isInitialized() const {
-  return _initialized;
-}
-
-template <typename T>
 void BLEOutgoingSignal<T>::write(const T& value) {
-  if (!_initialized) {
-    return;
-  }
-
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   size_t used;
   while ((used = _encoder(value, _store.pBuffer, _store.capacity)) == 0 && _store.capacity < maxCapacity) {
@@ -132,9 +107,4 @@ void BLEOutgoingSignal<T>::_sendDataFn(void* pvParameters) {
 
     self->_pChar->writeValue(self->_store.pSendBuffer, used);
   }
-}
-
-template <typename T>
-BLEOutgoingSignal<T>::Spec::operator std::string() const {
-  return "service uuid: " + std::string(serviceUUID) + ", characteristic uuid: " + std::string(characteristicUUID);
 }
