@@ -3,10 +3,15 @@
 #include <BLEGamepadClient.h>
 
 BLEBaseController::BLEBaseController(const NimBLEAddress allowedAddress)
-    : _connected(false), _address(), _allowedAddress(allowedAddress), _lastAddress() {}
+    : _connected(false),
+      _address(),
+      _allowedAddress(allowedAddress),
+      _lastAddress(),
+      _onConnect([](NimBLEAddress) {}),
+      _onDisconnect([](NimBLEAddress) {}) {}
 
 bool BLEBaseController::begin() {
-  BLEGamepadClient::initNimBLE();
+  BLEGamepadClient::initBLEDevice();
 
   return BLEGamepadClient::_controllerRegistry.registerController(this);
 }
@@ -43,11 +48,15 @@ void BLEBaseController::setLastAddress(const NimBLEAddress address) {
 bool BLEBaseController::isConnected() const {
   return _connected;
 }
+
 void BLEBaseController::setConnected() {
   _connected = true;
+  _onConnect(_address);
 }
+
 void BLEBaseController::setDisconnected() {
   _connected = false;
+  _onDisconnect(_address);
 }
 
 /**

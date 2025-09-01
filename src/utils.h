@@ -6,12 +6,18 @@
 
 namespace blegc {
 
-struct CharacteristicFilter {
+struct BLECharacteristicLocation {
   NimBLEUUID serviceUUID;
   NimBLEUUID characteristicUUID;
   uint8_t properties{0};
   unsigned int idx{0};
 };
+
+template <typename T>
+using BLEValueDecoder = std::function<size_t(T&, uint8_t payload[], size_t payloadLen)>;
+
+template <typename T>
+using BLEValueEncoder = std::function<size_t(const T& value, uint8_t buffer[], size_t bufferLen)>;
 
 static auto* LOG_TAG = "utils";
 
@@ -87,7 +93,7 @@ static bool discoverAttributes(NimBLEClient* pClient) {
   return true;
 }
 
-static NimBLERemoteCharacteristic* findCharacteristic(NimBLEClient* pClient, const CharacteristicFilter& filter) {
+static NimBLERemoteCharacteristic* findCharacteristic(NimBLEClient* pClient, const BLECharacteristicLocation& filter) {
   std::string propStr;
   writeProperties(propStr, filter.properties, ", ");
   BLEGC_LOGD(LOG_TAG,

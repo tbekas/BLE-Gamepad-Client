@@ -2,22 +2,20 @@
 
 #include <NimBLEDevice.h>
 #include <functional>
-#include "BLEBatteryEvent.h"
-#include "BLEControlsEvent.h"
+#include "XboxBatteryEvent.h"
+#include "XboxControlsEvent.h"
 #include "utils.h"
 
 template <typename T>
 using OnUpdate = std::function<void(T& value)>;
 
 template <typename T>
-class BLEIncomingSignal {
+class BLENotifiableSignal {
  public:
-  using Decoder = std::function<size_t(T&, uint8_t payload[], size_t payloadLen)>;
-
-  BLEIncomingSignal(const Decoder& decoder, const blegc::CharacteristicFilter& filter);
-  ~BLEIncomingSignal();
+  BLENotifiableSignal(const blegc::BLEValueDecoder<T>& decoder, const blegc::BLECharacteristicLocation& location);
+  ~BLENotifiableSignal();
   bool init(NimBLEClient* pClient);
-  void read(T& out);
+  void readLast(T& out);
   void onUpdate(const OnUpdate<T>& onUpdate);
 
  private:
@@ -27,8 +25,8 @@ class BLEIncomingSignal {
   static void _onUpdateTaskFn(void* pvParameters);
   void _handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify);
 
-  const Decoder& _decoder;
-  const blegc::CharacteristicFilter& _filter;
+  const blegc::BLEValueDecoder<T>& _decoder;
+  const blegc::BLECharacteristicLocation& _location;
 
   NimBLERemoteCharacteristic* _pChar;
   TaskHandle_t _onUpdateTask;
@@ -38,5 +36,5 @@ class BLEIncomingSignal {
   bool _onUpdateCallbackSet;
 };
 
-template class BLEIncomingSignal<BLEControlsEvent>;
-template class BLEIncomingSignal<BLEBatteryEvent>;
+template class BLENotifiableSignal<XboxControlsEvent>;
+template class BLENotifiableSignal<XboxBatteryEvent>;

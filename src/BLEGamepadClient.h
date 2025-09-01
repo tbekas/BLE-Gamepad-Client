@@ -8,7 +8,7 @@ class BLEGamepadClient {
  public:
   BLEGamepadClient() = delete;
 
-  static void initNimBLE();
+  static void initBLEDevice();
   static void enableAutoScan();
   static void disableAutoScan();
   static bool isAutoScanEnabled();

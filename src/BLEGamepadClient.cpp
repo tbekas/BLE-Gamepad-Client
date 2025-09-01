@@ -11,7 +11,7 @@ TaskHandle_t BLEGamepadClient::_autoScanTask;
 BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_autoScanTask);
 BLEAutoScanner BLEGamepadClient::_autoScanner(_autoScanTask, _controllerRegistry);
 
-void BLEGamepadClient::initNimBLE() {
+void BLEGamepadClient::initBLEDevice() {
   if (!NimBLEDevice::isInitialized()) {
     BLEGC_LOGD(LOG_TAG, "Initializing NimBLE");
     NimBLEDevice::init(CONFIG_BT_BLEGC_DEVICE_NAME);
@@ -56,7 +56,7 @@ bool BLEGamepadClient::isAutoScanEnabled() {
  * @brief Deletes all stored bonding information.
  */
 void BLEGamepadClient::deleteBonds() {
-  initNimBLE();
+  initBLEDevice();
 
   NimBLEDevice::deleteAllBonds();
 }

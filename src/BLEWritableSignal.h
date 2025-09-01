@@ -1,18 +1,15 @@
 #pragma once
 
 #include <NimBLEDevice.h>
-#include "BLEVibrationsCommand.h"
+#include "XboxVibrationsCommand.h"
 #include "utils.h"
 
 template <typename T>
-class BLEOutgoingSignal {
+class BLEWritableSignal {
  public:
-  using Encoder = std::function<size_t(const T& value, uint8_t buffer[], size_t bufferLen)>;
-
-  BLEOutgoingSignal(const Encoder& encoder, const blegc::CharacteristicFilter& filter, size_t bufferLen = 1);
-  ~BLEOutgoingSignal();
+  BLEWritableSignal(const blegc::BLEValueEncoder<T>& encoder, const blegc::BLECharacteristicLocation& location);
+  ~BLEWritableSignal();
   bool init(NimBLEClient* pClient);
-  bool deinit(bool disconnected);
   void write(const T& value);
 
  private:
@@ -24,8 +21,8 @@ class BLEOutgoingSignal {
   };
   static void _sendDataFn(void* pvParameters);
 
-  const Encoder& _encoder;
-  const blegc::CharacteristicFilter& _filter;
+  const blegc::BLEValueEncoder<T>& _encoder;
+  const blegc::BLECharacteristicLocation& _location;
 
   NimBLERemoteCharacteristic* _pChar;
   TaskHandle_t _sendDataTask;
@@ -33,4 +30,4 @@ class BLEOutgoingSignal {
   Store _store;
 };
 
-template class BLEOutgoingSignal<BLEVibrationsCommand>;
+template class BLEWritableSignal<XboxVibrationsCommand>;

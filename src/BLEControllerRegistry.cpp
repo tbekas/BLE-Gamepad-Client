@@ -208,8 +208,8 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
         }
 
         BLEGC_LOGD(LOG_TAG, "Controller successfully initialized");
+        pCtrl->setConnected();
 
-        // TODO trigger onConnect
         break;
       }
       case BLEClientDisconnected:
@@ -217,7 +217,7 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
           BLEGC_LOGW(LOG_TAG, "Controller failed to deinitialize, address: %s", std::string(msg.address).c_str());
         }
 
-        // TODO trigger onDisconnect
+        pCtrl->setDisconnected();
 
         self->_releaseController(msg.address);
         xTaskNotifyGive(self->_autoScanTask);

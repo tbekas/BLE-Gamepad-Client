@@ -1,4 +1,4 @@
-#include "BLEOutgoingSignal.h"
+#include "BLEWritableSignal.h"
 
 #include <NimBLEDevice.h>
 #include <bitset>
@@ -6,16 +6,16 @@
 #include "logger.h"
 #include "utils.h"
 
-static auto* LOG_TAG = "BLEOutgoingSignal";
+static auto* LOG_TAG = "BLEWritableSignal";
 
-constexpr size_t maxCapacity = 1024;
+constexpr size_t MAX_CAPACITY = 1024;
+constexpr size_t INIT_CAPACITY = 8;
 
 template <typename T>
-BLEOutgoingSignal<T>::BLEOutgoingSignal(const Encoder& encoder,
-                                        const blegc::CharacteristicFilter& filter,
-                                        size_t bufferLen)
-    : _encoder(encoder), _filter(filter), _pChar(nullptr), _sendDataTask(nullptr), _storeMutex(nullptr), _store() {
-  _store.capacity = bufferLen > 0 ? bufferLen : 8;
+BLEWritableSignal<T>::BLEWritableSignal(const blegc::BLEValueEncoder<T>& encoder,
+                                        const blegc::BLECharacteristicLocation& location)
+    : _encoder(encoder), _location(location), _pChar(nullptr), _sendDataTask(nullptr), _storeMutex(nullptr), _store() {
+  _store.capacity = INIT_CAPACITY;
   _store.pBuffer = new uint8_t[_store.capacity];
   _store.pSendBuffer = new uint8_t[_store.capacity];
 
@@ -25,7 +25,7 @@ BLEOutgoingSignal<T>::BLEOutgoingSignal(const Encoder& encoder,
   configASSERT(_sendDataTask);
 }
 template <typename T>
-BLEOutgoingSignal<T>::~BLEOutgoingSignal() {
+BLEWritableSignal<T>::~BLEWritableSignal() {
   if (_sendDataTask != nullptr) {
     vTaskDelete(_sendDataTask);
   }
@@ -38,8 +38,8 @@ BLEOutgoingSignal<T>::~BLEOutgoingSignal() {
 }
 
 template <typename T>
-bool BLEOutgoingSignal<T>::init(NimBLEClient* pClient) {
-  _pChar = blegc::findCharacteristic(pClient, _filter);
+bool BLEWritableSignal<T>::init(NimBLEClient* pClient) {
+  _pChar = blegc::findCharacteristic(pClient, _location);
   if (!_pChar) {
     return false;
   }
@@ -53,13 +53,13 @@ bool BLEOutgoingSignal<T>::init(NimBLEClient* pClient) {
 }
 
 template <typename T>
-void BLEOutgoingSignal<T>::write(const T& value) {
+void BLEWritableSignal<T>::write(const T& value) {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   size_t used;
-  while ((used = _encoder(value, _store.pBuffer, _store.capacity)) == 0 && _store.capacity < maxCapacity) {
+  while ((used = _encoder(value, _store.pBuffer, _store.capacity)) == 0 && _store.capacity < MAX_CAPACITY) {
     delete[] _store.pBuffer;
     delete[] _store.pSendBuffer;
-    _store.capacity = min(_store.capacity * 2, maxCapacity);
+    _store.capacity = min(_store.capacity * 2, MAX_CAPACITY);
     _store.pBuffer = new uint8_t[_store.capacity];
     _store.pSendBuffer = new uint8_t[_store.capacity];
   }
@@ -77,8 +77,8 @@ void BLEOutgoingSignal<T>::write(const T& value) {
 }
 
 template <typename T>
-void BLEOutgoingSignal<T>::_sendDataFn(void* pvParameters) {
-  auto* self = static_cast<BLEOutgoingSignal*>(pvParameters);
+void BLEWritableSignal<T>::_sendDataFn(void* pvParameters) {
+  auto* self = static_cast<BLEWritableSignal*>(pvParameters);
 
   while (true) {
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
