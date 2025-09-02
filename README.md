@@ -1,5 +1,8 @@
 # BLE-Gamepad-Client
 
+[![arduino-library-badge](https://www.ardu-badge.com/badge/BLE-Gamepad-Client.svg?)](https://www.ardu-badge.com/BLE-Gamepad-Client)
+[![PlatformIO Registry](https://badges.registry.platformio.org/packages/tbekas/library/BLE-Gamepad-Client.svg)](https://registry.platformio.org/libraries/tbekas/BLE-Gamepad-Client)
+
 This library enables connecting BLE (Bluetooth Low Energy) gamepads to ESP32 boards. Currently, only the Xbox Wireless
 Controller is supported.
 
