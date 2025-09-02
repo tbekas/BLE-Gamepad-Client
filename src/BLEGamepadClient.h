@@ -5,6 +5,7 @@
 
 // export headers
 #include "xbox/XboxController.h"
+#include "steam/SteamController.h"
 
 class BLEGamepadClient {
  public:

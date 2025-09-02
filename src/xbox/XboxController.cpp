@@ -6,8 +6,6 @@
 #include "../utils.h"
 #include "XboxVibrationsCommand.h"
 
-const std::string advertisedDeviceName = "Xbox Wireless Controller";
-
 XboxController::XboxController(const NimBLEAddress allowedAddress)
     : BLEBaseController(allowedAddress),
       _controls(XboxControlsEvent::Decoder, XboxControlsEvent::CharacteristicLocation),
@@ -20,7 +18,7 @@ XboxController::XboxController(const std::string& allowedAddress)
 XboxController::XboxController() : XboxController(NimBLEAddress()) {}
 
 bool XboxController::isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
-  return pAdvertisedDevice->haveName() && pAdvertisedDevice->getName() == advertisedDeviceName;
+  return pAdvertisedDevice->haveName() && pAdvertisedDevice->getName() == "Xbox Wireless Controller";
 }
 
 bool XboxController::deinit() {

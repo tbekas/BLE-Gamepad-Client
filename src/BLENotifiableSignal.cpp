@@ -5,6 +5,7 @@
 #include <functional>
 #include "xbox/XboxBatteryEvent.h"
 #include "xbox/XboxControlsEvent.h"
+#include "steam/SteamControlsEvent.h"
 #include "logger.h"
 #include "utils.h"
 
@@ -115,3 +116,4 @@ void BLENotifiableSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
 
 template class BLENotifiableSignal<XboxControlsEvent>;
 template class BLENotifiableSignal<XboxBatteryEvent>;
+template class BLENotifiableSignal<SteamControlsEvent>;
