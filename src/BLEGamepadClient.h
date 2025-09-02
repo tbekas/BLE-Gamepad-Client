@@ -4,11 +4,7 @@
 #include "BLEControllerRegistry.h"
 
 // export headers
-#include "XboxController.h"
-#include "XboxControlsEvent.h"
-#include "XboxBatteryEvent.h"
-#include "XboxVibrationsCommand.h"
-
+#include "xbox/XboxController.h"
 
 class BLEGamepadClient {
  public:

@@ -2,9 +2,9 @@
 
 #include <NimBLEDevice.h>
 #include <bitset>
-#include "BLENotifiableSignal.h"
+#include "../BLENotifiableSignal.h"
+#include "../utils.h"
 #include "XboxVibrationsCommand.h"
-#include "utils.h"
 
 const std::string advertisedDeviceName = "Xbox Wireless Controller";
 

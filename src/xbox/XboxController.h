@@ -2,15 +2,16 @@
 
 #include <NimBLEAddress.h>
 #include "BLEBaseController.h"
-#include "XboxBatteryEvent.h"
-#include "XboxControlsEvent.h"
 #include "BLENotifiableSignal.h"
 #include "BLEWritableSignal.h"
-
+#include "XboxControlsEvent.h"
+#include "XboxBatteryEvent.h"
 #include "XboxVibrationsCommand.h"
 
 using OnControlsUpdate = std::function<void(XboxControlsEvent& e)>;
 using OnBatteryUpdate = std::function<void(XboxBatteryEvent& e)>;
+
+template class BLEWritableSignal<XboxVibrationsCommand>;
 
 class XboxController final : public BLEBaseController {
  public:

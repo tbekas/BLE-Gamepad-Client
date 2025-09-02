@@ -1,7 +1,7 @@
 #pragma once
 
-#include "BLEBaseEvent.h"
-#include "utils.h"
+#include "../BLEBaseEvent.h"
+#include "../utils.h"
 
 struct XboxControlsEvent : BLEBaseEvent {
   /**

@@ -3,6 +3,8 @@
 #include <NimBLEDevice.h>
 #include <bitset>
 #include <functional>
+#include "xbox/XboxBatteryEvent.h"
+#include "xbox/XboxControlsEvent.h"
 #include "logger.h"
 #include "utils.h"
 
@@ -110,3 +112,6 @@ void BLENotifiableSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
     xTaskNotifyGive(_onUpdateTask);
   }
 }
+
+template class BLENotifiableSignal<XboxControlsEvent>;
+template class BLENotifiableSignal<XboxBatteryEvent>;

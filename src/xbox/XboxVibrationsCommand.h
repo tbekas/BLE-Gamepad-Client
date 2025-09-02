@@ -1,6 +1,6 @@
 #pragma once
 
-#include "utils.h"
+#include "../utils.h"
 
 struct XboxVibrationsCommand {
   /// @brief Power applied to the motor behind left trigger. Allowed values are between 0.0 and 1.0, where 1.0

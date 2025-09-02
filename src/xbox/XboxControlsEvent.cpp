@@ -2,8 +2,8 @@
 
 #include <NimBLEDevice.h>
 #include <bitset>
-#include "logger.h"
-#include "utils.h"
+#include "../logger.h"
+#include "../utils.h"
 
 static auto* LOG_TAG = "XboxControlsEvent";
 

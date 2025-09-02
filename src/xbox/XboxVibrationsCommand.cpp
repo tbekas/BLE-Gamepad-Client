@@ -1,8 +1,8 @@
 #include "XboxVibrationsCommand.h"
 
 #include <NimBLEDevice.h>
-#include "logger.h"
-#include "utils.h"
+#include "../logger.h"
+#include "../utils.h"
 
 static auto* LOG_TAG = "XboxVibrationsCommand";
 

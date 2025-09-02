@@ -3,6 +3,7 @@
 #include <NimBLEDevice.h>
 #include <bitset>
 #include <functional>
+#include "xbox/XboxVibrationsCommand.h"
 #include "logger.h"
 #include "utils.h"
 
@@ -108,3 +109,5 @@ void BLEWritableSignal<T>::_sendDataFn(void* pvParameters) {
     self->_pChar->writeValue(self->_store.pSendBuffer, used);
   }
 }
+
+template class BLEWritableSignal<XboxVibrationsCommand>;

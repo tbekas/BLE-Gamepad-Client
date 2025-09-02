@@ -1,7 +1,6 @@
 #pragma once
 
 #include <NimBLEDevice.h>
-#include "XboxVibrationsCommand.h"
 #include "utils.h"
 
 template <typename T>
@@ -29,5 +28,3 @@ class BLEWritableSignal {
   SemaphoreHandle_t _storeMutex;
   Store _store;
 };
-
-template class BLEWritableSignal<XboxVibrationsCommand>;

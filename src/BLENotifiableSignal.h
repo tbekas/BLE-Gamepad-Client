@@ -2,8 +2,6 @@
 
 #include <NimBLEDevice.h>
 #include <functional>
-#include "XboxBatteryEvent.h"
-#include "XboxControlsEvent.h"
 #include "utils.h"
 
 template <typename T>
@@ -35,6 +33,3 @@ class BLENotifiableSignal {
   OnUpdate<T> _onUpdateCallback;
   bool _onUpdateCallbackSet;
 };
-
-template class BLENotifiableSignal<XboxControlsEvent>;
-template class BLENotifiableSignal<XboxBatteryEvent>;
