@@ -5,6 +5,7 @@
 #include <NimBLEScan.h>
 #include <NimBLEUtils.h>
 #include <bitset>
+#include "BLEBaseController.h"
 #include "config.h"
 #include "logger.h"
 
@@ -15,24 +16,12 @@ BLEClientStatus::operator std::string() const {
   return "BLEClientStatus address: " + std::string(address) + ", kind: " + kindStr;
 }
 
-BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask, BLEDeviceMatcher& matcher)
-    : _initialized(false),
-      _autoScanTask(autoScanTask),
-      _matcher(matcher),
+BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask)
+    : _autoScanTask(autoScanTask),
       _clientStatusQueue(nullptr),
       _clientStatusConsumerTask(nullptr),
       _connectionSlots(nullptr),
-      _clientCallbacks(*this) {}
-
-/**
- * @brief Initializes a BLEControllerRegistry.
- * @return True if successful.
- */
-bool BLEControllerRegistry::init() {
-  if (_initialized) {
-    return false;
-  }
-
+      _clientCallbacks(*this) {
   _connectionSlots = xSemaphoreCreateCounting(CONFIG_BT_NIMBLE_MAX_CONNECTIONS, 0);
   configASSERT(_connectionSlots);
   _clientStatusQueue = xQueueCreate(10, sizeof(BLEClientStatus));
@@ -41,43 +30,9 @@ bool BLEControllerRegistry::init() {
   xTaskCreatePinnedToCore(_clientStatusConsumerFn, "_bleConnectionMsgConsumerTask", 10000, this, 0,
                           &_clientStatusConsumerTask, CONFIG_BT_NIMBLE_PINNED_TO_CORE);
   configASSERT(_clientStatusConsumerTask);
-
-  _initialized = true;
-  return true;
 }
 
-/**
- * @brief Deinitializes a BLEControllerRegistry.
- * @return True if successful.
- */
-bool BLEControllerRegistry::deinit() {
-  if (!_initialized) {
-    return false;
-  }
-
-  bool result = true;
-
-  auto* pScan = NimBLEDevice::getScan();
-  if (pScan->isScanning()) {
-    result = pScan->stop() && result;
-  }
-
-  for (auto& ctrl : _controllers) {
-    if (ctrl.isInitialized()) {
-      result = ctrl.deinit(false) && result;
-    }
-
-    auto* pClient = NimBLEDevice::getClientByPeerAddress(ctrl.getAddress());
-    if (!pClient) {
-      continue;
-    }
-    pClient->disconnect();
-  }
-
-  _controllers.clear();
-
-  result = NimBLEDevice::deinit() && result;
-
+BLEControllerRegistry::~BLEControllerRegistry() {
   if (_clientStatusConsumerTask != nullptr) {
     vTaskDelete(_clientStatusConsumerTask);
   }
@@ -87,36 +42,26 @@ bool BLEControllerRegistry::deinit() {
   if (_connectionSlots != nullptr) {
     vSemaphoreDelete(_connectionSlots);
   }
-
-  _initialized = false;
-  return result;
 }
 
-/**
- * @brief Checks if BLEControllerRegistry is initialized.
- * @return True if initialized; false otherwise.
- */
-bool BLEControllerRegistry::isInitialized() {
-  return _initialized;
-}
-
-BLEControllerInternal* BLEControllerRegistry::createController(NimBLEAddress allowedAddress) {
+bool BLEControllerRegistry::registerController(BLEBaseController* controller) {
   if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
-    BLEGC_LOGE(LOG_TAG, "Cannot create controller");
-    return nullptr;
+    BLEGC_LOGE(LOG_TAG, "Cannot add connection slots");
+    return false;
   }
 
-  BLEGC_LOGD(LOG_TAG, "Creating a new controller instance, address: %s", std::string(allowedAddress).c_str());
-  _controllers.emplace_back(allowedAddress);
-  auto& ctrl = _controllers.back();
+  _controllers.push_back(controller);
 
   xTaskNotifyGive(_autoScanTask);
-  return &ctrl;
+  return true;
 }
-void BLEControllerRegistry::connectController(NimBLEAddress address) {
-  if (!_reserveController(address)) {
+
+void BLEControllerRegistry::tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
+  if (!_reserveController(pAdvertisedDevice)) {
     return;
   }
+
+  const auto address = pAdvertisedDevice->getAddress();
 
   auto* pClient = NimBLEDevice::getClientByPeerAddress(address);
   if (pClient) {
@@ -145,59 +90,61 @@ void BLEControllerRegistry::connectController(NimBLEAddress address) {
   }
 }
 
-BLEControllerInternal* BLEControllerRegistry::_getController(NimBLEAddress address) {
-  for (auto& ctrl : _controllers) {
-    if (ctrl.getAddress() == address) {
-      return &ctrl;
+BLEBaseController* BLEControllerRegistry::_getController(const NimBLEAddress address) const {
+  for (auto* ctrl : _controllers) {
+    if (ctrl->getAddress() == address) {
+      return ctrl;
     }
   }
 
   return nullptr;
 }
 
-bool BLEControllerRegistry::_reserveController(const NimBLEAddress address) {
+bool BLEControllerRegistry::_reserveController(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
   if (xSemaphoreTake(_connectionSlots, 0) != pdTRUE) {
     BLEGC_LOGD(LOG_TAG, "No connections slots left");
     return false;
   }
 
+  const auto address = pAdvertisedDevice->getAddress();
+
   // try reserve ctrl with matching allowed address
-  for (auto& ctrl : _controllers) {
-    if (!ctrl.getAddress().isNull()) {
+  for (auto* ctrl : _controllers) {
+    if (!ctrl->getAddress().isNull() || !ctrl->isSupported(pAdvertisedDevice)) {
       continue;
     }
 
-    if (!ctrl.getAllowedAddress().isNull() && ctrl.getAllowedAddress() == address) {
-      ctrl.setAddress(address);
+    if (!ctrl->getAllowedAddress().isNull() && ctrl->getAllowedAddress() == address) {
+      ctrl->setAddress(address);
       return true;
     }
   }
 
   // try reserve ctrl reserved last time
-  for (auto& ctrl : _controllers) {
-    if (!ctrl.getAddress().isNull()) {
+  for (auto* ctrl : _controllers) {
+    if (!ctrl->getAddress().isNull() || !ctrl->isSupported(pAdvertisedDevice)) {
       continue;
     }
 
-    if (!ctrl.getLastAddress().isNull() && ctrl.getLastAddress() == address) {
-      ctrl.setAddress(address);
+    if (!ctrl->getLastAddress().isNull() && ctrl->getLastAddress() == address) {
+      ctrl->setAddress(address);
       return true;
     }
   }
 
   // try reserve any controller
-  for (auto& ctrl : _controllers) {
-    if (!ctrl.getAddress().isNull()) {
+  for (auto* ctrl : _controllers) {
+    if (!ctrl->getAddress().isNull() || !ctrl->isSupported(pAdvertisedDevice)) {
       continue;
     }
 
-    if (ctrl.getAllowedAddress().isNull()) {
-      ctrl.setAddress(address);
+    if (ctrl->getAllowedAddress().isNull()) {
+      ctrl->setAddress(address);
       return true;
     }
   }
 
-  BLEGC_LOGD(LOG_TAG, "No suitable controller available");
+  BLEGC_LOGD(LOG_TAG, "No suitable controller available for a device, address %s", std::string(address).c_str());
 
   if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
     BLEGC_LOGE(LOG_TAG, "Failed to release connection slot");
@@ -225,10 +172,6 @@ bool BLEControllerRegistry::_releaseController(const NimBLEAddress address) {
 }
 
 unsigned int BLEControllerRegistry::getAvailableConnectionSlotCount() const {
-  if (!_initialized) {
-    return 0;
-  }
-
   return uxSemaphoreGetCount(_connectionSlots);
 }
 
@@ -244,55 +187,37 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
 
     BLEGC_LOGD(LOG_TAG, "Handling client status message %s", std::string(msg).c_str());
 
+    auto* pCtrl = self->_getController(msg.address);
+    if (!pCtrl) {
+      BLEGC_LOGE(LOG_TAG, "Controller not found, address: %s", std::string(msg.address).c_str());
+      break;
+    }
+
     switch (msg.kind) {
       case BLEClientConnected: {
-        auto* pCtrl = self->_getController(msg.address);
-        if (pCtrl == nullptr) {
-          BLEGC_LOGE(LOG_TAG, "Controller not found, address: %s", std::string(msg.address).c_str());
+        auto* pClient = NimBLEDevice::getClientByPeerAddress(msg.address);
+        if (!pClient) {
+          BLEGC_LOGE(LOG_TAG, "BLE client not found, address %s", std::string(msg.address).c_str());
           break;
         }
 
-        auto modelMatch = std::bitset<MAX_CTRL_MODEL_COUNT>(self->_matcher.getMatchedModels(msg.address));
-        const unsigned int modelCount = self->_matcher.getModelCount();
-        configASSERT(modelCount > 0);
-
-        // iterate over models from back to front
-        unsigned int i = modelCount;
-        do {
-          i--;
-
-          if (!modelMatch[i]) {
-            continue;
-          }
-
-          auto& model = self->_matcher.getModel(i);
-
-          if (!pCtrl->init(model)) {
-            BLEGC_LOGW(LOG_TAG, "Failed to initialize controller, address: %s", std::string(msg.address).c_str());
-            // this config failed, try another one
-            continue;
-          }
-
-          BLEGC_LOGD(LOG_TAG, "Controller successfully initialized");
+        if (!pCtrl->init(pClient)) {
+          BLEGC_LOGW(LOG_TAG, "Failed to initialize controller, address: %s", std::string(msg.address).c_str());
+          // TODO: disconnect and tmp ban?
           break;
+        }
 
-        } while (i > 0);
+        BLEGC_LOGD(LOG_TAG, "Controller successfully initialized");
+        pCtrl->setConnected();
 
-        // TODO: disconnect and tmp ban?
-      } break;
+        break;
+      }
       case BLEClientDisconnected:
-        auto* pCtrl = self->_getController(msg.address);
-        if (pCtrl == nullptr) {
-          BLEGC_LOGE(LOG_TAG, "Controller not found, address: %s", std::string(msg.address).c_str());
-          break;
+        if (!pCtrl->deinit()) {
+          BLEGC_LOGW(LOG_TAG, "Controller failed to deinitialize, address: %s", std::string(msg.address).c_str());
         }
 
-        if (pCtrl->isInitialized()) {
-          if (!pCtrl->deinit(true)) {
-            BLEGC_LOGW(LOG_TAG, "Controller failed to deinitialize, address: %s", std::string(msg.address).c_str());
-          }
-          BLEGC_LOGD(LOG_TAG, "Controller successfully deinitialized");
-        }
+        pCtrl->setDisconnected();
 
         self->_releaseController(msg.address);
         xTaskNotifyGive(self->_autoScanTask);

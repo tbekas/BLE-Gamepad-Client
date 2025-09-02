@@ -1,6 +1,8 @@
 #pragma once
 
-struct BLEVibrationsCommand {
+#include "../utils.h"
+
+struct XboxVibrationsCommand {
   /// @brief Power applied to the motor behind left trigger. Allowed values are between 0.0 and 1.0, where 1.0
   /// represents the full power.
   float leftTriggerMotor{0.0f};
@@ -27,4 +29,7 @@ struct BLEVibrationsCommand {
 
   /// @brief Number of vibration-pause cycles. Defaults to 1 cycle.
   uint8_t cycles{1};
+
+  static const blegc::BLEValueEncoder<XboxVibrationsCommand> Encoder;
+  static const blegc::BLECharacteristicLocation CharacteristicLocation;
 };

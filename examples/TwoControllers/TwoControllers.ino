@@ -6,8 +6,8 @@
 #include <Arduino.h>
 #include <BLEGamepadClient.h>
 
-BLEController controller1;
-BLEController controller2("5f:7a:30:78:22:2a"); // MAC address is an optional parameter
+XboxController controller1;
+XboxController controller2("5f:7a:30:78:22:2a"); // MAC address is an optional parameter
 
 void setup(void) {
   Serial.begin(115200);
@@ -16,7 +16,7 @@ void setup(void) {
 }
 
 void loop() {
-  BLEControlsEvent e;
+  XboxControlsEvent e;
 
   if (controller1.isConnected()) {
     controller1.readControls(e);

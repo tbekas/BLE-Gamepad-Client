@@ -1,18 +1,13 @@
 #pragma once
 
-#include "BLEDeviceMatcher.h"
 #include "BLEControllerRegistry.h"
 
 class BLEAutoScanner {
  public:
   BLEAutoScanner(TaskHandle_t& autoScanTask,
-                 BLEControllerRegistry& controllerRegistry,
-                 BLEDeviceMatcher& matcher);
+                 BLEControllerRegistry& controllerRegistry);
   ~BLEAutoScanner() = default;
 
-  bool init();
-  bool deinit();
-  bool isInitialized() const;
   void enableAutoScan();
   void disableAutoScan();
   bool isAutoScanEnabled() const;
@@ -31,7 +26,6 @@ class BLEAutoScanner {
   bool _initialized = false;
   bool _autoScanEnabled = true;
   TaskHandle_t& _autoScanTask;
-  BLEDeviceMatcher& _matcher;
   BLEControllerRegistry& _controllerRegistry;
   ScanCallbacks _scanCallbacks;
 };

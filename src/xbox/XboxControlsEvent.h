@@ -1,8 +1,9 @@
 #pragma once
 
-#include "BLEBaseEvent.h"
+#include "../BLEBaseEvent.h"
+#include "../utils.h"
 
-struct BLEControlsEvent : BLEBaseEvent {
+struct XboxControlsEvent : BLEBaseEvent {
   /**
    * @brief Left stick deflection along the X-axis. Takes values between -1.0 and 1.0. No deflection should yield 0.0,
    * unless affected by stick drift. Positive values represent deflection to the right, and negative values to the left.
@@ -104,4 +105,7 @@ struct BLEControlsEvent : BLEBaseEvent {
 
   /// @brief Xbox button, also known as guide button.
   bool xbox{false};
+
+  static const blegc::BLEValueDecoder<XboxControlsEvent> Decoder;
+  static const blegc::BLECharacteristicLocation CharacteristicLocation;
 };

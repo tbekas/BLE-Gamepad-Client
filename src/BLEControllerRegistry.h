@@ -3,8 +3,7 @@
 #include <NimBLEDevice.h>
 #include <list>
 
-#include "BLEControllerInternal.h"
-#include "BLEDeviceMatcher.h"
+#include "BLEBaseController.h"
 
 enum BLEClientStatusMsgKind : uint8_t { BLEClientConnected = 0, BLEClientDisconnected = 1 };
 
@@ -17,13 +16,11 @@ struct BLEClientStatus {
 
 class BLEControllerRegistry {
  public:
-  BLEControllerRegistry(TaskHandle_t& autoScanTask, BLEDeviceMatcher& matcher);
+  BLEControllerRegistry(TaskHandle_t& autoScanTask);
+  ~BLEControllerRegistry();
 
-  bool init();
-  bool deinit();
-  bool isInitialized();
-  BLEControllerInternal* createController(NimBLEAddress allowedAddress);
-  void connectController(NimBLEAddress address);
+  bool registerController(BLEBaseController* controller); // TODO make it void (?)
+  void tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   unsigned int getAvailableConnectionSlotCount() const;
 
  private:
@@ -37,17 +34,15 @@ class BLEControllerRegistry {
     BLEControllerRegistry& _controllerRegistry;
   };
 
-  BLEControllerInternal* _getController(NimBLEAddress address);
-  bool _reserveController(NimBLEAddress address);
+  BLEBaseController* _getController(NimBLEAddress address) const;
+  bool _reserveController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   bool _releaseController(NimBLEAddress address);
   static void _clientStatusConsumerFn(void* pvParameters);
 
-  bool _initialized;
   TaskHandle_t& _autoScanTask;
-  BLEDeviceMatcher& _matcher;
   QueueHandle_t _clientStatusQueue;
   TaskHandle_t _clientStatusConsumerTask;
   SemaphoreHandle_t _connectionSlots;
-  std::list<BLEControllerInternal> _controllers;
+  std::vector<BLEBaseController*> _controllers;
   ClientCallbacks _clientCallbacks;
 };
