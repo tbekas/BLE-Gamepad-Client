@@ -5,7 +5,7 @@ To add support for a controller model that is not yet supported, you need to pro
 
 Below is a simplified example of a model. The `myDecodeControls` function reads the first two bytes from the
 `payload` array, scales them from the original range of `0–255` to a normalized range of `-1.0f` to `1.0f`, and assigns
-the resulting values to the corresponding `BLEControlsEvent` members representing left stick deflection.
+the resulting values to the corresponding `XboxControlsEvent` members representing left stick deflection.
 
 The `serviceUUID` is set to `0x1812`, which is the UUID assigned to the HID (Human Interface Device) service in the
 [Bluetooth specification](https://bitbucket.org/bluetooth-SIG/public/src/main/assigned_numbers/uuids/service_uuids.yaml).
@@ -14,9 +14,9 @@ The `serviceUUID` is set to `0x1812`, which is the UUID assigned to the HID (Hum
 #include <Arduino.h>
 #include <BLEGamepadClient.h>
 
-BLEController controller;
+XboxController controller;
 
-size_t myDecodeControls(BLEControlsEvent& e, uint8_t payload[], size_t payloadLen) {
+size_t myDecodeControls(XboxControlsEvent& e, uint8_t payload[], size_t payloadLen) {
   if (payloadLen < 2) {
     // Not enough data to decode
     return 0;
@@ -41,7 +41,7 @@ void setup(void) {
 }
 
 void loop() {
-  BLEControlsEvent e;
+  XboxControlsEvent e;
 
   if (controller.isConnected()) {
     controller.readControls(e);

@@ -24,9 +24,9 @@ void BLEGamepadClient::initBLEDevice() {
 /**
  * @brief Enables the auto-scan feature.
  *
- * Auto-scan automatically starts scanning whenever there are one or more `BLEController` instances that have been
- * initialized with `BLEController::begin()` but are not yet connected. Scanning stops automatically once all
- * `BLEController` instances are connected.
+ * Auto-scan automatically starts scanning whenever there are one or more controller instances that have been
+ * initialized with `begin()` but are not yet connected. Scanning stops automatically once all controller instances
+ * are connected.
  */
 void BLEGamepadClient::enableAutoScan() {
   _autoScanner.enableAutoScan();
