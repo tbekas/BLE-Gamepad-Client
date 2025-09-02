@@ -19,16 +19,16 @@ class XboxController final : public BLEBaseController {
   XboxController();
   ~XboxController() = default;
 
-  // overrides
-  bool isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) override;
-  bool init(NimBLEClient* pClient) override;
-  bool deinit() override;
-
   void readControls(XboxControlsEvent& event);
   void onControlsUpdate(const OnControlsUpdate& callback);
   void readBattery(XboxBatteryEvent& event);
   void onBatteryUpdate(const OnBatteryUpdate& callback);
   void writeVibrations(const XboxVibrationsCommand& cmd);
+
+ protected:
+  bool isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) override;
+  bool init(NimBLEClient* pClient) override;
+  bool deinit() override;
 
  private:
   BLENotifiableSignal<XboxControlsEvent> _controls;

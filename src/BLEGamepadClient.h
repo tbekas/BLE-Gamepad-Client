@@ -2,9 +2,8 @@
 
 #include "BLEAutoScanner.h"
 #include "BLEControllerRegistry.h"
-#include "BLEBaseController.h"
 
-// additional headers
+// export headers
 #include "XboxController.h"
 #include "XboxControlsEvent.h"
 #include "XboxBatteryEvent.h"

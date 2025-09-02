@@ -10,29 +10,27 @@ class BLEBaseController {
   virtual ~BLEBaseController() = default;
   explicit BLEBaseController(NimBLEAddress allowedAddress);
 
-  bool begin(); // user facing
+  bool begin();
   bool end();
-
-  NimBLEAddress getAddress() const; // user facing
-
- // internal
-  void setAddress(NimBLEAddress address);
+  NimBLEAddress getAddress() const;
   NimBLEAddress getAllowedAddress() const;
+  bool isConnected() const;
+  void onConnect(const OnConnect& onConnect);
+  void onDisconnect(const OnDisconnect& onDisconnect);
+
+ friend class BLEControllerRegistry;
+
+ protected:
+  void setAddress(NimBLEAddress address);
   NimBLEAddress getLastAddress() const;
   void setLastAddress(NimBLEAddress address);
+  void setConnected();
+  void setDisconnected();
 
-  bool isConnected() const; // user facing
-  void setConnected(); // internal
-  void setDisconnected(); // internal
-  void onConnect(const OnConnect& onConnect); // user facing
-  void onDisconnect(const OnDisconnect& onDisconnect); // user facing
-
-  // internal
   virtual bool isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) = 0;
   virtual bool init(NimBLEClient* pClient) = 0;
   virtual bool deinit() = 0;
 
- protected:
   bool _connected;
   NimBLEAddress _address;
   NimBLEAddress _allowedAddress;

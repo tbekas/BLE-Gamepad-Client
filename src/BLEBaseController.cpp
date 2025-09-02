@@ -1,6 +1,6 @@
 #include "BLEBaseController.h"
 
-#include <BLEGamepadClient.h>
+#include "BLEGamepadClient.h"
 
 BLEBaseController::BLEBaseController(const NimBLEAddress allowedAddress)
     : _connected(false),
