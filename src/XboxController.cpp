@@ -14,6 +14,9 @@ XboxController::XboxController(const NimBLEAddress allowedAddress)
       _battery(XboxBatteryEvent::Decoder, XboxBatteryEvent::CharacteristicLocation),
       _vibrations(XboxVibrationsCommand::Encoder, XboxVibrationsCommand::CharacteristicLocation) {}
 
+XboxController::XboxController(const std::string& allowedAddress)
+    : XboxController(NimBLEAddress(allowedAddress, BLE_ADDR_PUBLIC)) {}
+
 XboxController::XboxController() : XboxController(NimBLEAddress()) {}
 
 bool XboxController::isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) {

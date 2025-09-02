@@ -15,6 +15,7 @@ using OnBatteryUpdate = std::function<void(XboxBatteryEvent& e)>;
 class XboxController final : public BLEBaseController {
  public:
   explicit XboxController(NimBLEAddress allowedAddress);
+  explicit XboxController(const std::string& allowedAddress);
   XboxController();
   ~XboxController() = default;
 
