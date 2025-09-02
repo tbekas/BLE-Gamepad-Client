@@ -10,9 +10,9 @@ size_t encodeVibrationsCommand(const XboxVibrationsCommand& c, uint8_t outBuffer
 
 const blegc::BLEValueEncoder<XboxVibrationsCommand> XboxVibrationsCommand::Encoder(encodeVibrationsCommand);
 const blegc::BLECharacteristicLocation XboxVibrationsCommand::CharacteristicLocation{
-  .serviceUUID = NimBLEUUID(static_cast<uint16_t>(0x1812)),
-  .characteristicUUID = NimBLEUUID(static_cast<uint16_t>(0x2a4d)),
-  .properties = BLE_GATT_CHR_PROP_WRITE};
+    .serviceUUID = NimBLEUUID(uint16_t{0x1812}),
+    .characteristicUUID = NimBLEUUID(uint16_t{0x2a4d}),
+    .properties = uint8_t{BLE_GATT_CHR_PROP_WRITE}};
 
 constexpr size_t vibrationsPayloadLen = 8;
 

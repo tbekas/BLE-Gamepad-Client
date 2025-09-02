@@ -20,6 +20,6 @@ size_t decodeBatteryEvent(XboxBatteryEvent& e, uint8_t payload[], size_t payload
 
 const blegc::BLEValueDecoder<XboxBatteryEvent> XboxBatteryEvent::Decoder(decodeBatteryEvent);
 const blegc::BLECharacteristicLocation XboxBatteryEvent::CharacteristicLocation{
-    .serviceUUID = NimBLEUUID(static_cast<uint16_t>(0x180f)),
-    .characteristicUUID = NimBLEUUID(static_cast<uint16_t>(0x2a19)),
-    .properties = BLE_GATT_CHR_PROP_NOTIFY};
+    .serviceUUID = NimBLEUUID(uint16_t{0x180f}),
+    .characteristicUUID = NimBLEUUID(uint16_t{0x2a19}),
+    .properties = uint8_t{BLE_GATT_CHR_PROP_NOTIFY}};

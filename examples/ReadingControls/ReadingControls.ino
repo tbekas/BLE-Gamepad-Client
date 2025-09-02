@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <BLEGamepadClient.h>
 
-BLEController controller;
+XboxController controller;
 
 void setup(void) {
   Serial.begin(115200);
@@ -10,7 +10,7 @@ void setup(void) {
 
 void loop() {
   if (controller.isConnected()) {
-    BLEControlsEvent e;
+    XboxControlsEvent e;
     controller.readControls(e);
 
     Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",

@@ -9,8 +9,8 @@ namespace blegc {
 struct BLECharacteristicLocation {
   NimBLEUUID serviceUUID;
   NimBLEUUID characteristicUUID;
-  uint8_t properties{0};
-  unsigned int idx{0};
+  uint8_t properties;
+  uint8_t idx;
 };
 
 template <typename T>

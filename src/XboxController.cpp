@@ -6,7 +6,7 @@
 #include "XboxVibrationsCommand.h"
 #include "utils.h"
 
-constexpr std::string_view advertisedDeviceName = "Xbox Wireless Controller";
+const std::string advertisedDeviceName = "Xbox Wireless Controller";
 
 XboxController::XboxController(const NimBLEAddress allowedAddress)
     : BLEBaseController(allowedAddress),

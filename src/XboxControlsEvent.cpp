@@ -11,9 +11,9 @@ size_t decodeControlsEvent(XboxControlsEvent& e, uint8_t payload[], size_t paylo
 
 const blegc::BLEValueDecoder<XboxControlsEvent> XboxControlsEvent::Decoder(decodeControlsEvent);
 const blegc::BLECharacteristicLocation XboxControlsEvent::CharacteristicLocation{
-    .serviceUUID = NimBLEUUID(static_cast<uint16_t>(0x1812)),
-    .characteristicUUID = NimBLEUUID(static_cast<uint16_t>(0x2a4d)),
-    .properties = BLE_GATT_CHR_PROP_NOTIFY};
+    .serviceUUID = NimBLEUUID(uint16_t{0x1812}),
+    .characteristicUUID = NimBLEUUID(uint16_t{0x2a4d}),
+    .properties = uint8_t{BLE_GATT_CHR_PROP_NOTIFY}};
 
 constexpr size_t controlsPayloadLen = 16;
 constexpr uint16_t axisMax = 0xffff;

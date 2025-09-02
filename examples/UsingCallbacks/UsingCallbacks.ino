@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <BLEGamepadClient.h>
 
-void onControlsUpdate(BLEControlsEvent& e) {
+void onControlsUpdate(XboxControlsEvent& e) {
   Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
     e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);
 }
@@ -14,7 +14,7 @@ void onDisconnect(NimBLEAddress address) {
   Serial.printf("controller disconnected, address: %s\n", address.toString().c_str());
 }
 
-BLEController controller;
+XboxController controller;
 
 void setup(void) {
   Serial.begin(115200);

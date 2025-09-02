@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <BLEGamepadClient.h>
 
-BLEController controller;
+XboxController controller;
 
 void setup(void) {
   Serial.begin(115200);
@@ -12,7 +12,7 @@ int i = 0;
 
 void loop() {
   if (controller.isConnected()) {
-    BLEVibrationsCommand cmd;
+    XboxVibrationsCommand cmd;
 
     switch (i % 4) {
       case 0: cmd.rightMotor = 1.0f; break; // 1.0f = max power for the motor
