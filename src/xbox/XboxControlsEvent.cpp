@@ -31,7 +31,7 @@ inline float decodeTrigger(uint16_t val) {
   return (1.0f * val) / triggerMax;
 }
 
-inline uint16_t uint16(uint8_t r, uint8_t l) {
+inline uint16_t make_uint16(uint8_t r, uint8_t l) {
   uint16_t val = l;
   val <<= 8;
   val += r;
@@ -52,12 +52,12 @@ size_t decodeControlsEvent(XboxControlsEvent& e, uint8_t payload[], size_t paylo
     return 0;
   }
 
-  e.leftStickX = decodeStickX(uint16(payload[0], payload[1]));
-  e.leftStickY = decodeStickY(uint16(payload[2], payload[3]));
-  e.rightStickX = decodeStickX(uint16(payload[4], payload[5]));
-  e.rightStickY = decodeStickY(uint16(payload[6], payload[7]));
-  e.leftTrigger = decodeTrigger(uint16(payload[8], payload[9]));
-  e.rightTrigger = decodeTrigger(uint16(payload[10], payload[11]));
+  e.leftStickX = decodeStickX(make_uint16(payload[0], payload[1]));
+  e.leftStickY = decodeStickY(make_uint16(payload[2], payload[3]));
+  e.rightStickX = decodeStickX(make_uint16(payload[4], payload[5]));
+  e.rightStickY = decodeStickY(make_uint16(payload[6], payload[7]));
+  e.leftTrigger = decodeTrigger(make_uint16(payload[8], payload[9]));
+  e.rightTrigger = decodeTrigger(make_uint16(payload[10], payload[11]));
 
   // clang-format off
   e.dpadUp = e.dpadRight = e.dpadDown = e.dpadLeft = false;

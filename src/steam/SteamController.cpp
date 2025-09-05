@@ -59,7 +59,7 @@ bool SteamController::init(NimBLEClient* pClient) {
     return false;
   }
 
-  auto location = blegc::BLECharacteristicLocation{
+  const auto location = blegc::BLECharacteristicLocation{
     .serviceUUID = NimBLEUUID("100f6c32-1735-4313-b402-38567131e5f3"),
     .characteristicUUID = NimBLEUUID("100f6c34-1735-4313-b402-38567131e5f3"),
     .properties = uint8_t{BLE_GATT_CHR_PROP_WRITE}};

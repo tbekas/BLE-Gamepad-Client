@@ -16,7 +16,7 @@ const blegc::BLECharacteristicLocation XboxVibrationsCommand::CharacteristicLoca
 
 constexpr size_t vibrationsPayloadLen = 8;
 
-inline uint16_t uint16(uint8_t r, uint8_t l) {
+inline uint16_t make_uint16(uint8_t r, uint8_t l) {
   uint16_t val = l;
   val <<= 8;
   val += r;
