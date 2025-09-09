@@ -25,8 +25,7 @@ Logger function used to print log messages to the output.
 
 `CONFIG_BT_BLEGC_COPY_REPORT_DATA`
 
-Enables copying raw data from incoming reports into the `data` field of event objects. Useful for debugging event
-decoders.  
+Enables copying raw data from incoming reports into the `data` field of event objects. Useful for debugging.  
 
 Available values:
 * `0` - disabled
