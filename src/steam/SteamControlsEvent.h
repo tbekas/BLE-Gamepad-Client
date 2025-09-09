@@ -2,14 +2,22 @@
 
 #include "../utils.h"
 
-struct SteamControlsEvent {
+#include "../BLEBaseEvent.h"
 
+struct SteamControlsEvent : BLEBaseEvent {
+
+  /// @brief Stick deflection along the X-axis. Takes values between -1.0 and 1.0. No deflection should yield 0.0,
+  /// unless affected by stick drift. Positive values represent deflection to the right, and negative values to the
+  /// left.
   float stickX{0.0f};
 
+  /// @brief Stick deflection along the Y-axis. Takes values between -1.0 and 1.0. No deflection should yield 0.0,
+  /// unless affected by stick drift. Positive values represent upward deflection, and negative values downward.
   float stickY{0.0f};
 
-  /// @brief Button activated when pressing down on the left stick, also known as the L3 button.
+  /// @brief Button activated when pressing down on the stick, also known as the L3 button.
   bool stickButton{false};
+
 
   float rightPadX{0.0f};
   float rightPadY{0.0f};
@@ -19,7 +27,7 @@ struct SteamControlsEvent {
   bool leftPadClick{false};
   bool rightPadClick{false};
 
-  bool leftPadTouch{false}; // ?? if this is to stay, consider renaming "leftPadButton" to "leftPadClick" etc..
+  bool leftPadTouch{false};
   bool rightPadTouch{false};
 
   /// @brief Up button on the directional pad.
@@ -46,10 +54,10 @@ struct SteamControlsEvent {
   /// @brief Face button B, also known as the square button.
   bool buttonY{false};
 
-  /// @brief Left bumper button, also known as the L1 or L shoulder button.
+  /// @brief Left bumper button, also known as the L1 or left shoulder button.
   bool leftBumper{false};
 
-  /// @brief Right bumper button, also known as the R1 or R shoulder button.
+  /// @brief Right bumper button, also known as the R1 or right shoulder button.
   bool rightBumper{false};
 
   /// @brief Pressure level of a left trigger. Takes values between 0.0 and 1.0. No pressure should yield 0.0. This
@@ -60,24 +68,25 @@ struct SteamControlsEvent {
   /// control is also known as R2.
   float rightTrigger{0.0f};
 
+  /// @brief Button activated when the left trigger is fully pressed.
   bool leftTriggerButton{false};
 
+  /// @brief Button activated when the right trigger is fully pressed.
   bool rightTriggerButton{false};
 
-  /// @brief Left Grip. The button on the left underside of the controller.
+  /// @brief Left grip button, located on the underside of the controller.
   bool leftGripButton{false};
 
-  /// @brief Right Grip. The button on the right underside of the controller.
+  /// @brief Right grip button, located on the underside of the controller.
   bool rightGripButton{false};
 
-  bool startButton{false}; // right side
+  /// @brief The right-pointing button, located to the right of the Steam button.
+  bool startButton{false};
 
-  bool systemButton{false}; // ??? idk
+  /// @brief The left-pointing button, located to the left of the Steam button.
+  bool selectButton{false};
 
-  bool selectButton{false}; // left side
-
-  uint8_t data[128];
-  size_t dataLen{0};
+  bool systemButton{false};  // TODO keep it?
 
   static const blegc::BLEValueDecoder<SteamControlsEvent> Decoder;
   static const blegc::BLECharacteristicLocation CharacteristicLocation;

@@ -3,11 +3,11 @@
 #include <NimBLEDevice.h>
 #include <bitset>
 #include <functional>
+#include "logger.h"
+#include "steam/SteamControlsEvent.h"
+#include "utils.h"
 #include "xbox/XboxBatteryEvent.h"
 #include "xbox/XboxControlsEvent.h"
-#include "steam/SteamControlsEvent.h"
-#include "logger.h"
-#include "utils.h"
 
 static auto* LOG_TAG = "BLEIncomingSignal";
 
@@ -97,20 +97,44 @@ void BLENotifiableSignal<T>::_onUpdateTaskFn(void* pvParameters) {
 template <typename T>
 void BLENotifiableSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
                                            uint8_t* pData,
-                                           size_t length,
+                                           size_t dataLen,
                                            bool isNotify) {
   BLEGC_LOGT(LOG_TAG, "Received a notification. %s", blegc::remoteCharToStr(pChar).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  auto result = _decoder(_store.event, pData, length) > 0;
-  configASSERT(xSemaphoreGive(_storeMutex));
+  if constexpr (std::is_base_of_v<BLEBaseEvent, T>) {
+    BLEBaseEvent& e = _store.event;
 
-  if (!result) {
-    BLEGC_LOGE(LOG_TAG, "Decoding failed. %s", blegc::remoteCharToStr(pChar).c_str());
+    if (auto* pClient = pChar->getClient()) {
+      e.controllerAddress = pClient->getPeerAddress();
+    }
+
+#if CONFIG_BT_BLEGC_COPY_REPORT_DATA
+    if (e.dataCap < dataLen) {
+      e.data = std::make_shared<uint8_t[]>(dataLen);
+      e.dataCap = dataLen;
+      e.dataLen = dataLen;
+    }
+
+    memcpy(e.data.get(), pData, dataLen);
+#endif
   }
 
-  if (_onUpdateCallbackSet && result) {
-    xTaskNotifyGive(_onUpdateTask);
+  auto result = _decoder(_store.event, pData, dataLen);
+  configASSERT(xSemaphoreGive(_storeMutex));
+
+  switch (result) {
+    case blegc::BLEDecodeResult::Success:
+      if (_onUpdateCallbackSet) {
+        xTaskNotifyGive(_onUpdateTask);
+      }
+      break;
+    case blegc::BLEDecodeResult::NotSupported:
+      BLEGC_LOGT(LOG_TAG, "Report not supported. %s", blegc::remoteCharToStr(pChar).c_str());
+      break;
+    case blegc::BLEDecodeResult::InvalidReport:
+      BLEGC_LOGE(LOG_TAG, "Invalid report. %s", blegc::remoteCharToStr(pChar).c_str());
+      break;
   }
 }
 

@@ -5,53 +5,45 @@
 #include "../logger.h"
 #include "../utils.h"
 
-static auto* LOG_TAG = "XboxControlsEvent";
+// Sources
+// https://github.com/torvalds/linux/blob/master/drivers/hid/hid-steam.c
+// https://github.com/ricardoquesada/bluepad32/blob/main/src/components/bluepad32/parser/uni_hid_parser_steam.c
 
-#define INPUT_REPORT 0x04
-
+#define REPORT_TYPE_INPUT 0x04
 #define CONTAINS_BUTTONS_DATA 0x0010
 #define CONTAINS_TRIGGERS_DATA 0x0020
 #define CONTAINS_THUMBSTICK_DATA 0x0080
 #define CONTAINS_LEFT_PAD_DATA 0x0100
 #define CONTAINS_RIGHT_PAD_DATA 0x0200
+#define CONTAINS_GYRO_DATA 0x1000
 
-size_t decodeControlsEvent(SteamControlsEvent& e, uint8_t payload[], size_t payloadLen);
+blegc::BLEDecodeResult decodeControlsEvent(SteamControlsEvent& e, uint8_t payload[], size_t payloadLen);
 
 const blegc::BLEValueDecoder<SteamControlsEvent> SteamControlsEvent::Decoder(decodeControlsEvent);
 const blegc::BLECharacteristicLocation SteamControlsEvent::CharacteristicLocation{
-    .serviceUUID = NimBLEUUID(uint16_t{0x1812}),
-    .characteristicUUID = NimBLEUUID(uint16_t{0x2a4d}),
-    .properties = uint8_t{BLE_GATT_CHR_PROP_NOTIFY},
+    .serviceUUID = NimBLEUUID(blegc::hidSvcUUID),
+    .characteristicUUID = NimBLEUUID(blegc::inputReportChrUUID),
+    .properties = BLE_GATT_CHR_PROP_NOTIFY,
     .idx = 2};
-
-// const blegc::BLECharacteristicLocation SteamControlsEvent::CharacteristicLocation{
-//   .serviceUUID = NimBLEUUID("100f6c32-1735-4313-b402-38567131e5f3"),
-//   .characteristicUUID = NimBLEUUID("100f6c33-1735-4313-b402-38567131e5f3"),
-//   .properties = uint8_t{BLE_GATT_CHR_PROP_NOTIFY}};
 
 constexpr size_t controlsPayloadLen = 19;
 
-inline uint16_t make_uint16(uint8_t r, uint8_t l) {
-  uint16_t val = l;
+inline uint16_t make_uint16(const uint8_t lsb, const uint8_t msb) {
+  uint16_t val = msb;
   val <<= 8;
-  val += r;
+  val += lsb;
   return val;
 }
 
 inline int16_t make_int16(const uint8_t lsb, const uint8_t msb) {
-  int16_t val = (lsb | msb << 8);
+  int16_t val = lsb | msb << 8;
   return val;
 }
 
-constexpr uint8_t mask(int bit) {
-  return static_cast<uint8_t>(1) << bit;
-}
-
 inline bool decodeButton(uint8_t byte, int bit) {
-  return byte & mask(bit);
+  return byte & 1 << bit;
 }
 
-// TODO use pointers?
 inline float decodePad(const uint8_t lsb, const uint8_t msb) {
   return static_cast<float>(make_int16(lsb, msb)) / INT16_MAX;
 }
@@ -60,67 +52,64 @@ inline float decodeTrigger(const uint8_t b) {
   return static_cast<float>(b) / UINT8_MAX;
 }
 
-size_t decodeControlsEvent(SteamControlsEvent& e, uint8_t payload[], size_t payloadLen) {
-
+blegc::BLEDecodeResult decodeControlsEvent(SteamControlsEvent& e, uint8_t payload[], size_t payloadLen) {
   if (payloadLen != controlsPayloadLen) {
-    BLEGC_LOGE(LOG_TAG, "Expected %d bytes, was %d bytes", controlsPayloadLen, payloadLen);
-    return 0;
+    return blegc::BLEDecodeResult::InvalidReport;
   }
 
-  if ((payload[1] & 0x0f) != INPUT_REPORT) {
-    // BLEGC_LOGE(LOG_TAG, "Unexpected report type 0x%02x", payload[1] & 0x0f);
-    // return 0;
-    return 1;
+  if (payload[0] != 0xc0) {
+    return blegc::BLEDecodeResult::NotSupported;
   }
 
-  const auto contentInfo = make_uint16(payload[1] & 0xf0, payload[2]);
+  if (payload[1] & 0x0f != REPORT_TYPE_INPUT) {
+    return blegc::BLEDecodeResult::NotSupported;
+  }
+
+  const auto contentInfo = make_uint16(payload[1], payload[2]);
 
   auto offset = 3;
-
   if (contentInfo & CONTAINS_BUTTONS_DATA) {
-    // TODO remove this - debug data
-    size_t copyLen = min(sizeof(e.data), payloadLen);
-    memcpy(e.data, payload, copyLen);
-    e.dataLen = copyLen;
+    const uint8_t byte0 = payload[offset];
+    e.rightTriggerButton = decodeButton(byte0, 0);
+    e.leftTriggerButton = decodeButton(byte0, 1);
+    e.rightBumper = decodeButton(byte0, 2);
+    e.leftBumper = decodeButton(byte0, 3);
+    e.buttonY = decodeButton(byte0, 4);
+    e.buttonB = decodeButton(byte0, 5);
+    e.buttonX = decodeButton(byte0, 6);
+    e.buttonA = decodeButton(byte0, 7);
 
-    const uint8_t byte3 = payload[offset];
-    e.rightTriggerButton = decodeButton(byte3, 0);
-    e.leftTriggerButton = decodeButton(byte3, 1);
-    e.rightBumper = decodeButton(byte3, 2);
-    e.leftBumper = decodeButton(byte3, 3);
-    e.buttonY = decodeButton(byte3, 4);
-    e.buttonB = decodeButton(byte3, 5);
-    e.buttonX = decodeButton(byte3, 6);
-    e.buttonA = decodeButton(byte3, 7);
+    const uint8_t byte1 = payload[offset + 1];
 
-    const uint8_t byte4 = payload[offset + 1];
+    e.dpadUp = decodeButton(byte1, 0);
+    e.dpadRight = decodeButton(byte1, 1);
+    e.dpadLeft = decodeButton(byte1, 2);
+    e.dpadDown = decodeButton(byte1, 3);
+    e.selectButton = decodeButton(byte1, 4);
+    e.systemButton = decodeButton(byte1, 5);
+    e.startButton = decodeButton(byte1, 6);
+    e.leftGripButton = decodeButton(byte1, 7);
 
-    e.dpadUp = decodeButton(byte4, 0);
-    e.dpadRight = decodeButton(byte4, 1);
-    e.dpadLeft = decodeButton(byte4, 2);
-    e.dpadDown = decodeButton(byte4, 3);
-    e.selectButton = decodeButton(byte4, 4);
-    e.systemButton = decodeButton(byte4, 5);
-    e.startButton = decodeButton(byte4, 6);
-    e.leftGripButton = decodeButton(byte4, 7);
-
-    const uint8_t byte5 = payload[offset + 2];
-    e.rightGripButton = decodeButton(byte5, 0);
-    e.leftPadClick = decodeButton(byte5, 1);
-    e.rightPadClick = decodeButton(byte5, 2);
-    e.leftPadTouch = decodeButton(byte5, 3);
-    e.rightPadTouch = decodeButton(byte5, 4);
-    e.stickButton = decodeButton(byte5, 6);
+    const uint8_t byte2 = payload[offset + 2];
+    e.rightGripButton = decodeButton(byte2, 0);
+    e.leftPadClick = decodeButton(byte2, 1);
+    e.rightPadClick = decodeButton(byte2, 2);
+    e.leftPadTouch = decodeButton(byte2, 3);
+    e.rightPadTouch = decodeButton(byte2, 4);
+    e.stickButton = decodeButton(byte2, 6);
+    offset += 3;
   }
 
   if (contentInfo & CONTAINS_TRIGGERS_DATA) {
     e.leftTrigger = decodeTrigger(payload[offset]);
     e.rightTrigger = decodeTrigger(payload[offset + 1]);
+    offset += 2;
   }
 
   if (contentInfo & CONTAINS_THUMBSTICK_DATA) {
     e.stickX = decodePad(payload[offset], payload[offset + 1]);
     e.stickY = decodePad(payload[offset + 2], payload[offset + 3]);
+    offset += 4;
   }
 
   if (contentInfo & CONTAINS_LEFT_PAD_DATA) {
@@ -132,7 +121,8 @@ size_t decodeControlsEvent(SteamControlsEvent& e, uint8_t payload[], size_t payl
   if (contentInfo & CONTAINS_RIGHT_PAD_DATA) {
     e.rightPadX = decodePad(payload[offset], payload[offset + 1]);
     e.rightPadY = decodePad(payload[offset + 2], payload[offset + 3]);
+    offset += 4;
   }
 
-  return 1;
+  return blegc::BLEDecodeResult::Success;
 }

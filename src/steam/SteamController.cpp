@@ -7,40 +7,39 @@
 
 static auto* LOG_TAG = "SteamController";
 
-// Commands that can be sent in a feature report.
-#define STEAM_CMD_SET_MAPPINGS 0x80
-#define STEAM_CMD_CLEAR_MAPPINGS 0x81
-#define STEAM_CMD_GET_MAPPINGS 0x82
-#define STEAM_CMD_GET_ATTRIB 0x83
-#define STEAM_CMD_GET_ATTRIB_LABEL 0x84
-#define STEAM_CMD_DEFAULT_MAPPINGS 0x85
-#define STEAM_CMD_FACTORY_RESET 0x86
-#define STEAM_CMD_WRITE_REGISTER 0x87
+// This is a small subset of available commands and register ids. Check the Linux driver for more
+// https://github.com/torvalds/linux/blob/master/drivers/hid/hid-steam.c
+#define CMD_CLEAR_MAPPINGS 0x81
+#define CMD_WRITE_REGISTER 0x87
+#define ID_LPAD_MODE 0x07
+#define ID_RPAD_MODE 0x08
+#define ID_RPAD_MARGIN 0x18
+#define ID_LED 0x2d
+#define ID_GYRO_MODE 0x30
 
-// Some useful register ids
-#define STEAM_REG_LPAD_MODE 0x07
-#define STEAM_REG_RPAD_MODE 0x08
-#define STEAM_REG_RPAD_MARGIN 0x18
-#define STEAM_REG_LED 0x2d
-#define STEAM_REG_GYRO_MODE 0x30
-#define STEAM_REG_LPAD_CLICK_PRESSURE 0x34
-#define STEAM_REG_RPAD_CLICK_PRESSURE 0x35
-
-static uint8_t cmd_clear_mappings[] = {
-  0xc0, STEAM_CMD_CLEAR_MAPPINGS,  // Command
-  0x01                             // Command Len
+// clang-format off
+static  constexpr uint8_t clearMappingsCmd[] = {
+  0xc0, CMD_CLEAR_MAPPINGS, // Command
+  0x01                      // Command Len
 };
+// clang-format on
 
-
-static uint8_t cmd_disable_lizard[] = {
-  0xc0, STEAM_CMD_WRITE_REGISTER,    // Command
-  0x0f,                              // Command Len
-  STEAM_REG_GYRO_MODE,   0x00, 0x00, // Disable gyro/accel
-  STEAM_REG_LPAD_MODE,   0x07, 0x00, // Disable cursor
-  STEAM_REG_RPAD_MODE,   0x07, 0x00, // Disable mouse
-  STEAM_REG_RPAD_MARGIN, 0x00, 0x00, // No margin
-  STEAM_REG_LED,         0x64, 0x00  // LED bright, max value
+// clang-format off
+static constexpr uint8_t disableLizardModeCmd[] = {
+  0xc0, CMD_WRITE_REGISTER,   // Command
+  0x0f,                       // Command Len
+  ID_GYRO_MODE,   0x00, 0x00, // Disable gyro/accel
+  ID_LPAD_MODE,   0x07, 0x00, // Disable cursor
+  ID_RPAD_MODE,   0x07, 0x00, // Disable mouse
+  ID_RPAD_MARGIN, 0x00, 0x00, // No margin
+  ID_LED,         0x64, 0x00  // Max LED brightness
 };
+// clang-format on
+
+static const auto steamSettingsChar = blegc::BLECharacteristicLocation{
+  .serviceUUID = NimBLEUUID("100f6c32-1735-4313-b402-38567131e5f3"),
+  .characteristicUUID = NimBLEUUID("100f6c34-1735-4313-b402-38567131e5f3"),
+  .properties = uint8_t{BLE_GATT_CHR_PROP_WRITE}};
 
 SteamController::SteamController(NimBLEAddress allowedAddress)
     : BLEBaseController(allowedAddress),
@@ -59,12 +58,7 @@ bool SteamController::init(NimBLEClient* pClient) {
     return false;
   }
 
-  const auto location = blegc::BLECharacteristicLocation{
-    .serviceUUID = NimBLEUUID("100f6c32-1735-4313-b402-38567131e5f3"),
-    .characteristicUUID = NimBLEUUID("100f6c34-1735-4313-b402-38567131e5f3"),
-    .properties = uint8_t{BLE_GATT_CHR_PROP_WRITE}};
-
-  auto* pChar = blegc::findCharacteristic(pClient, location);
+  const auto* pChar = blegc::findCharacteristic(pClient, steamSettingsChar);
   if (!pChar) {
     return false;
   }
@@ -74,11 +68,11 @@ bool SteamController::init(NimBLEClient* pClient) {
     return false;
   }
 
-  if (!pChar->writeValue(&cmd_clear_mappings[0], sizeof(cmd_clear_mappings))) {
+  if (!pChar->writeValue(&clearMappingsCmd[0], sizeof(clearMappingsCmd))) {
     return false;
   }
 
-  if (!pChar->writeValue(&cmd_disable_lizard[0], sizeof(cmd_disable_lizard))) {
+  if (!pChar->writeValue(&disableLizardModeCmd[0], sizeof(disableLizardModeCmd))) {
     return false;
   }
 

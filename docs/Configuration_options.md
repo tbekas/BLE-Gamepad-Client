@@ -23,6 +23,18 @@ Logger function used to print log messages to the output.
 **Default**: `Serial.printf`  
 <br/>
 
+`CONFIG_BT_BLEGC_COPY_REPORT_DATA`
+
+Enables copying raw data from incoming reports into the `data` field of event objects. Useful for debugging event
+decoders.  
+
+Available values:
+* `0` - disabled
+* `1` - enabled
+
+**Default**: `0` (disabled)  
+<br/>
+
 `CONFIG_BT_BLEGC_SCAN_DURATION_MS`
 
 Duration (in milliseconds) of a single scan. The next scan starts automatically after the previous one ends.  
