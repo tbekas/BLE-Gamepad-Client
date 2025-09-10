@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../BLEBaseEvent.h"
-#include "../utils.h"
+#include "../BLECharacteristicSpec.h"
+#include "../coders.h"
 
 struct XboxControlsEvent : BLEBaseEvent {
   /// @brief Left stick deflection along the X-axis. Takes values between -1.0 and 1.0. No deflection should yield 0.0,
@@ -76,6 +77,6 @@ struct XboxControlsEvent : BLEBaseEvent {
   /// @brief Xbox button.
   bool xboxButton{false};
 
-  static const blegc::BLEValueDecoder<XboxControlsEvent> Decoder;
-  static const blegc::BLECharacteristicSpec CharSpec;
+  static const BLEValueDecoder<XboxControlsEvent> Decoder;
+  static const BLECharacteristicSpec CharSpec;
 };

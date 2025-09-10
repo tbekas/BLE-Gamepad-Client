@@ -1,20 +1,21 @@
 #include "XboxVibrationsCommand.h"
 
 #include <NimBLEDevice.h>
+#include "../BLECharacteristicSpec.h"
 #include "../logger.h"
-#include "../utils.h"
+#include "../coders.h"
 
 static auto* LOG_TAG = "XboxVibrationsCommand";
 
-blegc::BLEEncodeResult encodeVibrationsCommand(const XboxVibrationsCommand& c, size_t& usedBytes, uint8_t buffer[], size_t bufferLen);
+BLEEncodeResult encodeVibrationsCommand(const XboxVibrationsCommand& c, size_t& usedBytes, uint8_t buffer[], size_t bufferLen);
 
-const blegc::BLEValueEncoder<XboxVibrationsCommand> XboxVibrationsCommand::Encoder(encodeVibrationsCommand);
-const blegc::BLECharacteristicSpec XboxVibrationsCommand::CharSpec{
+const BLEValueEncoder<XboxVibrationsCommand> XboxVibrationsCommand::Encoder(encodeVibrationsCommand);
+const BLECharacteristicSpec XboxVibrationsCommand::CharSpec{
     .serviceUUID = NimBLEUUID(blegc::hidSvcUUID),
     .characteristicUUID = NimBLEUUID(blegc::inputReportChrUUID),
     .properties = BLE_GATT_CHR_PROP_WRITE};
 
-constexpr size_t vibrationsPayloadLen = 8;
+constexpr size_t vibrationsDataLen = 8;
 
 inline uint8_t encodeMotorEnable(float power, int bit) {
   return (power > 0.0f) * 1 << bit;
@@ -28,10 +29,10 @@ inline uint8_t encodeDuration(uint32_t durationMs) {
   return static_cast<uint8_t>(min(durationMs, static_cast<uint32_t>(2550)) / 10);
 }
 
-blegc::BLEEncodeResult encodeVibrationsCommand(const XboxVibrationsCommand& c, size_t& usedBytes, uint8_t buffer[], size_t bufferLen) {
-  if (bufferLen < vibrationsPayloadLen) {
-    BLEGC_LOGD(LOG_TAG, "Expected buffer of at least %d bytes, was %d bytes", vibrationsPayloadLen, bufferLen);
-    return blegc::BLEEncodeResult::BufferTooShort;
+BLEEncodeResult encodeVibrationsCommand(const XboxVibrationsCommand& c, size_t& usedBytes, uint8_t buffer[], size_t bufferLen) {
+  if (bufferLen < vibrationsDataLen) {
+    BLEGC_LOGD(LOG_TAG, "Expected buffer of at least %d bytes, was %d bytes", vibrationsDataLen, bufferLen);
+    return BLEEncodeResult::BufferTooShort;
   }
 
   if (c.cycles == 0) {
@@ -51,5 +52,5 @@ blegc::BLEEncodeResult encodeVibrationsCommand(const XboxVibrationsCommand& c, s
 
   usedBytes = 8;
 
-  return blegc::BLEEncodeResult::Success;
+  return BLEEncodeResult::Success;
 }
