@@ -13,7 +13,7 @@ static auto* LOG_TAG = "BLEValueReceiver";
 
 template <typename T>
 BLEValueReceiver<T>::BLEValueReceiver(const blegc::BLEValueDecoder<T>& decoder,
-                                            const blegc::BLECharacteristicSpec& charSpec)
+                                      const blegc::BLECharacteristicSpec& charSpec)
     : _decoder(decoder),
       _charSpec(charSpec),
       _pChar(nullptr),
@@ -96,9 +96,9 @@ void BLEValueReceiver<T>::_onUpdateTaskFn(void* pvParameters) {
 
 template <typename T>
 void BLEValueReceiver<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
-                                           uint8_t* pData,
-                                           size_t dataLen,
-                                           bool isNotify) {
+                                        uint8_t* pData,
+                                        size_t dataLen,
+                                        bool isNotify) {
   BLEGC_LOGT(LOG_TAG, "Received a notification. %s", blegc::remoteCharToStr(pChar).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));

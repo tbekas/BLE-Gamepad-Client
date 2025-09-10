@@ -9,12 +9,12 @@
 
 static auto* LOG_TAG = "BLEValueWriter";
 
-constexpr size_t MAX_CAPACITY = 1024; // TODO make it configurable
+constexpr size_t MAX_CAPACITY = 1024;  // TODO make it configurable
 constexpr size_t INIT_CAPACITY = 8;
 
 template <typename T>
 BLEValueWriter<T>::BLEValueWriter(const blegc::BLEValueEncoder<T>& encoder,
-                                        const blegc::BLECharacteristicSpec& charSpec)
+                                  const blegc::BLECharacteristicSpec& charSpec)
     : _encoder(encoder), _charSpec(charSpec), _pChar(nullptr), _sendDataTask(nullptr), _storeMutex(nullptr), _store() {
   _store.capacity = INIT_CAPACITY;
   _store.pBuffer = new uint8_t[_store.capacity];
