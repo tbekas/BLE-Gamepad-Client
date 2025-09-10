@@ -62,6 +62,11 @@ the [examples directory](https://github.com/tbekas/BLE-Gamepad-Client/tree/0.5.0
 Install BLE firmware using these
 instructions: [Steam Controller BLE](https://help.steampowered.com/en/faqs/view/1796-5FC3-88B3-C85F).
 
+Classes:
+
+* `SteamController`
+* `SteamControlsEvent`
+
 Pairing instructions:
 
 * Turn on your controller by pressing Steam button while holding Y button.
@@ -73,6 +78,13 @@ Pairing instructions:
 Update controller's firmware to version is 5.x using these
 instructions: [Update your Xbox Wireless Controller](https://support.xbox.com/en-US/help/hardware-network/controller/update-xbox-wireless-controller).
 
+Classes:
+
+* `XboxController`
+* `XboxControlsEvent`
+* `XboxBatteryEvent`
+* `XboxVibrationsCommand`
+
 Pairing instructions:
 
 * Turn on your controller by pressing the Xbox button.
@@ -81,6 +93,16 @@ Pairing instructions:
 ### Xbox Series S/X Wireless Controller (model 1914 - 3 buttons)
 
 <img src="docs/xbox_series_controller.png" width="320" alt="Xbox One Controller" />
+
+Your controller likely already has firmware version 5.x, but if it's not the case use these
+instructions to update it: [Update your Xbox Wireless Controller](https://support.xbox.com/en-US/help/hardware-network/controller/update-xbox-wireless-controller).
+
+Classes:
+
+* `XboxController`
+* `XboxControlsEvent`
+* `XboxBatteryEvent`
+* `XboxVibrationsCommand`
 
 Pairing instructions:
 
