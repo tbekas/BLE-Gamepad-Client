@@ -36,14 +36,14 @@ static constexpr uint8_t disableLizardModeCmd[] = {
 };
 // clang-format on
 
-static const auto steamSettingsChar = blegc::BLECharacteristicLocation{
+static const auto settingsCharSpec = blegc::BLECharacteristicSpec{
   .serviceUUID = NimBLEUUID("100f6c32-1735-4313-b402-38567131e5f3"),
   .characteristicUUID = NimBLEUUID("100f6c34-1735-4313-b402-38567131e5f3"),
   .properties = uint8_t{BLE_GATT_CHR_PROP_WRITE}};
 
 SteamController::SteamController(NimBLEAddress allowedAddress)
     : BLEBaseController(allowedAddress),
-      _controls(SteamControlsEvent::Decoder, SteamControlsEvent::CharacteristicLocation) {}
+      _controls(SteamControlsEvent::Decoder, SteamControlsEvent::CharSpec) {}
 
 SteamController::SteamController(const std::string& allowedAddress)
     : SteamController(NimBLEAddress(allowedAddress, BLE_ADDR_PUBLIC)) {}
@@ -58,7 +58,7 @@ bool SteamController::init(NimBLEClient* pClient) {
     return false;
   }
 
-  const auto* pChar = blegc::findCharacteristic(pClient, steamSettingsChar);
+  const auto* pChar = blegc::findCharacteristic(pClient, settingsCharSpec);
   if (!pChar) {
     return false;
   }

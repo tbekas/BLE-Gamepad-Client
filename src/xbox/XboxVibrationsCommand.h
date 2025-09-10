@@ -31,5 +31,5 @@ struct XboxVibrationsCommand {
   uint8_t cycles{1};
 
   static const blegc::BLEValueEncoder<XboxVibrationsCommand> Encoder;
-  static const blegc::BLECharacteristicLocation CharacteristicLocation;
+  static const blegc::BLECharacteristicSpec CharSpec;
 };

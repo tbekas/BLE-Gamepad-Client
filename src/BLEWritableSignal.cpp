@@ -14,8 +14,8 @@ constexpr size_t INIT_CAPACITY = 8;
 
 template <typename T>
 BLEWritableSignal<T>::BLEWritableSignal(const blegc::BLEValueEncoder<T>& encoder,
-                                        const blegc::BLECharacteristicLocation& location)
-    : _encoder(encoder), _location(location), _pChar(nullptr), _sendDataTask(nullptr), _storeMutex(nullptr), _store() {
+                                        const blegc::BLECharacteristicSpec& charSpec)
+    : _encoder(encoder), _charSpec(charSpec), _pChar(nullptr), _sendDataTask(nullptr), _storeMutex(nullptr), _store() {
   _store.capacity = INIT_CAPACITY;
   _store.pBuffer = new uint8_t[_store.capacity];
   _store.pSendBuffer = new uint8_t[_store.capacity];
@@ -40,7 +40,7 @@ BLEWritableSignal<T>::~BLEWritableSignal() {
 
 template <typename T>
 bool BLEWritableSignal<T>::init(NimBLEClient* pClient) {
-  _pChar = blegc::findCharacteristic(pClient, _location);
+  _pChar = blegc::findCharacteristic(pClient, _charSpec);
   if (!_pChar) {
     return false;
   }

@@ -77,5 +77,5 @@ struct XboxControlsEvent : BLEBaseEvent {
   bool xboxButton{false};
 
   static const blegc::BLEValueDecoder<XboxControlsEvent> Decoder;
-  static const blegc::BLECharacteristicLocation CharacteristicLocation;
+  static const blegc::BLECharacteristicSpec CharSpec;
 };

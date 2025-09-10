@@ -103,5 +103,5 @@ struct SteamControlsEvent : BLEBaseEvent {
   bool steamButton{false};
 
   static const blegc::BLEValueDecoder<SteamControlsEvent> Decoder;
-  static const blegc::BLECharacteristicLocation CharacteristicLocation;
+  static const blegc::BLECharacteristicSpec CharSpec;
 };

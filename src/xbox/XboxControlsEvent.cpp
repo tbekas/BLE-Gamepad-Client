@@ -10,7 +10,7 @@ static auto* LOG_TAG = "XboxControlsEvent";
 blegc::BLEDecodeResult decodeControlsEvent(XboxControlsEvent& e, uint8_t payload[], size_t payloadLen);
 
 const blegc::BLEValueDecoder<XboxControlsEvent> XboxControlsEvent::Decoder(decodeControlsEvent);
-const blegc::BLECharacteristicLocation XboxControlsEvent::CharacteristicLocation{
+const blegc::BLECharacteristicSpec XboxControlsEvent::CharSpec{
     .serviceUUID = NimBLEUUID(blegc::hidSvcUUID),
     .characteristicUUID = NimBLEUUID(blegc::inputReportChrUUID),
     .properties = BLE_GATT_CHR_PROP_NOTIFY};

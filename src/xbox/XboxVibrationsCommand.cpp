@@ -9,7 +9,7 @@ static auto* LOG_TAG = "XboxVibrationsCommand";
 blegc::BLEEncodeResult encodeVibrationsCommand(const XboxVibrationsCommand& c, size_t& usedBytes, uint8_t buffer[], size_t bufferLen);
 
 const blegc::BLEValueEncoder<XboxVibrationsCommand> XboxVibrationsCommand::Encoder(encodeVibrationsCommand);
-const blegc::BLECharacteristicLocation XboxVibrationsCommand::CharacteristicLocation{
+const blegc::BLECharacteristicSpec XboxVibrationsCommand::CharSpec{
     .serviceUUID = NimBLEUUID(blegc::hidSvcUUID),
     .characteristicUUID = NimBLEUUID(blegc::inputReportChrUUID),
     .properties = BLE_GATT_CHR_PROP_WRITE};

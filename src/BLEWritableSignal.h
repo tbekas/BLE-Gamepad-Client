@@ -6,7 +6,7 @@
 template <typename T>
 class BLEWritableSignal {
  public:
-  BLEWritableSignal(const blegc::BLEValueEncoder<T>& encoder, const blegc::BLECharacteristicLocation& location);
+  BLEWritableSignal(const blegc::BLEValueEncoder<T>& encoder, const blegc::BLECharacteristicSpec& charSpec);
   ~BLEWritableSignal();
   bool init(NimBLEClient* pClient);
   void write(const T& value);
@@ -21,7 +21,7 @@ class BLEWritableSignal {
   static void _sendDataFn(void* pvParameters);
 
   const blegc::BLEValueEncoder<T>& _encoder;
-  const blegc::BLECharacteristicLocation& _location;
+  const blegc::BLECharacteristicSpec& _charSpec;
 
   NimBLERemoteCharacteristic* _pChar;
   TaskHandle_t _sendDataTask;

@@ -10,7 +10,7 @@ using OnUpdate = std::function<void(T& value)>;
 template <typename T>
 class BLENotifiableSignal {
  public:
-  BLENotifiableSignal(const blegc::BLEValueDecoder<T>& decoder, const blegc::BLECharacteristicLocation& location);
+  BLENotifiableSignal(const blegc::BLEValueDecoder<T>& decoder, const blegc::BLECharacteristicSpec& charSpec);
   ~BLENotifiableSignal();
   bool init(NimBLEClient* pClient);
   void readLast(T& out);
@@ -24,7 +24,7 @@ class BLENotifiableSignal {
   void _handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t dataLen, bool isNotify);
 
   const blegc::BLEValueDecoder<T>& _decoder;
-  const blegc::BLECharacteristicLocation& _location;
+  const blegc::BLECharacteristicSpec& _charSpec;
 
   NimBLERemoteCharacteristic* _pChar;
   TaskHandle_t _onUpdateTask;

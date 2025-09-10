@@ -8,9 +8,9 @@
 
 XboxController::XboxController(const NimBLEAddress allowedAddress)
     : BLEBaseController(allowedAddress),
-      _controls(XboxControlsEvent::Decoder, XboxControlsEvent::CharacteristicLocation),
-      _battery(XboxBatteryEvent::Decoder, XboxBatteryEvent::CharacteristicLocation),
-      _vibrations(XboxVibrationsCommand::Encoder, XboxVibrationsCommand::CharacteristicLocation) {}
+      _controls(XboxControlsEvent::Decoder, XboxControlsEvent::CharSpec),
+      _battery(XboxBatteryEvent::Decoder, XboxBatteryEvent::CharSpec),
+      _vibrations(XboxVibrationsCommand::Encoder, XboxVibrationsCommand::CharSpec) {}
 
 XboxController::XboxController(const std::string& allowedAddress)
     : XboxController(NimBLEAddress(allowedAddress, BLE_ADDR_PUBLIC)) {}
