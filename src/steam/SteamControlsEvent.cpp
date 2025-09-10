@@ -86,7 +86,7 @@ blegc::BLEDecodeResult decodeControlsEvent(SteamControlsEvent& e, uint8_t payloa
     e.dpadLeft = decodeButton(byte1, 2);
     e.dpadDown = decodeButton(byte1, 3);
     e.selectButton = decodeButton(byte1, 4);
-    e.systemButton = decodeButton(byte1, 5);
+    e.steamButton = decodeButton(byte1, 5);
     e.startButton = decodeButton(byte1, 6);
     e.leftGripButton = decodeButton(byte1, 7);
 

@@ -64,13 +64,13 @@ struct XboxControlsEvent : BLEBaseEvent {
   /// @brief Pressure level on the right trigger. Takes values between 0.0 and 1.0. No pressure should yield 0.0.
   float rightTrigger{0.0f};
 
-  /// @brief Share button.
+  /// @brief Share button, located below the Xbox button in the center (model 1914).
   bool shareButton{false};
 
-  /// @brief Menu button.
+  /// @brief Menu button, located below the Xbox button on the right side.
   bool menuButton{false};
 
-  /// @brief View button.
+  /// @brief View button, located below the Xbox button on the left side.
   bool viewButton{false};
 
   /// @brief Xbox button.

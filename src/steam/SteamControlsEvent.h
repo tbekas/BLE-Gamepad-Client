@@ -99,7 +99,8 @@ struct SteamControlsEvent : BLEBaseEvent {
   /// @brief The left-pointing button, located to the left of the Steam button.
   bool selectButton{false};
 
-  bool systemButton{false};  // TODO keep it?
+  /// @brief Steam button.
+  bool steamButton{false};
 
   static const blegc::BLEValueDecoder<SteamControlsEvent> Decoder;
   static const blegc::BLECharacteristicLocation CharacteristicLocation;
