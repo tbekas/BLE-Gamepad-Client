@@ -3,8 +3,8 @@
 [![arduino-library-badge](https://www.ardu-badge.com/badge/BLE-Gamepad-Client.svg?)](https://www.ardu-badge.com/BLE-Gamepad-Client)
 [![PlatformIO Registry](https://badges.registry.platformio.org/packages/tbekas/library/BLE-Gamepad-Client.svg)](https://registry.platformio.org/libraries/tbekas/BLE-Gamepad-Client)
 
-This library enables connecting BLE (Bluetooth Low Energy) gamepads to ESP32 boards. Currently, only the Xbox Wireless
-Controller and Steam Controller are supported.
+This library enables connecting BLE (Bluetooth Low Energy) gamepads to ESP32 boards. Supported gamepads include the Xbox
+Wireless Controller and the Steam Controller.
 
 # Arduino Library
 
@@ -59,18 +59,19 @@ the [examples directory](https://github.com/tbekas/BLE-Gamepad-Client/tree/0.5.0
 
 <img src="docs/steam_controller.png" width="320" alt="Steam Controller" />
 
-Install BLE firmware using these instructions: [Steam Controller BLE](https://help.steampowered.com/en/faqs/view/1796-5FC3-88B3-C85F).
+Install BLE firmware using these
+instructions: [Steam Controller BLE](https://help.steampowered.com/en/faqs/view/1796-5FC3-88B3-C85F).
 
 Pairing instructions:
 
 * Turn on your controller by pressing Steam button while holding Y button.
 
-
 ### Xbox One Wireless Controller (models 1697 and 1708 - 2 buttons)
 
 <img src="docs/xbox_one_controller.png" width="320" alt="Xbox One Controller" />
 
-Update controller's firmware to version is 5.x using these instructions: [Update your Xbox Wireless Controller](https://support.xbox.com/en-US/help/hardware-network/controller/update-xbox-wireless-controller).
+Update controller's firmware to version is 5.x using these
+instructions: [Update your Xbox Wireless Controller](https://support.xbox.com/en-US/help/hardware-network/controller/update-xbox-wireless-controller).
 
 Pairing instructions:
 
@@ -88,5 +89,5 @@ Pairing instructions:
 
 # Acknowledgments
 
-* [h2zero](https://github.com/h2zero) for the excellent [NimBLE-Arduino](https://github.com/h2zero/NimBLE-Arduino) library, which
-  this library is built upon.
+* [h2zero](https://github.com/h2zero) for the excellent [NimBLE-Arduino](https://github.com/h2zero/NimBLE-Arduino)
+  library, which this library is built upon.

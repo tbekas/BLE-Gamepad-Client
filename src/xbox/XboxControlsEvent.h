@@ -22,10 +22,10 @@ struct XboxControlsEvent : BLEBaseEvent {
   /// unless affected by stick drift. Positive values represent upward deflection, and negative values downward.
   float rightStickY{0.0f};
 
-  /// @brief Button activated when pressing down on the left stick, also known as the L3 button.
+  /// @brief Button activated when pressing down on the left stick.
   bool leftStickButton{false};
 
-  /// @brief Button activated when pressing down on the right stick, also known as the R3 button.
+  /// @brief Button activated when pressing down on the right stick.
   bool rightStickButton{false};
 
   /// @brief Up button on the directional pad.
@@ -40,42 +40,40 @@ struct XboxControlsEvent : BLEBaseEvent {
   /// @brief Right button on the directional pad.
   bool dpadRight{false};
 
-  /// @brief Face button A, also known as the cross button.
+  /// @brief Face button A.
   bool buttonA{false};
 
-  /// @brief Face button B, also known as the circle button.
+  /// @brief Face button B.
   bool buttonB{false};
 
-  /// @brief Face button B, also known as the triangle button.
+  /// @brief Face button X.
   bool buttonX{false};
 
-  /// @brief Face button B, also known as the square button.
+  /// @brief Face button Y.
   bool buttonY{false};
 
-  /// @brief Left bumper button, also known as the L1 or left shoulder button.
+  /// @brief Left bumper button, also known as the left shoulder button.
   bool leftBumper{false};
 
-  /// @brief Right bumper button, also known as the R1 or right shoulder button.
+  /// @brief Right bumper button, also known as the right shoulder button.
   bool rightBumper{false};
 
-  /// @brief Pressure level of a left trigger. Takes values between 0.0 and 1.0. No pressure should yield 0.0. This
-  /// control is also known as L2.
+  /// @brief Pressure level on the left trigger. Takes values between 0.0 and 1.0. No pressure should yield 0.0.
   float leftTrigger{0.0f};
 
-  /// @brief Pressure level of a right trigger. Takes values between 0.0 and 1.0. No pressure should yield 0.0. This
-  /// control is also known as R2.
+  /// @brief Pressure level on the right trigger. Takes values between 0.0 and 1.0. No pressure should yield 0.0.
   float rightTrigger{0.0f};
 
   /// @brief Share button.
   bool shareButton{false};
 
-  /// @brief Menu button, also known as start button.
+  /// @brief Menu button.
   bool menuButton{false};
 
-  /// @brief View button, also known as back button.
+  /// @brief View button.
   bool viewButton{false};
 
-  /// @brief Xbox button, also known as guide button.
+  /// @brief Xbox button.
   bool xboxButton{false};
 
   static const blegc::BLEValueDecoder<XboxControlsEvent> Decoder;
