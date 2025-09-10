@@ -3,13 +3,13 @@
 #include <NimBLEDevice.h>
 #include <bitset>
 #include <functional>
-#include "xbox/XboxVibrationsCommand.h"
 #include "logger.h"
 #include "utils.h"
+#include "xbox/XboxVibrationsCommand.h"
 
 static auto* LOG_TAG = "BLEWritableSignal";
 
-constexpr size_t MAX_CAPACITY = 1024;
+constexpr size_t MAX_CAPACITY = 1024; // TODO make it configurable
 constexpr size_t INIT_CAPACITY = 8;
 
 template <typename T>
@@ -57,7 +57,9 @@ template <typename T>
 void BLEWritableSignal<T>::write(const T& value) {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   size_t used;
-  while ((used = _encoder(value, _store.pBuffer, _store.capacity)) == 0 && _store.capacity < MAX_CAPACITY) {
+  blegc::BLEEncodeResult result;
+  while ((result = _encoder(value, used, _store.pBuffer, _store.capacity)) == blegc::BLEEncodeResult::BufferTooShort &&
+         _store.capacity < MAX_CAPACITY) {
     delete[] _store.pBuffer;
     delete[] _store.pSendBuffer;
     _store.capacity = min(_store.capacity * 2, MAX_CAPACITY);
@@ -65,16 +67,20 @@ void BLEWritableSignal<T>::write(const T& value) {
     _store.pSendBuffer = new uint8_t[_store.capacity];
   }
 
-  _store.used = used;
-  auto result = _store.used > 0 && _store.used <= _store.capacity;
+  _store.used = result == blegc::BLEEncodeResult::Success ? used : 0;
   configASSERT(xSemaphoreGive(_storeMutex));
 
-  if (!result) {
-    BLEGC_LOGE(LOG_TAG, "Encoding failed");
-    return;
+  switch (result) {
+    case blegc::BLEEncodeResult::Success:
+      xTaskNotifyGive(_sendDataTask);
+      break;
+    case blegc::BLEEncodeResult::InvalidValue:
+      BLEGC_LOGE(LOG_TAG, "Encoding failed, invalid value");
+      break;
+    case blegc::BLEEncodeResult::BufferTooShort:
+      BLEGC_LOGE(LOG_TAG, "Encoding failed, buffer too short");
+      break;
   }
-
-  xTaskNotifyGive(_sendDataTask);
 }
 
 template <typename T>
@@ -91,11 +97,10 @@ void BLEWritableSignal<T>::_sendDataFn(void* pvParameters) {
     self->_store.pBuffer = tmp;
 
     auto used = self->_store.used;
-    auto result = self->_store.used > 0 && self->_store.used <= self->_store.capacity;
+    auto shouldSend = self->_store.used > 0 && self->_store.used <= self->_store.capacity;
     configASSERT(xSemaphoreGive(self->_storeMutex));
 
-    if (!result) {
-      BLEGC_LOGE(LOG_TAG, "Encoding failed");
+    if (!shouldSend) {
       continue;
     }
 

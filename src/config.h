@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nimble/console/console.h>
+#include <cstdio>
 #include <nimconfig.h>
 
 #ifndef CONFIG_BT_BLEGC_LOG_LEVEL
@@ -12,7 +12,17 @@
 #endif
 
 #ifndef CONFIG_BT_BLEGC_LOGGER
-#define CONFIG_BT_BLEGC_LOGGER console_printf
+#define CONFIG_BT_BLEGC_LOGGER printf
+#endif
+
+#ifndef CONFIG_BT_BLEGC_COPY_REPORT_DATA
+#define CONFIG_BT_BLEGC_COPY_REPORT_DATA 1
+#endif
+
+#if defined __has_include
+#  if __has_include (<Arduino.h>)
+#    define CONFIG_BT_BLEGC_ARDUINO_PLATFORM 1
+#  endif
 #endif
 
 #ifndef CONFIG_BT_BLEGC_SCAN_DURATION_MS

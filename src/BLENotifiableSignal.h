@@ -21,7 +21,7 @@ class BLENotifiableSignal {
     T event{};
   };
   static void _onUpdateTaskFn(void* pvParameters);
-  void _handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t length, bool isNotify);
+  void _handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t dataLen, bool isNotify);
 
   const blegc::BLEValueDecoder<T>& _decoder;
   const blegc::BLECharacteristicLocation& _location;
