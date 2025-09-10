@@ -2,7 +2,7 @@
 
 #include <NimBLEAddress.h>
 #include "BLEBaseController.h"
-#include "BLENotifiableSignal.h"
+#include "BLEValueReceiver.h"
 #include "SteamControlsEvent.h"
 
 class SteamController final : public BLEBaseController {
@@ -20,5 +20,5 @@ protected:
   bool deinit() override;
 
  private:
-  BLENotifiableSignal<SteamControlsEvent> _controls;
+  BLEValueReceiver<SteamControlsEvent> _controls;
 };

@@ -2,7 +2,7 @@
 
 #include <NimBLEDevice.h>
 #include <bitset>
-#include "../BLENotifiableSignal.h"
+#include "../BLEValueReceiver.h"
 #include "../utils.h"
 #include "XboxVibrationsCommand.h"
 

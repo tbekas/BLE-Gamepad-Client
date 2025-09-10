@@ -1,4 +1,4 @@
-#include "BLEWritableSignal.h"
+#include "BLEValueWriter.h"
 
 #include <NimBLEDevice.h>
 #include <bitset>
@@ -7,14 +7,14 @@
 #include "utils.h"
 #include "xbox/XboxVibrationsCommand.h"
 
-static auto* LOG_TAG = "BLEWritableSignal";
+static auto* LOG_TAG = "BLEValueWriter";
 
-constexpr size_t MAX_CAPACITY = 1024; // TODO make it configurable
+constexpr size_t MAX_CAPACITY = 1024;  // TODO make it configurable
 constexpr size_t INIT_CAPACITY = 8;
 
 template <typename T>
-BLEWritableSignal<T>::BLEWritableSignal(const blegc::BLEValueEncoder<T>& encoder,
-                                        const blegc::BLECharacteristicSpec& charSpec)
+BLEValueWriter<T>::BLEValueWriter(const blegc::BLEValueEncoder<T>& encoder,
+                                  const blegc::BLECharacteristicSpec& charSpec)
     : _encoder(encoder), _charSpec(charSpec), _pChar(nullptr), _sendDataTask(nullptr), _storeMutex(nullptr), _store() {
   _store.capacity = INIT_CAPACITY;
   _store.pBuffer = new uint8_t[_store.capacity];
@@ -26,7 +26,7 @@ BLEWritableSignal<T>::BLEWritableSignal(const blegc::BLEValueEncoder<T>& encoder
   configASSERT(_sendDataTask);
 }
 template <typename T>
-BLEWritableSignal<T>::~BLEWritableSignal() {
+BLEValueWriter<T>::~BLEValueWriter() {
   if (_sendDataTask != nullptr) {
     vTaskDelete(_sendDataTask);
   }
@@ -39,7 +39,7 @@ BLEWritableSignal<T>::~BLEWritableSignal() {
 }
 
 template <typename T>
-bool BLEWritableSignal<T>::init(NimBLEClient* pClient) {
+bool BLEValueWriter<T>::init(NimBLEClient* pClient) {
   _pChar = blegc::findCharacteristic(pClient, _charSpec);
   if (!_pChar) {
     return false;
@@ -54,7 +54,7 @@ bool BLEWritableSignal<T>::init(NimBLEClient* pClient) {
 }
 
 template <typename T>
-void BLEWritableSignal<T>::write(const T& value) {
+void BLEValueWriter<T>::write(const T& value) {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   size_t used;
   blegc::BLEEncodeResult result;
@@ -84,8 +84,8 @@ void BLEWritableSignal<T>::write(const T& value) {
 }
 
 template <typename T>
-void BLEWritableSignal<T>::_sendDataFn(void* pvParameters) {
-  auto* self = static_cast<BLEWritableSignal*>(pvParameters);
+void BLEValueWriter<T>::_sendDataFn(void* pvParameters) {
+  auto* self = static_cast<BLEValueWriter*>(pvParameters);
 
   while (true) {
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
@@ -115,4 +115,4 @@ void BLEWritableSignal<T>::_sendDataFn(void* pvParameters) {
   }
 }
 
-template class BLEWritableSignal<XboxVibrationsCommand>;
+template class BLEValueWriter<XboxVibrationsCommand>;
