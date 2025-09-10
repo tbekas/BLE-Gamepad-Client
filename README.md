@@ -53,7 +53,7 @@ void loop() {
 Checkout the code examples in
 the [examples directory](https://github.com/tbekas/BLE-Gamepad-Client/tree/0.5.0/examples).
 
-<a href="https://github.com/tbekas/BLE-Gamepad-Client/tree/0.5.0/examples">link using html a tag</a>
+<a href="examples" doxy-href="https://github.com/tbekas/BLE-Gamepad-Client/tree/0.5.0/examples">link using html a tag</a>
 
 # Supported gamepads
 
