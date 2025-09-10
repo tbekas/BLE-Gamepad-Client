@@ -36,7 +36,9 @@ inline uint16_t make_uint16(const uint8_t lsb, const uint8_t msb) {
 }
 
 inline int16_t make_int16(const uint8_t lsb, const uint8_t msb) {
-  int16_t val = lsb | msb << 8;
+  int16_t val = msb;
+  val <<= 8;
+  val += lsb;
   return val;
 }
 

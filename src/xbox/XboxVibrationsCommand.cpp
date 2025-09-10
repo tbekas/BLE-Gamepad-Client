@@ -16,19 +16,8 @@ const blegc::BLECharacteristicLocation XboxVibrationsCommand::CharacteristicLoca
 
 constexpr size_t vibrationsPayloadLen = 8;
 
-inline uint16_t make_uint16(uint8_t lsb, uint8_t msb) {
-  uint16_t val = msb;
-  val <<= 8;
-  val += lsb;
-  return val;
-}
-
-constexpr uint8_t mask(int bit) {
-  return uint8_t(1) << bit;
-}
-
 inline uint8_t encodeMotorEnable(float power, int bit) {
-  return (power > 0.0f) * mask(bit);
+  return (power > 0.0f) * 1 << bit;
 }
 
 inline uint8_t encodeMotorPower(float power) {

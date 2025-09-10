@@ -19,18 +19,6 @@ constexpr size_t controlsPayloadLen = 16;
 constexpr uint16_t axisMax = 0xffff;
 constexpr uint16_t triggerMax = 0x3ff;
 
-inline float decodeStickX(uint16_t val) {
-  return ((2.0f * val) / axisMax) - 1.0f;
-}
-
-inline float decodeStickY(uint16_t val) {
-  return ((-2.0f * val) / axisMax) + 1.0f;
-}
-
-inline float decodeTrigger(uint16_t val) {
-  return (1.0f * val) / triggerMax;
-}
-
 inline uint16_t make_uint16(uint8_t lsb, uint8_t msb) {
   uint16_t val = msb;
   val <<= 8;
@@ -38,12 +26,20 @@ inline uint16_t make_uint16(uint8_t lsb, uint8_t msb) {
   return val;
 }
 
-constexpr uint8_t mask(int bit) {
-  return static_cast<uint8_t>(1) << bit;
+inline float decodeStickX(uint8_t lsb, uint8_t msb) {
+  return 2.0f * static_cast<float>(make_uint16(lsb, msb)) / axisMax - 1.0f;
+}
+
+inline float decodeStickY(uint8_t lsb, uint8_t msb) {
+  return -2.0f * static_cast<float>(make_uint16(lsb, msb)) / axisMax + 1.0f;
+}
+
+inline float decodeTrigger(uint8_t lsb, uint8_t msb) {
+  return 1.0f * static_cast<float>(make_uint16(lsb, msb)) / triggerMax;
 }
 
 inline bool decodeButton(uint8_t byte, int bit) {
-  return byte & mask(bit);
+  return byte & 1 << bit;
 }
 
 blegc::BLEDecodeResult decodeControlsEvent(XboxControlsEvent& e, uint8_t payload[], size_t payloadLen) {
@@ -51,12 +47,12 @@ blegc::BLEDecodeResult decodeControlsEvent(XboxControlsEvent& e, uint8_t payload
     return blegc::BLEDecodeResult::InvalidReport;
   }
 
-  e.leftStickX = decodeStickX(make_uint16(payload[0], payload[1]));
-  e.leftStickY = decodeStickY(make_uint16(payload[2], payload[3]));
-  e.rightStickX = decodeStickX(make_uint16(payload[4], payload[5]));
-  e.rightStickY = decodeStickY(make_uint16(payload[6], payload[7]));
-  e.leftTrigger = decodeTrigger(make_uint16(payload[8], payload[9]));
-  e.rightTrigger = decodeTrigger(make_uint16(payload[10], payload[11]));
+  e.leftStickX = decodeStickX(payload[0], payload[1]);
+  e.leftStickY = decodeStickY(payload[2], payload[3]);
+  e.rightStickX = decodeStickX(payload[4], payload[5]);
+  e.rightStickY = decodeStickY(payload[6], payload[7]);
+  e.leftTrigger = decodeTrigger(payload[8], payload[9]);
+  e.rightTrigger = decodeTrigger(payload[10], payload[11]);
 
   // clang-format off
   e.dpadUp = e.dpadRight = e.dpadDown = e.dpadLeft = false;
