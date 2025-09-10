@@ -1,4 +1,4 @@
-#include "BLENotifiableSignal.h"
+#include "BLEValueReceiver.h"
 
 #include <NimBLEDevice.h>
 #include <bitset>
@@ -9,10 +9,10 @@
 #include "xbox/XboxBatteryEvent.h"
 #include "xbox/XboxControlsEvent.h"
 
-static auto* LOG_TAG = "BLEIncomingSignal";
+static auto* LOG_TAG = "BLEValueReceiver";
 
 template <typename T>
-BLENotifiableSignal<T>::BLENotifiableSignal(const blegc::BLEValueDecoder<T>& decoder,
+BLEValueReceiver<T>::BLEValueReceiver(const blegc::BLEValueDecoder<T>& decoder,
                                             const blegc::BLECharacteristicSpec& charSpec)
     : _decoder(decoder),
       _charSpec(charSpec),
@@ -29,7 +29,7 @@ BLENotifiableSignal<T>::BLENotifiableSignal(const blegc::BLEValueDecoder<T>& dec
 }
 
 template <typename T>
-BLENotifiableSignal<T>::~BLENotifiableSignal() {
+BLEValueReceiver<T>::~BLEValueReceiver() {
   if (_onUpdateTask != nullptr) {
     vTaskDelete(_onUpdateTask);
     _onUpdateTask = nullptr;
@@ -41,7 +41,7 @@ BLENotifiableSignal<T>::~BLENotifiableSignal() {
 }
 
 template <typename T>
-bool BLENotifiableSignal<T>::init(NimBLEClient* pClient) {
+bool BLEValueReceiver<T>::init(NimBLEClient* pClient) {
   _pChar = blegc::findCharacteristic(pClient, _charSpec);
   if (!_pChar) {
     return false;
@@ -52,7 +52,7 @@ bool BLENotifiableSignal<T>::init(NimBLEClient* pClient) {
     return false;
   }
 
-  auto handlerFn = std::bind(&BLENotifiableSignal::_handleNotify, this, std::placeholders::_1, std::placeholders::_2,
+  auto handlerFn = std::bind(&BLEValueReceiver::_handleNotify, this, std::placeholders::_1, std::placeholders::_2,
                              std::placeholders::_3, std::placeholders::_4);
 
   BLEGC_LOGD(LOG_TAG, "Subscribing to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
@@ -68,21 +68,21 @@ bool BLENotifiableSignal<T>::init(NimBLEClient* pClient) {
 }
 
 template <typename T>
-void BLENotifiableSignal<T>::readLast(T& out) {
+void BLEValueReceiver<T>::readLast(T& out) {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   out = _store.event;
   configASSERT(xSemaphoreGive(_storeMutex));
 }
 
 template <typename T>
-void BLENotifiableSignal<T>::onUpdate(const OnUpdate<T>& onUpdate) {
+void BLEValueReceiver<T>::onUpdate(const OnUpdate<T>& onUpdate) {
   _onUpdateCallback = onUpdate;
   _onUpdateCallbackSet = true;
 }
 
 template <typename T>
-void BLENotifiableSignal<T>::_onUpdateTaskFn(void* pvParameters) {
-  auto* self = static_cast<BLENotifiableSignal*>(pvParameters);
+void BLEValueReceiver<T>::_onUpdateTaskFn(void* pvParameters) {
+  auto* self = static_cast<BLEValueReceiver*>(pvParameters);
 
   while (true) {
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
@@ -95,7 +95,7 @@ void BLENotifiableSignal<T>::_onUpdateTaskFn(void* pvParameters) {
 }
 
 template <typename T>
-void BLENotifiableSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
+void BLEValueReceiver<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
                                            uint8_t* pData,
                                            size_t dataLen,
                                            bool isNotify) {
@@ -138,6 +138,6 @@ void BLENotifiableSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
   }
 }
 
-template class BLENotifiableSignal<XboxControlsEvent>;
-template class BLENotifiableSignal<XboxBatteryEvent>;
-template class BLENotifiableSignal<SteamControlsEvent>;
+template class BLEValueReceiver<XboxControlsEvent>;
+template class BLEValueReceiver<XboxBatteryEvent>;
+template class BLEValueReceiver<SteamControlsEvent>;

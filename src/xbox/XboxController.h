@@ -2,8 +2,8 @@
 
 #include <NimBLEAddress.h>
 #include "BLEBaseController.h"
-#include "BLENotifiableSignal.h"
-#include "BLEWritableSignal.h"
+#include "BLEValueReceiver.h"
+#include "BLEValueWriter.h"
 #include "XboxControlsEvent.h"
 #include "XboxBatteryEvent.h"
 #include "XboxVibrationsCommand.h"
@@ -11,7 +11,7 @@
 using OnControlsUpdate = std::function<void(XboxControlsEvent& e)>;
 using OnBatteryUpdate = std::function<void(XboxBatteryEvent& e)>;
 
-template class BLEWritableSignal<XboxVibrationsCommand>;
+template class BLEValueWriter<XboxVibrationsCommand>;
 
 class XboxController final : public BLEBaseController {
  public:
@@ -32,7 +32,7 @@ class XboxController final : public BLEBaseController {
   bool deinit() override;
 
  private:
-  BLENotifiableSignal<XboxControlsEvent> _controls;
-  BLENotifiableSignal<XboxBatteryEvent> _battery;
-  BLEWritableSignal<XboxVibrationsCommand> _vibrations;
+  BLEValueReceiver<XboxControlsEvent> _controls;
+  BLEValueReceiver<XboxBatteryEvent> _battery;
+  BLEValueWriter<XboxVibrationsCommand> _vibrations;
 };

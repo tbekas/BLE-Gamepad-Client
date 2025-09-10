@@ -8,10 +8,10 @@ template <typename T>
 using OnUpdate = std::function<void(T& value)>;
 
 template <typename T>
-class BLENotifiableSignal {
+class BLEValueReceiver {
  public:
-  BLENotifiableSignal(const blegc::BLEValueDecoder<T>& decoder, const blegc::BLECharacteristicSpec& charSpec);
-  ~BLENotifiableSignal();
+  BLEValueReceiver(const blegc::BLEValueDecoder<T>& decoder, const blegc::BLECharacteristicSpec& charSpec);
+  ~BLEValueReceiver();
   bool init(NimBLEClient* pClient);
   void readLast(T& out);
   void onUpdate(const OnUpdate<T>& onUpdate);

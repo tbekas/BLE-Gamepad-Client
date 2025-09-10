@@ -4,10 +4,10 @@
 #include "utils.h"
 
 template <typename T>
-class BLEWritableSignal {
+class BLEValueWriter {
  public:
-  BLEWritableSignal(const blegc::BLEValueEncoder<T>& encoder, const blegc::BLECharacteristicSpec& charSpec);
-  ~BLEWritableSignal();
+  BLEValueWriter(const blegc::BLEValueEncoder<T>& encoder, const blegc::BLECharacteristicSpec& charSpec);
+  ~BLEValueWriter();
   bool init(NimBLEClient* pClient);
   void write(const T& value);
 
