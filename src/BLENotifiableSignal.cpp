@@ -102,7 +102,7 @@ void BLENotifiableSignal<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
   BLEGC_LOGT(LOG_TAG, "Received a notification. %s", blegc::remoteCharToStr(pChar).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  if constexpr (std::is_base_of_v<BLEBaseEvent, T>) {
+  if (std::is_base_of<BLEBaseEvent, T>::value) {
     BLEBaseEvent& e = _store.event;
 
     if (auto* pClient = pChar->getClient()) {
