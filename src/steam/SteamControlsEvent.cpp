@@ -20,7 +20,7 @@
 blegc::BLEDecodeResult decodeControlsEvent(SteamControlsEvent& e, uint8_t payload[], size_t payloadLen);
 
 const blegc::BLEValueDecoder<SteamControlsEvent> SteamControlsEvent::Decoder(decodeControlsEvent);
-const blegc::BLECharacteristicLocation SteamControlsEvent::CharacteristicLocation{
+const blegc::BLECharacteristicSpec SteamControlsEvent::CharSpec{
     .serviceUUID = NimBLEUUID(blegc::hidSvcUUID),
     .characteristicUUID = NimBLEUUID(blegc::inputReportChrUUID),
     .properties = BLE_GATT_CHR_PROP_NOTIFY,

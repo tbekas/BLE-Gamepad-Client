@@ -19,7 +19,7 @@ blegc::BLEDecodeResult decodeBatteryEvent(XboxBatteryEvent& e, uint8_t payload[]
 }
 
 const blegc::BLEValueDecoder<XboxBatteryEvent> XboxBatteryEvent::Decoder(decodeBatteryEvent);
-const blegc::BLECharacteristicLocation XboxBatteryEvent::CharacteristicLocation{
+const blegc::BLECharacteristicSpec XboxBatteryEvent::CharSpec{
     .serviceUUID = NimBLEUUID(blegc::batterySvcUUID),
     .characteristicUUID = NimBLEUUID(blegc::batteryLevelCharUUID),
     .properties = BLE_GATT_CHR_PROP_NOTIFY};

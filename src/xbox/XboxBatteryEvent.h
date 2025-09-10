@@ -8,5 +8,5 @@ struct XboxBatteryEvent : BLEBaseEvent {
   float level{};
 
   static const blegc::BLEValueDecoder<XboxBatteryEvent> Decoder;
-  static const blegc::BLECharacteristicLocation CharacteristicLocation;
+  static const blegc::BLECharacteristicSpec CharSpec;
 };

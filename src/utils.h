@@ -16,7 +16,7 @@ static constexpr uint16_t inputReportChrUUID = 0x2a4d;
 static constexpr uint16_t batteryLevelCharUUID  = 0x2a19;
 static constexpr uint16_t batteryLevelDscUUID   = 0x2904;
 
-struct BLECharacteristicLocation {
+struct BLECharacteristicSpec {
   NimBLEUUID serviceUUID;
   NimBLEUUID characteristicUUID;
   uint8_t properties;
@@ -107,29 +107,29 @@ static bool discoverAttributes(NimBLEClient* pClient) {
   return true;
 }
 
-static NimBLERemoteCharacteristic* findCharacteristic(NimBLEClient* pClient, const BLECharacteristicLocation& filter) {
+static NimBLERemoteCharacteristic* findCharacteristic(NimBLEClient* pClient, const BLECharacteristicSpec& charSpec) {
   std::string propStr;
-  writeProperties(propStr, filter.properties, ", ");
+  writeProperties(propStr, charSpec.properties, ", ");
   BLEGC_LOGD(LOG_TAG,
              "Looking up for characteristic, service uuid: %s, characteristic uuid: %s, properties: [%s], idx: %d.",
-             std::string(filter.serviceUUID).c_str(),
-             isNull(filter.characteristicUUID) ? "null" : std::string(filter.characteristicUUID).c_str(),
-             propStr.c_str(), filter.idx);
+             std::string(charSpec.serviceUUID).c_str(),
+             isNull(charSpec.characteristicUUID) ? "null" : std::string(charSpec.characteristicUUID).c_str(),
+             propStr.c_str(), charSpec.idx);
 
-  auto* pService = pClient->getService(filter.serviceUUID);
+  auto* pService = pClient->getService(charSpec.serviceUUID);
   if (!pService) {
-    BLEGC_LOGE(LOG_TAG, "Service not found, service uuid: %s", std::string(filter.serviceUUID).c_str());
+    BLEGC_LOGE(LOG_TAG, "Service not found, service uuid: %s", std::string(charSpec.serviceUUID).c_str());
     return nullptr;
   }
 
-  unsigned int _idx = filter.idx;
+  unsigned int _idx = charSpec.idx;
 
   for (auto* pChar : pService->getCharacteristics(false)) {
-    if (!isNull(filter.characteristicUUID) && filter.characteristicUUID != pChar->getUUID()) {
+    if (!isNull(charSpec.characteristicUUID) && charSpec.characteristicUUID != pChar->getUUID()) {
       continue;
     }
 
-    if ((getProperties(pChar) & filter.properties) != filter.properties) {
+    if ((getProperties(pChar) & charSpec.properties) != charSpec.properties) {
       continue;
     }
 
@@ -141,9 +141,9 @@ static NimBLERemoteCharacteristic* findCharacteristic(NimBLEClient* pClient, con
   }
 
   BLEGC_LOGE(LOG_TAG, "Characteristic not found, service uuid: %s, characteristic uuid: %s, properties: [%s], idx: %d.",
-             std::string(filter.serviceUUID).c_str(),
-             isNull(filter.characteristicUUID) ? "null" : std::string(filter.characteristicUUID).c_str(),
-             propStr.c_str(), filter.idx);
+             std::string(charSpec.serviceUUID).c_str(),
+             isNull(charSpec.characteristicUUID) ? "null" : std::string(charSpec.characteristicUUID).c_str(),
+             propStr.c_str(), charSpec.idx);
 
   return nullptr;
 }

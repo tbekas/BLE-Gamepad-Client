@@ -13,9 +13,9 @@ static auto* LOG_TAG = "BLEIncomingSignal";
 
 template <typename T>
 BLENotifiableSignal<T>::BLENotifiableSignal(const blegc::BLEValueDecoder<T>& decoder,
-                                            const blegc::BLECharacteristicLocation& location)
+                                            const blegc::BLECharacteristicSpec& charSpec)
     : _decoder(decoder),
-      _location(location),
+      _charSpec(charSpec),
       _pChar(nullptr),
       _onUpdateTask(nullptr),
       _storeMutex(nullptr),
@@ -42,7 +42,7 @@ BLENotifiableSignal<T>::~BLENotifiableSignal() {
 
 template <typename T>
 bool BLENotifiableSignal<T>::init(NimBLEClient* pClient) {
-  _pChar = blegc::findCharacteristic(pClient, _location);
+  _pChar = blegc::findCharacteristic(pClient, _charSpec);
   if (!_pChar) {
     return false;
   }
