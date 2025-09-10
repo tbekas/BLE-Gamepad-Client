@@ -15,7 +15,7 @@ const BLECharacteristicSpec XboxVibrationsCommand::CharSpec{
     .characteristicUUID = NimBLEUUID(blegc::inputReportChrUUID),
     .properties = BLE_GATT_CHR_PROP_WRITE};
 
-constexpr size_t vibrationsPayloadLen = 8;
+constexpr size_t vibrationsDataLen = 8;
 
 inline uint8_t encodeMotorEnable(float power, int bit) {
   return (power > 0.0f) * 1 << bit;
@@ -30,8 +30,8 @@ inline uint8_t encodeDuration(uint32_t durationMs) {
 }
 
 BLEEncodeResult encodeVibrationsCommand(const XboxVibrationsCommand& c, size_t& usedBytes, uint8_t buffer[], size_t bufferLen) {
-  if (bufferLen < vibrationsPayloadLen) {
-    BLEGC_LOGD(LOG_TAG, "Expected buffer of at least %d bytes, was %d bytes", vibrationsPayloadLen, bufferLen);
+  if (bufferLen < vibrationsDataLen) {
+    BLEGC_LOGD(LOG_TAG, "Expected buffer of at least %d bytes, was %d bytes", vibrationsDataLen, bufferLen);
     return BLEEncodeResult::BufferTooShort;
   }
 

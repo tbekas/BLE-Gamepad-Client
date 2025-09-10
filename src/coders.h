@@ -5,7 +5,7 @@
 enum class BLEDecodeResult : uint8_t { Success = 0, InvalidReport = 1, NotSupported = 2 };
 
 template <typename T>
-using BLEValueDecoder = std::function<BLEDecodeResult(T&, uint8_t payload[], size_t payloadLen)>;
+using BLEValueDecoder = std::function<BLEDecodeResult(T&, uint8_t data[], size_t dataLen)>;
 
 enum class BLEEncodeResult : uint8_t { Success = 0, InvalidValue = 1, BufferTooShort = 2 };
 

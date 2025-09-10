@@ -7,15 +7,15 @@
 
 static auto* LOG_TAG = "XboxControlsEvent";
 
-constexpr size_t batteryPayloadLen = 1;
+constexpr size_t batteryDataLen = 1;
 
-BLEDecodeResult decodeBatteryEvent(XboxBatteryEvent& e, uint8_t payload[], size_t payloadLen) {
-  if (payloadLen != batteryPayloadLen) {
-    BLEGC_LOGE(LOG_TAG, "Expected %d bytes, was %d bytes", batteryPayloadLen, payloadLen);
+BLEDecodeResult decodeBatteryEvent(XboxBatteryEvent& e, uint8_t data[], size_t dataLen) {
+  if (dataLen != batteryDataLen) {
+    BLEGC_LOGE(LOG_TAG, "Expected %d bytes, was %d bytes", batteryDataLen, dataLen);
     return BLEDecodeResult::InvalidReport;
   }
 
-  e.level = 0.01f * static_cast<float>(payload[0]);
+  e.level = 0.01f * static_cast<float>(data[0]);
   return BLEDecodeResult::Success;
 }
 
