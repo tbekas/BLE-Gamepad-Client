@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../utils.h"
+#include "../BLECharacteristicSpec.h"
+#include "../coders.h"
 
 struct XboxVibrationsCommand {
   /// @brief Power applied to the motor behind left trigger. Allowed values are between 0.0 and 1.0, where 1.0
@@ -30,6 +31,6 @@ struct XboxVibrationsCommand {
   /// @brief Number of vibration-pause cycles. Defaults to 1 cycle.
   uint8_t cycles{1};
 
-  static const blegc::BLEValueEncoder<XboxVibrationsCommand> Encoder;
-  static const blegc::BLECharacteristicSpec CharSpec;
+  static const BLEValueEncoder<XboxVibrationsCommand> Encoder;
+  static const BLECharacteristicSpec CharSpec;
 };

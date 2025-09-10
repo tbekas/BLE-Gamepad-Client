@@ -1,12 +1,13 @@
 #pragma once
 
 #include <NimBLEDevice.h>
-#include "utils.h"
+#include "BLECharacteristicSpec.h"
+#include "coders.h"
 
 template <typename T>
 class BLEValueWriter {
  public:
-  BLEValueWriter(const blegc::BLEValueEncoder<T>& encoder, const blegc::BLECharacteristicSpec& charSpec);
+  BLEValueWriter(const BLEValueEncoder<T>& encoder, const BLECharacteristicSpec& charSpec);
   ~BLEValueWriter();
   bool init(NimBLEClient* pClient);
   void write(const T& value);
@@ -20,8 +21,8 @@ class BLEValueWriter {
   };
   static void _sendDataFn(void* pvParameters);
 
-  const blegc::BLEValueEncoder<T>& _encoder;
-  const blegc::BLECharacteristicSpec& _charSpec;
+  const BLEValueEncoder<T>& _encoder;
+  const BLECharacteristicSpec& _charSpec;
 
   NimBLERemoteCharacteristic* _pChar;
   TaskHandle_t _sendDataTask;

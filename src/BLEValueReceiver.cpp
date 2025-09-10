@@ -12,8 +12,8 @@
 static auto* LOG_TAG = "BLEValueReceiver";
 
 template <typename T>
-BLEValueReceiver<T>::BLEValueReceiver(const blegc::BLEValueDecoder<T>& decoder,
-                                      const blegc::BLECharacteristicSpec& charSpec)
+BLEValueReceiver<T>::BLEValueReceiver(const BLEValueDecoder<T>& decoder,
+                                      const BLECharacteristicSpec& charSpec)
     : _decoder(decoder),
       _charSpec(charSpec),
       _pChar(nullptr),
@@ -124,15 +124,15 @@ void BLEValueReceiver<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
   configASSERT(xSemaphoreGive(_storeMutex));
 
   switch (result) {
-    case blegc::BLEDecodeResult::Success:
+    case BLEDecodeResult::Success:
       if (_onUpdateCallbackSet) {
         xTaskNotifyGive(_onUpdateTask);
       }
       break;
-    case blegc::BLEDecodeResult::NotSupported:
+    case BLEDecodeResult::NotSupported:
       BLEGC_LOGT(LOG_TAG, "Report not supported. %s", blegc::remoteCharToStr(pChar).c_str());
       break;
-    case blegc::BLEDecodeResult::InvalidReport:
+    case BLEDecodeResult::InvalidReport:
       BLEGC_LOGE(LOG_TAG, "Invalid report. %s", blegc::remoteCharToStr(pChar).c_str());
       break;
   }

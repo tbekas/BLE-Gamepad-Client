@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../utils.h"
-
 #include "../BLEBaseEvent.h"
+#include "../BLECharacteristicSpec.h"
+#include "../coders.h"
+
 
 struct SteamControlsEvent : BLEBaseEvent {
   /// @brief Stick deflection along the X-axis. Takes values between -1.0 and 1.0. No deflection should yield 0.0,
@@ -102,6 +103,6 @@ struct SteamControlsEvent : BLEBaseEvent {
   /// @brief Steam button.
   bool steamButton{false};
 
-  static const blegc::BLEValueDecoder<SteamControlsEvent> Decoder;
-  static const blegc::BLECharacteristicSpec CharSpec;
+  static const BLEValueDecoder<SteamControlsEvent> Decoder;
+  static const BLECharacteristicSpec CharSpec;
 };

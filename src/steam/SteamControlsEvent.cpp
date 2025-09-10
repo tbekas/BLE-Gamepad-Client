@@ -2,8 +2,9 @@
 
 #include <NimBLEDevice.h>
 #include <bitset>
+#include "../BLECharacteristicSpec.h"
 #include "../logger.h"
-#include "../utils.h"
+#include "../coders.h"
 
 // Sources
 // https://github.com/torvalds/linux/blob/master/drivers/hid/hid-steam.c
@@ -17,10 +18,10 @@
 #define CONTAINS_RIGHT_PAD_DATA 0x0200
 #define CONTAINS_GYRO_DATA 0x1000
 
-blegc::BLEDecodeResult decodeControlsEvent(SteamControlsEvent& e, uint8_t payload[], size_t payloadLen);
+BLEDecodeResult decodeControlsEvent(SteamControlsEvent& e, uint8_t payload[], size_t payloadLen);
 
-const blegc::BLEValueDecoder<SteamControlsEvent> SteamControlsEvent::Decoder(decodeControlsEvent);
-const blegc::BLECharacteristicSpec SteamControlsEvent::CharSpec{
+const BLEValueDecoder<SteamControlsEvent> SteamControlsEvent::Decoder(decodeControlsEvent);
+const BLECharacteristicSpec SteamControlsEvent::CharSpec{
     .serviceUUID = NimBLEUUID(blegc::hidSvcUUID),
     .characteristicUUID = NimBLEUUID(blegc::inputReportChrUUID),
     .properties = BLE_GATT_CHR_PROP_NOTIFY,
@@ -54,17 +55,17 @@ inline float decodeTrigger(const uint8_t b) {
   return static_cast<float>(b) / UINT8_MAX;
 }
 
-blegc::BLEDecodeResult decodeControlsEvent(SteamControlsEvent& e, uint8_t payload[], size_t payloadLen) {
+BLEDecodeResult decodeControlsEvent(SteamControlsEvent& e, uint8_t payload[], size_t payloadLen) {
   if (payloadLen != controlsPayloadLen) {
-    return blegc::BLEDecodeResult::InvalidReport;
+    return BLEDecodeResult::InvalidReport;
   }
 
   if (payload[0] != 0xc0) {
-    return blegc::BLEDecodeResult::NotSupported;
+    return BLEDecodeResult::NotSupported;
   }
 
   if (payload[1] & 0x0f != REPORT_TYPE_INPUT) {
-    return blegc::BLEDecodeResult::NotSupported;
+    return BLEDecodeResult::NotSupported;
   }
 
   const auto contentInfo = make_uint16(payload[1], payload[2]);
@@ -126,5 +127,5 @@ blegc::BLEDecodeResult decodeControlsEvent(SteamControlsEvent& e, uint8_t payloa
     offset += 4;
   }
 
-  return blegc::BLEDecodeResult::Success;
+  return BLEDecodeResult::Success;
 }

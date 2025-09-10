@@ -3,6 +3,7 @@
 #include <NimBLEDevice.h>
 #include <bitset>
 #include <functional>
+#include "BLECharacteristicSpec.h"
 #include "logger.h"
 #include "utils.h"
 #include "xbox/XboxVibrationsCommand.h"
@@ -13,8 +14,8 @@ constexpr size_t MAX_CAPACITY = 1024;  // TODO make it configurable
 constexpr size_t INIT_CAPACITY = 8;
 
 template <typename T>
-BLEValueWriter<T>::BLEValueWriter(const blegc::BLEValueEncoder<T>& encoder,
-                                  const blegc::BLECharacteristicSpec& charSpec)
+BLEValueWriter<T>::BLEValueWriter(const BLEValueEncoder<T>& encoder,
+                                  const BLECharacteristicSpec& charSpec)
     : _encoder(encoder), _charSpec(charSpec), _pChar(nullptr), _sendDataTask(nullptr), _storeMutex(nullptr), _store() {
   _store.capacity = INIT_CAPACITY;
   _store.pBuffer = new uint8_t[_store.capacity];
@@ -57,8 +58,8 @@ template <typename T>
 void BLEValueWriter<T>::write(const T& value) {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   size_t used;
-  blegc::BLEEncodeResult result;
-  while ((result = _encoder(value, used, _store.pBuffer, _store.capacity)) == blegc::BLEEncodeResult::BufferTooShort &&
+  BLEEncodeResult result;
+  while ((result = _encoder(value, used, _store.pBuffer, _store.capacity)) == BLEEncodeResult::BufferTooShort &&
          _store.capacity < MAX_CAPACITY) {
     delete[] _store.pBuffer;
     delete[] _store.pSendBuffer;
@@ -67,17 +68,17 @@ void BLEValueWriter<T>::write(const T& value) {
     _store.pSendBuffer = new uint8_t[_store.capacity];
   }
 
-  _store.used = result == blegc::BLEEncodeResult::Success ? used : 0;
+  _store.used = result == BLEEncodeResult::Success ? used : 0;
   configASSERT(xSemaphoreGive(_storeMutex));
 
   switch (result) {
-    case blegc::BLEEncodeResult::Success:
+    case BLEEncodeResult::Success:
       xTaskNotifyGive(_sendDataTask);
       break;
-    case blegc::BLEEncodeResult::InvalidValue:
+    case BLEEncodeResult::InvalidValue:
       BLEGC_LOGE(LOG_TAG, "Encoding failed, invalid value");
       break;
-    case blegc::BLEEncodeResult::BufferTooShort:
+    case BLEEncodeResult::BufferTooShort:
       BLEGC_LOGE(LOG_TAG, "Encoding failed, buffer too short");
       break;
   }
