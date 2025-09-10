@@ -1,8 +1,6 @@
 #pragma once
 
 #include <NimBLEDevice.h>
-#include <list>
-
 #include "BLEBaseController.h"
 
 enum BLEClientStatusMsgKind : uint8_t { BLEClientConnected = 0, BLEClientDisconnected = 1 };

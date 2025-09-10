@@ -2,15 +2,16 @@
 
 #include <NimBLEDevice.h>
 #include <bitset>
+#include "../BLECharacteristicSpec.h"
 #include "../logger.h"
-#include "../utils.h"
+#include "../coders.h"
 
 static auto* LOG_TAG = "XboxControlsEvent";
 
-blegc::BLEDecodeResult decodeControlsEvent(XboxControlsEvent& e, uint8_t payload[], size_t payloadLen);
+BLEDecodeResult decodeControlsEvent(XboxControlsEvent& e, uint8_t payload[], size_t payloadLen);
 
-const blegc::BLEValueDecoder<XboxControlsEvent> XboxControlsEvent::Decoder(decodeControlsEvent);
-const blegc::BLECharacteristicSpec XboxControlsEvent::CharSpec{
+const BLEValueDecoder<XboxControlsEvent> XboxControlsEvent::Decoder(decodeControlsEvent);
+const BLECharacteristicSpec XboxControlsEvent::CharSpec{
     .serviceUUID = NimBLEUUID(blegc::hidSvcUUID),
     .characteristicUUID = NimBLEUUID(blegc::inputReportChrUUID),
     .properties = BLE_GATT_CHR_PROP_NOTIFY};
@@ -42,9 +43,9 @@ inline bool decodeButton(uint8_t byte, int bit) {
   return byte & 1 << bit;
 }
 
-blegc::BLEDecodeResult decodeControlsEvent(XboxControlsEvent& e, uint8_t payload[], size_t payloadLen) {
+BLEDecodeResult decodeControlsEvent(XboxControlsEvent& e, uint8_t payload[], size_t payloadLen) {
   if (payloadLen != controlsPayloadLen) {
-    return blegc::BLEDecodeResult::InvalidReport;
+    return BLEDecodeResult::InvalidReport;
   }
 
   e.leftStickX = decodeStickX(payload[0], payload[1]);
@@ -88,5 +89,5 @@ blegc::BLEDecodeResult decodeControlsEvent(XboxControlsEvent& e, uint8_t payload
   uint8_t byte15 = payload[15];
   e.shareButton = decodeButton(byte15, 0);
 
-  return blegc::BLEDecodeResult::Success;
+  return BLEDecodeResult::Success;
 }
