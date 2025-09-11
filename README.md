@@ -59,55 +59,60 @@ the [examples directory](https://github.com/tbekas/BLE-Gamepad-Client/tree/0.5.0
 
 <img src="docs/steam_controller.png" width="320" alt="Steam Controller" />
 
-Install BLE firmware using these
-instructions: [Steam Controller BLE](https://help.steampowered.com/en/faqs/view/1796-5FC3-88B3-C85F).
+#### Firmware:
 
-Classes:
+Install BLE firmware using these instructions: [Steam Controller BLE](https://help.steampowered.com/en/faqs/view/1796-5FC3-88B3-C85F).
+
+#### Pairing instructions:
+
+* Turn on your controller by pressing the Steam button while holding the Y button.
+
+#### Classes:
 
 * `SteamController`
 * `SteamControlsEvent`
-
-Pairing instructions:
-
-* Turn on your controller by pressing Steam button while holding Y button.
 
 ### Xbox One Wireless Controller (models 1697 and 1708 - 2 buttons)
 
 <img src="docs/xbox_one_controller.png" width="320" alt="Xbox One Controller" />
 
-Update controller's firmware to version is 5.x using these
+#### Firmware:
+
+Update controller's firmware to version 5.x using these
 instructions: [Update your Xbox Wireless Controller](https://support.xbox.com/en-US/help/hardware-network/controller/update-xbox-wireless-controller).
 
-Classes:
+#### Pairing instructions:
+
+* Turn on your controller by pressing the Xbox button.
+* Press and hold the controller’s pair button for 3 seconds, then release.
+
+#### Classes:
 
 * `XboxController`
 * `XboxControlsEvent`
 * `XboxBatteryEvent`
 * `XboxVibrationsCommand`
-
-Pairing instructions:
-
-* Turn on your controller by pressing the Xbox button.
-* Press and hold the controller’s pair button for 3 seconds, then release.
 
 ### Xbox Series S/X Wireless Controller (model 1914 - 3 buttons)
 
 <img src="docs/xbox_series_controller.png" width="320" alt="Xbox One Controller" />
 
-Your controller likely already has firmware version 5.x, but if it's not the case use these
-instructions to update it: [Update your Xbox Wireless Controller](https://support.xbox.com/en-US/help/hardware-network/controller/update-xbox-wireless-controller).
+#### Firmware:
 
-Classes:
+Your controller most likely already runs firmware version 5.x. If not, follow these instructions to update
+it: [Update your Xbox Wireless Controller](https://support.xbox.com/en-US/help/hardware-network/controller/update-xbox-wireless-controller).
+
+#### Pairing instructions:
+
+* Turn on your controller by pressing the Xbox button.
+* Press and hold the controller’s pair button for 3 seconds, then release.
+
+#### Classes:
 
 * `XboxController`
 * `XboxControlsEvent`
 * `XboxBatteryEvent`
 * `XboxVibrationsCommand`
-
-Pairing instructions:
-
-* Turn on your controller by pressing the Xbox button.
-* Press and hold the controller’s pair button for 3 seconds, then release.
 
 # Acknowledgments
 
