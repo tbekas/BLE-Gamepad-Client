@@ -20,7 +20,7 @@ Available values:
 `CONFIG_BT_BLEGC_LOGGER`
 
 Logger function used to print log messages to the output.  
-**Default**: `Serial.printf`  
+**Default**: `printf`  
 <br/>
 
 `CONFIG_BT_BLEGC_COPY_REPORT_DATA`
@@ -32,6 +32,12 @@ Available values:
 * `1` - enabled
 
 **Default**: `0` (disabled)  
+<br/>
+
+`CONFIG_BT_BLEGC_WRITER_MAX_CAPACITY`
+
+Maximum capacity, in bytes, of the internal buffer used to send data to the controller.  
+**Default**: 1024  
 <br/>
 
 `CONFIG_BT_BLEGC_SCAN_DURATION_MS`

@@ -6,11 +6,12 @@
 #include "BLECharacteristicSpec.h"
 #include "logger.h"
 #include "utils.h"
+#include "config.h"
 #include "xbox/XboxVibrationsCommand.h"
 
 static auto* LOG_TAG = "BLEValueWriter";
 
-constexpr size_t MAX_CAPACITY = 1024;  // TODO make it configurable
+constexpr size_t MAX_CAPACITY = CONFIG_BT_BLEGC_WRITER_MAX_CAPACITY;
 constexpr size_t INIT_CAPACITY = 8;
 
 template <typename T>
