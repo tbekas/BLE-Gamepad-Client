@@ -16,7 +16,7 @@
 #endif
 
 #ifndef CONFIG_BT_BLEGC_COPY_REPORT_DATA
-#define CONFIG_BT_BLEGC_COPY_REPORT_DATA 1
+#define CONFIG_BT_BLEGC_COPY_REPORT_DATA 0
 #endif
 
 #if defined __has_include

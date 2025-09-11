@@ -8,7 +8,7 @@ struct BLEBaseEvent {
   /// @brief Peer address of the controller that send this event.
   NimBLEAddress controllerAddress{};
 
-#if CONFIG_BT_BLEGC_COPY_REPORT_DATA > 0
+#if CONFIG_BT_BLEGC_COPY_REPORT_DATA
   std::shared_ptr<uint8_t[]> data{nullptr};
   size_t dataLen{0};
   size_t dataCap{0};
@@ -17,7 +17,7 @@ struct BLEBaseEvent {
   /// @brief Prints the report data attached to this event. To use this function set the config param
   /// CONFIG_BT_BLEGC_COPY_REPORT_DATA to 1.
   void printReportHexdump() const {
-#if CONFIG_BT_BLEGC_COPY_REPORT_DATA > 0
+#if CONFIG_BT_BLEGC_COPY_REPORT_DATA
     char buf[] = "00000000";
     for (size_t j = 0; j < dataLen; ++j) {
       CONFIG_BT_BLEGC_LOGGER("%02d: ", j % 100);
