@@ -11,6 +11,7 @@
 
 static auto* LOG_TAG = "BLEValueWriter";
 
+constexpr size_t MAX_CAPACITY = CONFIG_BT_BLEGC_WRITER_MAX_CAPACITY;
 constexpr size_t INIT_CAPACITY = 8;
 
 template <typename T>
@@ -60,10 +61,10 @@ void BLEValueWriter<T>::write(const T& value) {
   size_t used;
   BLEEncodeResult result;
   while ((result = _encoder(value, used, _store.pBuffer, _store.capacity)) == BLEEncodeResult::BufferTooShort &&
-         _store.capacity < CONFIG_BT_BLEGC_WRITER_MAX_CAPACITY) {
+         _store.capacity < MAX_CAPACITY) {
     delete[] _store.pBuffer;
     delete[] _store.pSendBuffer;
-    _store.capacity = min(_store.capacity * 2, CONFIG_BT_BLEGC_WRITER_MAX_CAPACITY);
+    _store.capacity = min(_store.capacity * 2, MAX_CAPACITY);
     _store.pBuffer = new uint8_t[_store.capacity];
     _store.pSendBuffer = new uint8_t[_store.capacity];
   }
