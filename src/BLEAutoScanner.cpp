@@ -41,16 +41,18 @@ void BLEAutoScanner::_autoScanTaskFn(void* pvParameters) {
     auto* pScan = NimBLEDevice::getScan();
     const auto isScanning = pScan->isScanning();
     const auto isEnabled = self->_autoScanEnabled;
+    const auto availConnSlots = self->_controllerRegistry.getAvailableConnectionSlotCount();
 
     if (isEnabled && isScanning) {
       BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, scan already in-progress");
       // do nothing
     } else if (isEnabled && !isScanning) {
-      if (self->_controllerRegistry.getAvailableConnectionSlotCount() == 0) {
-        BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, no scan in-progress, no available connection slots left");
-      } else {
-        BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, no scan in-progress, connection slots available -> starting scan");
+      if (availConnSlots > 0) {
+        BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, no scan in-progress, available connection slots: %d -> starting scan", availConnSlots);
         pScan->start(CONFIG_BT_BLEGC_SCAN_DURATION_MS);
+      } else {
+        BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, no scan in-progress, no available connection slots left");
+        // do nothing
       }
     } else if (!isEnabled && isScanning) {
       BLEGC_LOGD(LOG_TAG, "Auto-scan disabled, scan in-progress -> stopping scan");

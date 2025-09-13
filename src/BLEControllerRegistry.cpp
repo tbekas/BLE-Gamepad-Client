@@ -5,6 +5,7 @@
 #include <NimBLEScan.h>
 #include <NimBLEUtils.h>
 #include <bitset>
+#include <algorithm>
 #include "BLEBaseController.h"
 #include "config.h"
 #include "logger.h"
@@ -22,7 +23,7 @@ BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask)
       _clientStatusConsumerTask(nullptr),
       _connectionSlots(nullptr),
       _clientCallbacks(*this) {
-  _connectionSlots = xSemaphoreCreateCounting(CONFIG_BT_NIMBLE_MAX_CONNECTIONS, 0);
+  _connectionSlots = xSemaphoreCreateCounting(CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS, 0);
   configASSERT(_connectionSlots);
   _clientStatusQueue = xQueueCreate(10, sizeof(BLEClientStatus));
   configASSERT(_clientStatusQueue);
@@ -44,16 +45,46 @@ BLEControllerRegistry::~BLEControllerRegistry() {
   }
 }
 
-bool BLEControllerRegistry::registerController(BLEBaseController* controller) {
-  if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
-    BLEGC_LOGE(LOG_TAG, "Cannot add connection slots");
-    return false;
+void BLEControllerRegistry::registerController(BLEBaseController* controller) {
+  if (std::find(_controllers.begin(), _controllers.end(), controller) == _controllers.end()) {
+    _controllers.push_back(controller);
+  } else {
+    BLEGC_LOGD(LOG_TAG, "Controller already registered");
+    return;
   }
 
-  _controllers.push_back(controller);
+  if (xSemaphoreGive(_connectionSlots) == pdTRUE) {
+    xTaskNotifyGive(_autoScanTask);
+  } else {
+    BLEGC_LOGD(LOG_TAG,
+               "Max amount of connection slots reached. If you'd like to have more connection slots set CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS to a higher value.");
+  }
+}
 
-  xTaskNotifyGive(_autoScanTask);
-  return true;
+void BLEControllerRegistry::deregisterController(const BLEBaseController* controller) {
+  if (controller->isConnected()) {
+    // TODO when local disconnect flow is implemented replace this branch with:
+    // 1. if controller is connected, first remove it from _controllers (to avoid concurrent reconnect)
+    // 2. trigger local disconnect flow
+    // 3. decrease conn slots
+    // comment: use std::atomic for _controllers vector and compare_exchange for modifying it's contents
+    BLEGC_LOGE(LOG_TAG, "Cannot deregister connected controller");
+    return;
+  }
+
+  const auto it = std::find(_controllers.begin(), _controllers.end(), controller);
+  if (it != _controllers.end()) {
+    _controllers.erase(it);
+  } else {
+    BLEGC_LOGD(LOG_TAG, "Controller not registered");
+    return;
+  }
+
+  if (_controllers.size() < CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
+    if (xSemaphoreTake(_connectionSlots, 0) != pdTRUE) {
+      BLEGC_LOGE(LOG_TAG, "Cannot release connection slot");
+    }
+  }
 }
 
 void BLEControllerRegistry::tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
@@ -101,6 +132,8 @@ BLEBaseController* BLEControllerRegistry::_getController(const NimBLEAddress add
 }
 
 bool BLEControllerRegistry::_reserveController(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
+  BLEGC_LOGD(LOG_TAG, "Reserving controller"); // TODO remove this
+
   if (xSemaphoreTake(_connectionSlots, 0) != pdTRUE) {
     BLEGC_LOGD(LOG_TAG, "No connections slots left");
     return false;
@@ -161,8 +194,11 @@ bool BLEControllerRegistry::_releaseController(const NimBLEAddress address) {
     return false;
   }
 
+  BLEGC_LOGD(LOG_TAG, "Releasing controller %s", std::string(address).c_str()); // TODO remove this
+
   pCtrl->setLastAddress(pCtrl->getAddress());
   pCtrl->setAddress(NimBLEAddress());
+
 
   if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
     BLEGC_LOGE(LOG_TAG, "Failed to release connection slot");
@@ -217,9 +253,10 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
           BLEGC_LOGW(LOG_TAG, "Controller failed to deinitialize, address: %s", std::string(msg.address).c_str());
         }
 
+        self->_releaseController(msg.address);
+
         pCtrl->setDisconnected();
 
-        self->_releaseController(msg.address);
         xTaskNotifyGive(self->_autoScanTask);
         break;
     }

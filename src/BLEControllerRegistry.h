@@ -17,7 +17,8 @@ class BLEControllerRegistry {
   BLEControllerRegistry(TaskHandle_t& autoScanTask);
   ~BLEControllerRegistry();
 
-  bool registerController(BLEBaseController* controller); // TODO make it void (?)
+  void registerController(BLEBaseController* controller);
+  void deregisterController(const BLEBaseController* controller);
   void tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   unsigned int getAvailableConnectionSlotCount() const;
 

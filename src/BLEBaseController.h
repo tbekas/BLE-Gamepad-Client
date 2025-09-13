@@ -10,8 +10,8 @@ class BLEBaseController {
   virtual ~BLEBaseController() = default;
   explicit BLEBaseController(NimBLEAddress allowedAddress);
 
-  bool begin();
-  bool end();
+  void begin();
+  void end();
   NimBLEAddress getAddress() const;
   NimBLEAddress getAllowedAddress() const;
   bool isConnected() const;
