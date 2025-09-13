@@ -10,10 +10,14 @@ BLEBaseController::BLEBaseController(const NimBLEAddress allowedAddress)
       _onConnect([](NimBLEAddress) {}),
       _onDisconnect([](NimBLEAddress) {}) {}
 
-bool BLEBaseController::begin() {
+void BLEBaseController::begin() {
   BLEGamepadClient::initBLEDevice();
 
-  return BLEGamepadClient::_controllerRegistry.registerController(this);
+  BLEGamepadClient::_controllerRegistry.registerController(this);
+}
+
+void BLEBaseController::end() {
+  BLEGamepadClient::_controllerRegistry.deregisterController(this);
 }
 /**
  * @brief Returns the address of the currently connected controller. If controller is not connected a null address
