@@ -82,7 +82,7 @@ void BLEBaseController::onDisconnect(const OnDisconnect& onDisconnect) {
   _onDisconnect = onDisconnect;
 }
 
-void BLEBaseController::disconnect() {
+void BLEBaseController::disconnect() const {
   if (!_connected) {
     BLEGC_LOGD(LOG_TAG, "Controller not connected, address %s", std::string(_address).c_str());
   }

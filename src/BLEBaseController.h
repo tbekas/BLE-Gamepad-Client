@@ -17,7 +17,7 @@ class BLEBaseController {
   bool isConnected() const;
   void onConnect(const OnConnect& onConnect);
   void onDisconnect(const OnDisconnect& onDisconnect);
-  void disconnect();
+  void disconnect() const;
 
  friend class BLEControllerRegistry;
 
