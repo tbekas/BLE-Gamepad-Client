@@ -1,5 +1,7 @@
 #pragma once
 
+#include <atomic>
+#include <memory>
 #include <NimBLEDevice.h>
 #include "BLEBaseController.h"
 
@@ -17,7 +19,7 @@ class BLEControllerRegistry {
   BLEControllerRegistry(TaskHandle_t& autoScanTask);
   ~BLEControllerRegistry();
 
-  void registerController(BLEBaseController* controller);
+  void registerController(BLEBaseController* pCtrl);
   void deregisterController(const BLEBaseController* controller);
   void tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   unsigned int getAvailableConnectionSlotCount() const;
@@ -42,6 +44,6 @@ class BLEControllerRegistry {
   QueueHandle_t _clientStatusQueue;
   TaskHandle_t _clientStatusConsumerTask;
   SemaphoreHandle_t _connectionSlots;
-  std::vector<BLEBaseController*> _controllers;
+  std::atomic<std::vector<BLEBaseController*>*> _controllers;
   ClientCallbacks _clientCallbacks;
 };
