@@ -1,11 +1,13 @@
 #include "BLEControllerRegistry.h"
 
+#include <BLEGamepadClient.h>
 #include <NimBLEClient.h>
 #include <NimBLEDevice.h>
 #include <NimBLEScan.h>
 #include <NimBLEUtils.h>
-#include <bitset>
 #include <algorithm>
+#include <bitset>
+#include <memory>
 #include "BLEBaseController.h"
 #include "config.h"
 #include "logger.h"
@@ -22,7 +24,8 @@ BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask)
       _clientStatusQueue(nullptr),
       _clientStatusConsumerTask(nullptr),
       _connectionSlots(nullptr),
-      _clientCallbacks(*this) {
+      _clientCallbacks(*this),
+      _controllers(std::make_shared<std::vector<BLEBaseController*>>(std::vector<BLEBaseController*>())){
   _connectionSlots = xSemaphoreCreateCounting(CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS, 0);
   configASSERT(_connectionSlots);
   _clientStatusQueue = xQueueCreate(10, sizeof(BLEClientStatus));
@@ -45,44 +48,60 @@ BLEControllerRegistry::~BLEControllerRegistry() {
   }
 }
 
-void BLEControllerRegistry::registerController(BLEBaseController* controller) {
-  if (std::find(_controllers.begin(), _controllers.end(), controller) == _controllers.end()) {
-    _controllers.push_back(controller);
-  } else {
-    BLEGC_LOGD(LOG_TAG, "Controller already registered");
-    return;
-  }
+void BLEControllerRegistry::registerController(BLEBaseController* pCtrl) {
+  std::shared_ptr<std::vector<BLEBaseController*>> controllersOld = _controllers.load();
+  std::shared_ptr<std::vector<BLEBaseController*>> controllersNew = std::make_shared<std::vector<BLEBaseController*>>(std::vector<BLEBaseController*>());
+  do {
+    controllersNew->clear();
+    for (auto* pSomeCtrl : *controllersOld) {
+      controllersNew->push_back(pSomeCtrl);
+      if (pSomeCtrl == pCtrl) {
+        BLEGC_LOGD(LOG_TAG, "Controller already registered");
+        return;
+      }
+    }
+    controllersNew->push_back(pCtrl);
+  } while (!_controllers.compare_exchange_weak(controllersOld,
+                                               controllersNew));  // this loads updated data into controllersOld
 
-  if (xSemaphoreGive(_connectionSlots) == pdTRUE) {
-    xTaskNotifyGive(_autoScanTask);
+  if (controllersNew->size() <= CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
+    if (xSemaphoreGive(_connectionSlots) == pdTRUE) {
+      xTaskNotifyGive(_autoScanTask);
+    } else {
+      BLEGC_LOGE(LOG_TAG, "Cannot add a connection slot");
+    }
   } else {
     BLEGC_LOGD(LOG_TAG,
-               "Max amount of connection slots reached. If you'd like to have more connection slots set CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS to a higher value.");
+               "Max amount of connection slots reached. Increase CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS to add more.");
   }
 }
 
-void BLEControllerRegistry::deregisterController(const BLEBaseController* controller) {
-  if (controller->isConnected()) {
-    // TODO when local disconnect flow is implemented replace this branch with:
-    // 1. if controller is connected, first remove it from _controllers (to avoid concurrent reconnect)
-    // 2. trigger local disconnect flow
-    // 3. decrease conn slots
-    // comment: use std::atomic for _controllers vector and compare_exchange for modifying it's contents
-    BLEGC_LOGE(LOG_TAG, "Cannot deregister connected controller");
-    return;
-  }
+void BLEControllerRegistry::deregisterController(const BLEBaseController* pCtrl) {
+  std::shared_ptr<std::vector<BLEBaseController*>> controllersOld = _controllers.load();
+  std::shared_ptr<std::vector<BLEBaseController*>> controllersNew = std::make_shared<std::vector<BLEBaseController*>>();
+  do {
+    controllersNew->clear();
+    bool found = false;
+    for (auto* pSomeCtrl : *controllersOld) {
+      if (pSomeCtrl == pCtrl) {
+        found = true;
+        continue;
+      }
+      controllersNew->push_back(pSomeCtrl);
+    }
 
-  const auto it = std::find(_controllers.begin(), _controllers.end(), controller);
-  if (it != _controllers.end()) {
-    _controllers.erase(it);
-  } else {
-    BLEGC_LOGD(LOG_TAG, "Controller not registered");
-    return;
-  }
+    if (!found) {
+      BLEGC_LOGD(LOG_TAG, "Controller not registered");
+      return;
+    }
+  } while (!_controllers.compare_exchange_weak(controllersOld,
+                                               controllersNew));  // this loads updated data into controllersOld
 
-  if (_controllers.size() < CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
+  // TODO trigger local disconnect flow if controller is still connected
+
+  if (controllersNew->size() < CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
     if (xSemaphoreTake(_connectionSlots, 0) != pdTRUE) {
-      BLEGC_LOGE(LOG_TAG, "Cannot release connection slot");
+      BLEGC_LOGE(LOG_TAG, "Cannot remove a connection slot");
     }
   }
 }
@@ -122,9 +141,9 @@ void BLEControllerRegistry::tryConnectController(const NimBLEAdvertisedDevice* p
 }
 
 BLEBaseController* BLEControllerRegistry::_getController(const NimBLEAddress address) const {
-  for (auto* ctrl : _controllers) {
-    if (ctrl->getAddress() == address) {
-      return ctrl;
+  for (auto* pCtrl : *_controllers.load()) {
+    if (pCtrl->getAddress() == address) {
+      return pCtrl;
     }
   }
 
@@ -132,8 +151,6 @@ BLEBaseController* BLEControllerRegistry::_getController(const NimBLEAddress add
 }
 
 bool BLEControllerRegistry::_reserveController(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
-  BLEGC_LOGD(LOG_TAG, "Reserving controller"); // TODO remove this
-
   if (xSemaphoreTake(_connectionSlots, 0) != pdTRUE) {
     BLEGC_LOGD(LOG_TAG, "No connections slots left");
     return false;
@@ -142,37 +159,37 @@ bool BLEControllerRegistry::_reserveController(const NimBLEAdvertisedDevice* pAd
   const auto address = pAdvertisedDevice->getAddress();
 
   // try reserve ctrl with matching allowed address
-  for (auto* ctrl : _controllers) {
-    if (!ctrl->getAddress().isNull() || !ctrl->isSupported(pAdvertisedDevice)) {
+  for (auto* pCtrl : *_controllers.load()) {
+    if (!pCtrl->getAddress().isNull() || !pCtrl->isSupported(pAdvertisedDevice)) {
       continue;
     }
 
-    if (!ctrl->getAllowedAddress().isNull() && ctrl->getAllowedAddress() == address) {
-      ctrl->setAddress(address);
+    if (!pCtrl->getAllowedAddress().isNull() && pCtrl->getAllowedAddress() == address) {
+      pCtrl->setAddress(address);
       return true;
     }
   }
 
   // try reserve ctrl reserved last time
-  for (auto* ctrl : _controllers) {
-    if (!ctrl->getAddress().isNull() || !ctrl->isSupported(pAdvertisedDevice)) {
+  for (auto* pCtrl : *_controllers.load()) {
+    if (!pCtrl->getAddress().isNull() || !pCtrl->isSupported(pAdvertisedDevice)) {
       continue;
     }
 
-    if (!ctrl->getLastAddress().isNull() && ctrl->getLastAddress() == address) {
-      ctrl->setAddress(address);
+    if (!pCtrl->getLastAddress().isNull() && pCtrl->getLastAddress() == address) {
+      pCtrl->setAddress(address);
       return true;
     }
   }
 
   // try reserve any controller
-  for (auto* ctrl : _controllers) {
-    if (!ctrl->getAddress().isNull() || !ctrl->isSupported(pAdvertisedDevice)) {
+  for (auto* pCtrl : *_controllers.load()) {
+    if (!pCtrl->getAddress().isNull() || !pCtrl->isSupported(pAdvertisedDevice)) {
       continue;
     }
 
-    if (ctrl->getAllowedAddress().isNull()) {
-      ctrl->setAddress(address);
+    if (pCtrl->getAllowedAddress().isNull()) {
+      pCtrl->setAddress(address);
       return true;
     }
   }
@@ -194,11 +211,10 @@ bool BLEControllerRegistry::_releaseController(const NimBLEAddress address) {
     return false;
   }
 
-  BLEGC_LOGD(LOG_TAG, "Releasing controller %s", std::string(address).c_str()); // TODO remove this
+  BLEGC_LOGD(LOG_TAG, "Releasing controller %s", std::string(address).c_str());
 
   pCtrl->setLastAddress(pCtrl->getAddress());
   pCtrl->setAddress(NimBLEAddress());
-
 
   if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
     BLEGC_LOGE(LOG_TAG, "Failed to release connection slot");
