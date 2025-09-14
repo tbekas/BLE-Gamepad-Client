@@ -1,6 +1,9 @@
 #include "BLEBaseController.h"
 
+#include <NimBLEDevice.h>
 #include "BLEGamepadClient.h"
+
+static auto* LOG_TAG = "BLEBaseController";
 
 BLEBaseController::BLEBaseController(const NimBLEAddress allowedAddress)
     : _connected(false),
@@ -77,4 +80,18 @@ void BLEBaseController::onConnect(const OnConnect& onConnect) {
  */
 void BLEBaseController::onDisconnect(const OnDisconnect& onDisconnect) {
   _onDisconnect = onDisconnect;
+}
+
+void BLEBaseController::disconnect() {
+  if (!_connected) {
+    BLEGC_LOGD(LOG_TAG, "Controller not connected, address %s", std::string(_address).c_str());
+  }
+
+  auto* pClient = NimBLEDevice::getClientByPeerAddress(_address);
+  if (!pClient) {
+    BLEGC_LOGE(LOG_TAG, "BLE client not found, address %s", std::string(_address).c_str());
+    return;
+  }
+
+  pClient->disconnect();
 }
