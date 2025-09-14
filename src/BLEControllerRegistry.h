@@ -44,7 +44,6 @@ class BLEControllerRegistry {
   QueueHandle_t _clientStatusQueue;
   TaskHandle_t _clientStatusConsumerTask;
   SemaphoreHandle_t _connectionSlots;
-  std::atomic<std::shared_ptr<std::vector<BLEBaseController*>>> _controllers;
-  // std::atomic<std::vector<BLEBaseController*>> _controllers;
+  std::atomic<std::vector<BLEBaseController*>*> _controllers;
   ClientCallbacks _clientCallbacks;
 };

@@ -1,6 +1,5 @@
 #include "BLEControllerRegistry.h"
 
-#include <BLEGamepadClient.h>
 #include <NimBLEClient.h>
 #include <NimBLEDevice.h>
 #include <NimBLEScan.h>
@@ -25,7 +24,7 @@ BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask)
       _clientStatusConsumerTask(nullptr),
       _connectionSlots(nullptr),
       _clientCallbacks(*this),
-      _controllers(std::make_shared<std::vector<BLEBaseController*>>(std::vector<BLEBaseController*>())){
+      _controllers(new std::vector<BLEBaseController*>()){
   _connectionSlots = xSemaphoreCreateCounting(CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS, 0);
   configASSERT(_connectionSlots);
   _clientStatusQueue = xQueueCreate(10, sizeof(BLEClientStatus));
@@ -46,25 +45,30 @@ BLEControllerRegistry::~BLEControllerRegistry() {
   if (_connectionSlots != nullptr) {
     vSemaphoreDelete(_connectionSlots);
   }
+
+  const auto* pControllers = _controllers.load();
+  delete pControllers;
 }
 
 void BLEControllerRegistry::registerController(BLEBaseController* pCtrl) {
-  std::shared_ptr<std::vector<BLEBaseController*>> controllersOld = _controllers.load();
-  std::shared_ptr<std::vector<BLEBaseController*>> controllersNew = std::make_shared<std::vector<BLEBaseController*>>(std::vector<BLEBaseController*>());
+  auto* pControllersOld = _controllers.load();
+  auto* pControllersNew = new std::vector<BLEBaseController*>();
   do {
-    controllersNew->clear();
-    for (auto* pSomeCtrl : *controllersOld) {
-      controllersNew->push_back(pSomeCtrl);
+    pControllersNew->clear();
+    for (auto* pSomeCtrl : *pControllersOld) {
+      pControllersNew->push_back(pSomeCtrl);
       if (pSomeCtrl == pCtrl) {
         BLEGC_LOGD(LOG_TAG, "Controller already registered");
         return;
       }
     }
-    controllersNew->push_back(pCtrl);
-  } while (!_controllers.compare_exchange_weak(controllersOld,
-                                               controllersNew));  // this loads updated data into controllersOld
+    pControllersNew->push_back(pCtrl);
+  } while (!_controllers.compare_exchange_weak(pControllersOld,
+                                               pControllersNew));  // this loads updated data into controllersOld on failure
 
-  if (controllersNew->size() <= CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
+  delete pControllersOld;
+
+  if (pControllersNew->size() <= CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
     if (xSemaphoreGive(_connectionSlots) == pdTRUE) {
       xTaskNotifyGive(_autoScanTask);
     } else {
@@ -77,29 +81,31 @@ void BLEControllerRegistry::registerController(BLEBaseController* pCtrl) {
 }
 
 void BLEControllerRegistry::deregisterController(const BLEBaseController* pCtrl) {
-  std::shared_ptr<std::vector<BLEBaseController*>> controllersOld = _controllers.load();
-  std::shared_ptr<std::vector<BLEBaseController*>> controllersNew = std::make_shared<std::vector<BLEBaseController*>>();
+  auto* pControllersOld = _controllers.load();
+  auto* pControllersNew = new std::vector<BLEBaseController*>();
   do {
-    controllersNew->clear();
+    pControllersNew->clear();
     bool found = false;
-    for (auto* pSomeCtrl : *controllersOld) {
+    for (auto* pSomeCtrl : *pControllersOld) {
       if (pSomeCtrl == pCtrl) {
         found = true;
         continue;
       }
-      controllersNew->push_back(pSomeCtrl);
+      pControllersNew->push_back(pSomeCtrl);
     }
 
     if (!found) {
       BLEGC_LOGD(LOG_TAG, "Controller not registered");
       return;
     }
-  } while (!_controllers.compare_exchange_weak(controllersOld,
-                                               controllersNew));  // this loads updated data into controllersOld
+  } while (!_controllers.compare_exchange_weak(pControllersOld,
+                                               pControllersNew));  // this loads updated data into controllersOld
+
+  delete pControllersOld;
 
   // TODO trigger local disconnect flow if controller is still connected
 
-  if (controllersNew->size() < CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
+  if (pControllersNew->size() < CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
     if (xSemaphoreTake(_connectionSlots, 0) != pdTRUE) {
       BLEGC_LOGE(LOG_TAG, "Cannot remove a connection slot");
     }
