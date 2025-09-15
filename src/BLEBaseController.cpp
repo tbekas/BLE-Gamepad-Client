@@ -7,11 +7,12 @@ static auto* LOG_TAG = "BLEBaseController";
 
 BLEBaseController::BLEBaseController(const NimBLEAddress allowedAddress)
     : _connected(false),
+      _pendingDeregistration(false),
       _address(),
       _allowedAddress(allowedAddress),
       _lastAddress(),
-      _onConnect([](NimBLEAddress) {}),
-      _onDisconnect([](NimBLEAddress) {}) {}
+      _onConnect([](BLEBaseController* ) {}),
+      _onDisconnect([](BLEBaseController* ) {}) {}
 
 void BLEBaseController::begin() {
   BLEGamepadClient::initBLEDevice();
@@ -48,6 +49,10 @@ void BLEBaseController::setLastAddress(const NimBLEAddress address) {
   _lastAddress = address;
 }
 
+bool BLEBaseController::isReserved() const {
+  return !_address.isNull();
+}
+
 /**
  * @brief Is controller connected to the board.
  * @return True if controller is connected, false otherwise.
@@ -56,14 +61,32 @@ bool BLEBaseController::isConnected() const {
   return _connected;
 }
 
-void BLEBaseController::setConnected() {
+void BLEBaseController::markConnected() {
   _connected = true;
-  _onConnect(_address);
 }
 
-void BLEBaseController::setDisconnected() {
+void BLEBaseController::markDisconnected() {
   _connected = false;
-  _onDisconnect(_address);
+}
+
+void BLEBaseController::markPendingDeregistration() {
+  _pendingDeregistration = true;
+}
+
+void BLEBaseController::markCompletedDeregistration() {
+  _pendingDeregistration = false;
+}
+
+bool BLEBaseController::isPendingDeregistration() const {
+  return _pendingDeregistration;
+}
+
+void BLEBaseController::callOnConnect() {
+  _onConnect(this);
+}
+
+void BLEBaseController::callOnDisconnect() {
+  _onDisconnect(this);
 }
 
 /**
@@ -85,6 +108,7 @@ void BLEBaseController::onDisconnect(const OnDisconnect& onDisconnect) {
 void BLEBaseController::disconnect() const {
   if (!_connected) {
     BLEGC_LOGD(LOG_TAG, "Controller not connected, address %s", std::string(_address).c_str());
+    return;
   }
 
   auto* pClient = NimBLEDevice::getClientByPeerAddress(_address);

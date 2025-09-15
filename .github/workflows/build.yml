@@ -37,7 +37,9 @@ jobs:
           [env]
           platform = espressif32
           framework = arduino
-          build_flags = -D CONFIG_BT_BLEGC_LOG_LEVEL=5
+          build_flags = 
+            -D CONFIG_BT_BLEGC_LOG_LEVEL=5
+            -D CONFIG_BT_BLEGC_COPY_REPORT_DATA=1
 
           [env:esp32dev]
           board = esp32dev

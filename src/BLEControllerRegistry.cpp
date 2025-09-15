@@ -20,11 +20,15 @@ BLEClientStatus::operator std::string() const {
 
 BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask)
     : _autoScanTask(autoScanTask),
+      _callbackTask(nullptr),
       _clientStatusQueue(nullptr),
       _clientStatusConsumerTask(nullptr),
       _connectionSlots(nullptr),
       _clientCallbacks(*this),
       _controllers(new std::vector<BLEBaseController*>()){
+  xTaskCreate(_callbackTaskFn, "_callbackTask", 10000, this, 0, &_callbackTask);
+  configASSERT(_callbackTask);
+
   _connectionSlots = xSemaphoreCreateCounting(CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS, 0);
   configASSERT(_connectionSlots);
   _clientStatusQueue = xQueueCreate(10, sizeof(BLEClientStatus));
@@ -80,7 +84,20 @@ void BLEControllerRegistry::registerController(BLEBaseController* pCtrl) {
   }
 }
 
-void BLEControllerRegistry::deregisterController(const BLEBaseController* pCtrl) {
+void BLEControllerRegistry::deregisterController(BLEBaseController* pCtrl) {
+  pCtrl->markPendingDeregistration();
+
+  if (pCtrl->isConnected()) {
+    pCtrl->disconnect();
+    return; // deregistration will continue after completing disconnect
+  }
+
+  if (pCtrl->isReserved()) {
+    // initialization is in progress
+    return; // deregistration will continue after completing initialization and disconnect
+  }
+
+  // continuing deregistration
   auto* pControllersOld = _controllers.load();
   auto* pControllersNew = new std::vector<BLEBaseController*>();
   do {
@@ -103,13 +120,13 @@ void BLEControllerRegistry::deregisterController(const BLEBaseController* pCtrl)
 
   delete pControllersOld;
 
-  // TODO trigger local disconnect flow if controller is still connected
-
   if (pControllersNew->size() < CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
     if (xSemaphoreTake(_connectionSlots, 0) != pdTRUE) {
       BLEGC_LOGE(LOG_TAG, "Cannot remove a connection slot");
     }
   }
+
+  pCtrl->markCompletedDeregistration();
 }
 
 void BLEControllerRegistry::tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
@@ -166,7 +183,7 @@ bool BLEControllerRegistry::_reserveController(const NimBLEAdvertisedDevice* pAd
 
   // try reserve ctrl with matching allowed address
   for (auto* pCtrl : *_controllers.load()) {
-    if (!pCtrl->getAddress().isNull() || !pCtrl->isSupported(pAdvertisedDevice)) {
+    if (pCtrl->isReserved() || !pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
       continue;
     }
 
@@ -178,7 +195,7 @@ bool BLEControllerRegistry::_reserveController(const NimBLEAdvertisedDevice* pAd
 
   // try reserve ctrl reserved last time
   for (auto* pCtrl : *_controllers.load()) {
-    if (!pCtrl->getAddress().isNull() || !pCtrl->isSupported(pAdvertisedDevice)) {
+    if (pCtrl->isReserved() || !pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
       continue;
     }
 
@@ -190,7 +207,7 @@ bool BLEControllerRegistry::_reserveController(const NimBLEAdvertisedDevice* pAd
 
   // try reserve any controller
   for (auto* pCtrl : *_controllers.load()) {
-    if (!pCtrl->getAddress().isNull() || !pCtrl->isSupported(pAdvertisedDevice)) {
+    if (pCtrl->isReserved() || !pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
       continue;
     }
 
@@ -233,6 +250,19 @@ unsigned int BLEControllerRegistry::getAvailableConnectionSlotCount() const {
   return uxSemaphoreGetCount(_connectionSlots);
 }
 
+void BLEControllerRegistry::_callbackTaskFn(void* pvParameters) {
+  while (true) {
+    const auto val = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    auto* pCtrl = reinterpret_cast<BLEBaseController*>(val);
+    if (pCtrl->isConnected()) {
+      pCtrl->callOnConnect();
+    } else {
+      pCtrl->callOnDisconnect();
+    }
+  }
+}
+
 void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
   auto* self = static_cast<BLEControllerRegistry*>(pvParameters);
 
@@ -266,7 +296,13 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
         }
 
         BLEGC_LOGD(LOG_TAG, "Controller successfully initialized");
-        pCtrl->setConnected();
+
+        pCtrl->markConnected();
+        xTaskNotify(self->_callbackTask, reinterpret_cast<uint32_t>(pCtrl), eSetValueWithOverwrite);
+
+        if (pCtrl->isPendingDeregistration()) {
+          pCtrl->disconnect();
+        }
 
         break;
       }
@@ -276,10 +312,15 @@ void BLEControllerRegistry::_clientStatusConsumerFn(void* pvParameters) {
         }
 
         self->_releaseController(msg.address);
+        pCtrl->markDisconnected();
 
-        pCtrl->setDisconnected();
+        if (pCtrl->isPendingDeregistration()) {
+          self->deregisterController(pCtrl);
+        }
 
         xTaskNotifyGive(self->_autoScanTask);
+        xTaskNotify(self->_callbackTask, reinterpret_cast<uint32_t>(pCtrl), eSetValueWithOverwrite);
+
         break;
     }
   }

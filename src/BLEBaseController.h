@@ -2,8 +2,10 @@
 
 #include <NimBLEDevice.h>
 
-using OnConnect = std::function<void(NimBLEAddress a)>;
-using OnDisconnect = std::function<void(NimBLEAddress a)>;
+class BLEBaseController;
+
+using OnConnect = std::function<void(BLEBaseController* pCtrl)>;
+using OnDisconnect = std::function<void(BLEBaseController* pCtrl)>;
 
 class BLEBaseController {
  public:
@@ -25,14 +27,21 @@ class BLEBaseController {
   void setAddress(NimBLEAddress address);
   NimBLEAddress getLastAddress() const;
   void setLastAddress(NimBLEAddress address);
-  void setConnected();
-  void setDisconnected();
+  bool isReserved() const;
+  void markConnected();
+  void markDisconnected();
+  void markPendingDeregistration();
+  void markCompletedDeregistration();
+  bool isPendingDeregistration() const;
+  void callOnConnect();
+  void callOnDisconnect();
 
   virtual bool isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) = 0;
   virtual bool init(NimBLEClient* pClient) = 0;
   virtual bool deinit() = 0;
 
-  bool _connected;
+  volatile bool _connected;
+  volatile bool _pendingDeregistration;
   NimBLEAddress _address;
   NimBLEAddress _allowedAddress;
   NimBLEAddress _lastAddress;

@@ -20,7 +20,7 @@ class BLEControllerRegistry {
   ~BLEControllerRegistry();
 
   void registerController(BLEBaseController* pCtrl);
-  void deregisterController(const BLEBaseController* controller);
+  void deregisterController(BLEBaseController* pCtrl);
   void tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   unsigned int getAvailableConnectionSlotCount() const;
 
@@ -38,9 +38,11 @@ class BLEControllerRegistry {
   BLEBaseController* _getController(NimBLEAddress address) const;
   bool _reserveController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   bool _releaseController(NimBLEAddress address);
+  static void _callbackTaskFn(void* pvParameters);
   static void _clientStatusConsumerFn(void* pvParameters);
 
   TaskHandle_t& _autoScanTask;
+  TaskHandle_t _callbackTask;
   QueueHandle_t _clientStatusQueue;
   TaskHandle_t _clientStatusConsumerTask;
   SemaphoreHandle_t _connectionSlots;

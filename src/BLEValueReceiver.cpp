@@ -17,22 +17,22 @@ BLEValueReceiver<T>::BLEValueReceiver(const BLEValueDecoder<T>& decoder,
     : _decoder(decoder),
       _charSpec(charSpec),
       _pChar(nullptr),
-      _onUpdateTask(nullptr),
+      _callbackTask(nullptr),
       _storeMutex(nullptr),
       _store(),
       _onUpdateCallback(),
       _onUpdateCallbackSet(false) {
   _storeMutex = xSemaphoreCreateMutex();
   configASSERT(_storeMutex);
-  xTaskCreate(_onUpdateTaskFn, "_onUpdateTask", 10000, this, 0, &_onUpdateTask);
-  configASSERT(_onUpdateTask);
+  xTaskCreate(_callbackTaskFn, "_callbackTask", 10000, this, 0, &_callbackTask);
+  configASSERT(_callbackTask);
 }
 
 template <typename T>
 BLEValueReceiver<T>::~BLEValueReceiver() {
-  if (_onUpdateTask != nullptr) {
-    vTaskDelete(_onUpdateTask);
-    _onUpdateTask = nullptr;
+  if (_callbackTask != nullptr) {
+    vTaskDelete(_callbackTask);
+    _callbackTask = nullptr;
   }
   if (_storeMutex != nullptr) {
     vSemaphoreDelete(_storeMutex);
@@ -81,7 +81,7 @@ void BLEValueReceiver<T>::onUpdate(const OnUpdate<T>& onUpdate) {
 }
 
 template <typename T>
-void BLEValueReceiver<T>::_onUpdateTaskFn(void* pvParameters) {
+void BLEValueReceiver<T>::_callbackTaskFn(void* pvParameters) {
   auto* self = static_cast<BLEValueReceiver*>(pvParameters);
 
   while (true) {
@@ -126,7 +126,7 @@ void BLEValueReceiver<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
   switch (result) {
     case BLEDecodeResult::Success:
       if (_onUpdateCallbackSet) {
-        xTaskNotifyGive(_onUpdateTask);
+        xTaskNotifyGive(_callbackTask);
       }
       break;
     case BLEDecodeResult::NotSupported:
