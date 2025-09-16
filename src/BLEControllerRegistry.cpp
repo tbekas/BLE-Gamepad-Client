@@ -157,18 +157,27 @@ void BLEControllerRegistry::tryConnectController(const NimBLEAdvertisedDevice* p
 
   auto* pClient = NimBLEDevice::getClientByPeerAddress(address);
   if (pClient) {
-    BLEGC_LOGD(LOG_TAG, "Reusing existing client for a device, address: %s",
-               std::string(pClient->getPeerAddress()).c_str());
+    BLEGC_LOGD(LOG_TAG, "Using existing client for a device, address: %s", std::string(address).c_str());
   } else {
-    pClient = NimBLEDevice::createClient(address);
-    if (!pClient) {
-      BLEGC_LOGE(LOG_TAG, "Failed to create client for a device, address: %s", std::string(address).c_str());
+    pClient = NimBLEDevice::getDisconnectedClient();
 
-      _sendClientEvent({address, BLEClientConnectingFailed});
-      return;
+    if (pClient) {
+      BLEGC_LOGD(LOG_TAG, "Reusing disconnected client for a device, address: %s", std::string(address).c_str());
+      pClient->setPeerAddress(address);
+    } else{
+      BLEGC_LOGD(LOG_TAG, "Creating a client for a device, address: %s", std::string(address).c_str());
+      pClient = NimBLEDevice::createClient(address);
+
+      if (!pClient) {
+        BLEGC_LOGE(LOG_TAG, "Failed to create client for a device, address: %s", std::string(address).c_str());
+
+        _sendClientEvent({address, BLEClientConnectingFailed});
+        return;
+      }
+
+      pClient->setConnectTimeout(CONFIG_BT_BLEGC_CONN_TIMEOUT_MS);
+      pClient->setClientCallbacks(&_clientCallbacks, false);
     }
-    pClient->setConnectTimeout(CONFIG_BT_BLEGC_CONN_TIMEOUT_MS);
-    pClient->setClientCallbacks(&_clientCallbacks, false);
   }
 
   BLEGC_LOGI(LOG_TAG, "Attempting to connect to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());

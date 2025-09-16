@@ -15,6 +15,7 @@ class BLEBaseController {
   void begin();
   void end();
   NimBLEAddress getAddress() const;
+  NimBLEAddress getLastAddress() const;
   NimBLEAddress getAllowedAddress() const;
   bool isConnected() const;
   void onConnect(const OnConnect& onConnect);
@@ -25,7 +26,6 @@ class BLEBaseController {
 
  protected:
   void setAddress(NimBLEAddress address);
-  NimBLEAddress getLastAddress() const;
   void setLastAddress(NimBLEAddress address);
   bool isAllocated() const;
   void markPendingDeregistration();

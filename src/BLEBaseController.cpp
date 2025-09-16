@@ -86,7 +86,6 @@ void BLEBaseController::callOnDisconnect() {
 
 NimBLEClient* BLEBaseController::getClient() const {
   if (_address.isNull()) {
-    BLEGC_LOGD(LOG_TAG, "Can't get client for null address");
     return nullptr;
   }
 
