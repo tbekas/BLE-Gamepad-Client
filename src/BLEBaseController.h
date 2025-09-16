@@ -19,7 +19,7 @@ class BLEBaseController {
   bool isConnected() const;
   void onConnect(const OnConnect& onConnect);
   void onDisconnect(const OnDisconnect& onDisconnect);
-  void disconnect() const;
+  void disconnect();
 
  friend class BLEControllerRegistry;
 
@@ -27,20 +27,18 @@ class BLEBaseController {
   void setAddress(NimBLEAddress address);
   NimBLEAddress getLastAddress() const;
   void setLastAddress(NimBLEAddress address);
-  bool isReserved() const;
-  void markConnected();
-  void markDisconnected();
+  bool isAllocated() const;
   void markPendingDeregistration();
   void markCompletedDeregistration();
   bool isPendingDeregistration() const;
   void callOnConnect();
   void callOnDisconnect();
+  NimBLEClient* getClient() const;
 
   virtual bool isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) = 0;
   virtual bool init(NimBLEClient* pClient) = 0;
   virtual bool deinit() = 0;
 
-  volatile bool _connected;
   volatile bool _pendingDeregistration;
   NimBLEAddress _address;
   NimBLEAddress _allowedAddress;

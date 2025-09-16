@@ -107,7 +107,7 @@ void BLEValueWriter<T>::_sendDataFn(void* pvParameters) {
     }
 
     if (!self->_pChar) {
-      BLEGC_LOGE(LOG_TAG, "Remote characteristic not initialized");
+      BLEGC_LOGD(LOG_TAG, "Writer not initialized, sending data aborted");
       continue;
     }
 

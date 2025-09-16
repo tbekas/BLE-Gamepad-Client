@@ -6,8 +6,7 @@
 static auto* LOG_TAG = "BLEBaseController";
 
 BLEBaseController::BLEBaseController(const NimBLEAddress allowedAddress)
-    : _connected(false),
-      _pendingDeregistration(false),
+    : _pendingDeregistration(false),
       _address(),
       _allowedAddress(allowedAddress),
       _lastAddress(),
@@ -49,7 +48,7 @@ void BLEBaseController::setLastAddress(const NimBLEAddress address) {
   _lastAddress = address;
 }
 
-bool BLEBaseController::isReserved() const {
+bool BLEBaseController::isAllocated() const {
   return !_address.isNull();
 }
 
@@ -58,15 +57,11 @@ bool BLEBaseController::isReserved() const {
  * @return True if controller is connected, false otherwise.
  */
 bool BLEBaseController::isConnected() const {
-  return _connected;
-}
+  if (const auto* pClient = getClient(); pClient) {
+    return pClient->isConnected();
+  }
 
-void BLEBaseController::markConnected() {
-  _connected = true;
-}
-
-void BLEBaseController::markDisconnected() {
-  _connected = false;
+  return false;
 }
 
 void BLEBaseController::markPendingDeregistration() {
@@ -89,6 +84,20 @@ void BLEBaseController::callOnDisconnect() {
   _onDisconnect(this);
 }
 
+NimBLEClient* BLEBaseController::getClient() const {
+  if (_address.isNull()) {
+    BLEGC_LOGD(LOG_TAG, "Can't get client for null address");
+    return nullptr;
+  }
+
+  auto* pClient = NimBLEDevice::getClientByPeerAddress(_address);
+  if (!pClient) {
+    BLEGC_LOGE(LOG_TAG, "BLE client not found, address %s", std::string(_address).c_str());
+    return nullptr;
+  }
+  return pClient;
+}
+
 /**
  * @brief Sets the callback to be invoked when the controller connects.
  * @param onConnect Reference to a callback function.
@@ -105,17 +114,12 @@ void BLEBaseController::onDisconnect(const OnDisconnect& onDisconnect) {
   _onDisconnect = onDisconnect;
 }
 
-void BLEBaseController::disconnect() const {
-  if (!_connected) {
-    BLEGC_LOGD(LOG_TAG, "Controller not connected, address %s", std::string(_address).c_str());
-    return;
+void BLEBaseController::disconnect() {
+  if (auto* pClient = getClient(); pClient) {
+    if (pClient->disconnect()) {
+      BLEGC_LOGD(LOG_TAG, "Disconnect command sent successfully");
+    } else {
+      BLEGC_LOGD(LOG_TAG, "Disconnect command failed");
+    }
   }
-
-  auto* pClient = NimBLEDevice::getClientByPeerAddress(_address);
-  if (!pClient) {
-    BLEGC_LOGE(LOG_TAG, "BLE client not found, address %s", std::string(_address).c_str());
-    return;
-  }
-
-  pClient->disconnect();
 }
