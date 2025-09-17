@@ -10,8 +10,8 @@ BLEBaseController::BLEBaseController(const NimBLEAddress allowedAddress)
       _address(),
       _allowedAddress(allowedAddress),
       _lastAddress(),
-      _onConnect([](BLEBaseController* ) {}),
-      _onDisconnect([](BLEBaseController* ) {}) {}
+      _onConnect([](BLEBaseController& ) {}),
+      _onDisconnect([](BLEBaseController& ) {}) {}
 
 void BLEBaseController::begin() {
   BLEGamepadClient::initBLEDevice();
@@ -40,6 +40,14 @@ NimBLEAddress BLEBaseController::getAllowedAddress() const {
   return _allowedAddress;
 }
 
+/**
+ * @brief Is controller connected to the board and fully initialized.
+ * @return True if controller is connected and fully initialized, false otherwise.
+ */
+bool BLEBaseController::isConnected() const {
+  return _connected;
+}
+
 NimBLEAddress BLEBaseController::getLastAddress() const {
   return _lastAddress;
 }
@@ -52,18 +60,6 @@ bool BLEBaseController::isAllocated() const {
   return !_address.isNull();
 }
 
-/**
- * @brief Is controller connected to the board.
- * @return True if controller is connected, false otherwise.
- */
-bool BLEBaseController::isConnected() const {
-  if (const auto* pClient = getClient(); pClient) {
-    return pClient->isConnected();
-  }
-
-  return false;
-}
-
 void BLEBaseController::markPendingDeregistration() {
   _pendingDeregistration = true;
 }
@@ -72,16 +68,24 @@ void BLEBaseController::markCompletedDeregistration() {
   _pendingDeregistration = false;
 }
 
+void BLEBaseController::markConnected() {
+  _connected = true;
+}
+
+void BLEBaseController::markDisconnected() {
+  _connected = false;
+}
+
 bool BLEBaseController::isPendingDeregistration() const {
   return _pendingDeregistration;
 }
 
 void BLEBaseController::callOnConnect() {
-  _onConnect(this);
+  _onConnect(*this);
 }
 
 void BLEBaseController::callOnDisconnect() {
-  _onDisconnect(this);
+  _onDisconnect(*this);
 }
 
 NimBLEClient* BLEBaseController::getClient() const {
@@ -114,11 +118,15 @@ void BLEBaseController::onDisconnect(const OnDisconnect& onDisconnect) {
 }
 
 void BLEBaseController::disconnect() {
-  if (auto* pClient = getClient(); pClient) {
-    if (pClient->disconnect()) {
-      BLEGC_LOGD(LOG_TAG, "Disconnect command sent successfully");
-    } else {
-      BLEGC_LOGD(LOG_TAG, "Disconnect command failed");
+  if (_connected) {
+    if (auto* pClient = getClient(); pClient) {
+      if (pClient->disconnect()) {
+        BLEGC_LOGD(LOG_TAG, "Disconnect command sent successfully");
+      } else {
+        BLEGC_LOGD(LOG_TAG, "Disconnect command failed");
+      }
     }
+  } else {
+    BLEGC_LOGD(LOG_TAG, "Cannot disconnect controller that's not connected");
   }
 }

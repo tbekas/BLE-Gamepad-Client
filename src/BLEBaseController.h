@@ -4,8 +4,8 @@
 
 class BLEBaseController;
 
-using OnConnect = std::function<void(BLEBaseController* pCtrl)>;
-using OnDisconnect = std::function<void(BLEBaseController* pCtrl)>;
+using OnConnect = std::function<void(BLEBaseController& pCtrl)>;
+using OnDisconnect = std::function<void(BLEBaseController& pCtrl)>;
 
 class BLEBaseController {
  public:
@@ -30,6 +30,8 @@ class BLEBaseController {
   bool isAllocated() const;
   void markPendingDeregistration();
   void markCompletedDeregistration();
+  void markConnected();
+  void markDisconnected();
   bool isPendingDeregistration() const;
   void callOnConnect();
   void callOnDisconnect();
@@ -40,6 +42,7 @@ class BLEBaseController {
   virtual bool deinit() = 0;
 
   volatile bool _pendingDeregistration;
+  bool _connected;
   NimBLEAddress _address;
   NimBLEAddress _allowedAddress;
   NimBLEAddress _lastAddress;

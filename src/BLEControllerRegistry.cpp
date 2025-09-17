@@ -97,13 +97,14 @@ void BLEControllerRegistry::registerController(BLEBaseController* pCtrl) {
 void BLEControllerRegistry::deregisterController(BLEBaseController* pCtrl) {
   pCtrl->markPendingDeregistration();
 
-  if (pCtrl->isConnected()) {
-    pCtrl->disconnect();
+  auto* pClient = pCtrl->getClient();
+  if (pClient && pClient->isConnected()) {
+    pClient->disconnect();
     return;  // deregistration will continue after completing disconnect
   }
 
-  if (pCtrl->isAllocated() && !pCtrl->isConnected()) {
-    // connect is likely in progress
+  if (pCtrl->isAllocated() && (!pClient || !pClient->isConnected())) {
+    // connect is likely in progress, we can try to cancel it
     if (auto* pClient = pCtrl->getClient(); pClient) {
       if (pClient->cancelConnect()) {
         BLEGC_LOGD(LOG_TAG, "Cancel connect command sent successfully");
@@ -313,55 +314,53 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
 
     switch (msg.kind) {
       case BLEClientBonded: {
-        xTaskNotify(self->_callbackTask, reinterpret_cast<uint32_t>(pCtrl), eSetValueWithOverwrite);
-
         if (pCtrl->isPendingDeregistration()) {
-          pCtrl->disconnect();
+          pCtrl->getClient()->disconnect();
           break;
         }
 
-        auto* pClient = pCtrl->getClient();
-        if (!pClient) {
-          break;
-        }
-
-        if (!pCtrl->init(pClient)) {
+        if (!pCtrl->init(pCtrl->getClient())) {
           BLEGC_LOGW(LOG_TAG, "Failed to initialize controller, address: %s", std::string(msg.address).c_str());
-          pCtrl->disconnect();
+          pCtrl->getClient()->disconnect();
           break;
         }
+
+        pCtrl->markConnected();
+        xTaskNotify(self->_callbackTask, reinterpret_cast<uint32_t>(pCtrl), eSetValueWithOverwrite);
 
         BLEGC_LOGD(LOG_TAG, "Controller successfully initialized");
 
         break;
       }
-      case BLEClientDisconnected:
+      case BLEClientDisconnected: {
         if (!pCtrl->deinit()) {
           BLEGC_LOGW(LOG_TAG, "Failed to deinitialize controller, address: %s", std::string(msg.address).c_str());
         }
 
         self->_deallocateController(pCtrl);
 
-        xTaskNotify(self->_callbackTask, reinterpret_cast<uint32_t>(pCtrl), eSetValueWithOverwrite);
+        if (pCtrl->isConnected()) {
+          pCtrl->markDisconnected();
+          xTaskNotify(self->_callbackTask, reinterpret_cast<uint32_t>(pCtrl), eSetValueWithOverwrite);
+        }
 
         if (pCtrl->isPendingDeregistration()) {
           self->deregisterController(pCtrl);
         }
         break;
-      case BLEClientConnectingFailed:
+      }
+      case BLEClientConnectingFailed: {
         self->_deallocateController(pCtrl);
 
-        if (auto* pClient = pCtrl->getClient()) {
-          NimBLEDevice::deleteClient(pClient);
-        }
-
         if (pCtrl->isPendingDeregistration()) {
           self->deregisterController(pCtrl);
         }
         break;
-      case BLEClientBondingFailed:
-        pCtrl->disconnect();
+      }
+      case BLEClientBondingFailed: {
+        pCtrl->getClient()->disconnect();
         break;
+      }
     }
     xTaskNotifyGive(self->_autoScanTask);
   }
