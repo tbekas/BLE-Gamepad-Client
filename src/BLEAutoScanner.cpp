@@ -39,27 +39,24 @@ void BLEAutoScanner::_autoScanTaskFn(void* pvParameters) {
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 
     auto* pScan = NimBLEDevice::getScan();
-    const auto isScanning = pScan->isScanning();
-    const auto isEnabled = self->_autoScanEnabled;
     const auto availConnSlots = self->_controllerRegistry.getAvailableConnectionSlotCount();
 
-    if (isEnabled && isScanning) {
-      BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, scan already in-progress");
-      // do nothing
-    } else if (isEnabled && !isScanning) {
-      if (availConnSlots > 0) {
-        BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, no scan in-progress, available connection slots: %d -> starting scan", availConnSlots);
-        pScan->start(CONFIG_BT_BLEGC_SCAN_DURATION_MS);
-      } else {
-        BLEGC_LOGD(LOG_TAG, "Auto-scan enabled, no scan in-progress, no available connection slots left");
-        // do nothing
-      }
-    } else if (!isEnabled && isScanning) {
-      BLEGC_LOGD(LOG_TAG, "Auto-scan disabled, scan in-progress -> stopping scan");
+    const auto isScanning = pScan->isScanning();
+    const auto shouldBeScanning = self->_autoScanEnabled & availConnSlots > 0;
+
+    BLEGC_LOGD(LOG_TAG, "Auto-scan %s, %sscan in progress, available connection slots: %d",
+        self->_autoScanEnabled ? "enabled" : "disabled",
+        isScanning ? "" : "no ",
+        availConnSlots);
+
+    if (!isScanning && shouldBeScanning) {
+      BLEGC_LOGD(LOG_TAG, "Starting scan");
+      pScan->start(CONFIG_BT_BLEGC_SCAN_DURATION_MS);
+    } else if (isScanning && !shouldBeScanning) {
+      BLEGC_LOGD(LOG_TAG, "Stopping scan");
       pScan->stop();
-    } else if (!isEnabled && !isScanning) {
-      BLEGC_LOGD(LOG_TAG, "Auto-scan disabled, no scan in-progress");
-      // do nothing
+    } else {
+      BLEGC_LOGD(LOG_TAG, "No action");
     }
   }
 }

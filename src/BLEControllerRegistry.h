@@ -5,11 +5,13 @@
 #include <NimBLEDevice.h>
 #include "BLEBaseController.h"
 
-enum BLEClientStatusMsgKind : uint8_t { BLEClientConnected = 0, BLEClientDisconnected = 1 };
+enum BLEClientEventKind : uint8_t {
+  BLEClientBonded = 0, BLEClientDisconnected = 1, BLEClientConnectingFailed = 2, BLEClientBondingFailed = 3,
+};
 
-struct BLEClientStatus {
+struct BLEClientEvent {
   NimBLEAddress address;
-  BLEClientStatusMsgKind kind;
+  BLEClientEventKind kind;
 
   explicit operator std::string() const;
 };
@@ -20,7 +22,7 @@ class BLEControllerRegistry {
   ~BLEControllerRegistry();
 
   void registerController(BLEBaseController* pCtrl);
-  void deregisterController(const BLEBaseController* controller);
+  void deregisterController(BLEBaseController* pCtrl);
   void tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   unsigned int getAvailableConnectionSlotCount() const;
 
@@ -36,13 +38,16 @@ class BLEControllerRegistry {
   };
 
   BLEBaseController* _getController(NimBLEAddress address) const;
-  bool _reserveController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
-  bool _releaseController(NimBLEAddress address);
-  static void _clientStatusConsumerFn(void* pvParameters);
+  bool _allocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
+  bool _deallocateController(BLEBaseController* pCtrl);
+  void _sendClientEvent(const BLEClientEvent& msg) const;
+  static void _callbackTaskFn(void* pvParameters);
+  static void _clientEventConsumerFn(void* pvParameters);
 
   TaskHandle_t& _autoScanTask;
-  QueueHandle_t _clientStatusQueue;
-  TaskHandle_t _clientStatusConsumerTask;
+  TaskHandle_t _callbackTask;
+  QueueHandle_t _clientEventQueue;
+  TaskHandle_t _clientEventConsumerTask;
   SemaphoreHandle_t _connectionSlots;
   std::atomic<std::vector<BLEBaseController*>*> _controllers;
   ClientCallbacks _clientCallbacks;

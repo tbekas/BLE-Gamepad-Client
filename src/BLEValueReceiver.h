@@ -21,14 +21,14 @@ class BLEValueReceiver {
   struct Store {
     T event{};
   };
-  static void _onUpdateTaskFn(void* pvParameters);
+  static void _callbackTaskFn(void* pvParameters);
   void _handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t dataLen, bool isNotify);
 
   const BLEValueDecoder<T>& _decoder;
   const BLECharacteristicSpec& _charSpec;
 
   NimBLERemoteCharacteristic* _pChar;
-  TaskHandle_t _onUpdateTask;
+  TaskHandle_t _callbackTask;
   SemaphoreHandle_t _storeMutex;
   Store _store;
   OnUpdate<T> _onUpdateCallback;
