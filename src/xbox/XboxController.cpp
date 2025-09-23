@@ -8,8 +8,8 @@
 
 XboxController::XboxController(const NimBLEAddress allowedAddress)
     : BLEBaseController(allowedAddress),
-      _controls(XboxControlsEvent::Decoder, XboxControlsEvent::CharSpec),
-      _battery(XboxBatteryEvent::Decoder, XboxBatteryEvent::CharSpec),
+      BLEControlsAPI(XboxControlsEvent::Decoder, XboxControlsEvent::CharSpec),
+      BLEBatteryAPI(XboxBatteryEvent::Decoder, XboxBatteryEvent::CharSpec),
       _vibrations(XboxVibrationsCommand::Encoder, XboxVibrationsCommand::CharSpec) {}
 
 XboxController::XboxController(const std::string& allowedAddress)
@@ -30,40 +30,9 @@ bool XboxController::init(NimBLEClient* pClient) {
     return false;
   }
 
-  return _controls.init(pClient) && _battery.init(pClient) && _vibrations.init(pClient);
+  return BLEControlsAPI::init(pClient) && BLEBatteryAPI::init(pClient) && _vibrations.init(pClient);
 }
 
-/**
- * @brief Read the controls state from the connected controller.
- * @param[out] event Reference to the event instance where the data will be written.
- */
-void XboxController::readControls(XboxControlsEvent& event) {
-  _controls.readLast(event);
-}
-
-/**
- * @brief Sets the callback to be invoked when the controller sends update to the controls state.
- * @param callback Reference to the callback function.
- */
-void XboxController::onControlsUpdate(const std::function<void(XboxControlsEvent& e)>& callback) {
-  _controls.onUpdate(callback);
-}
-
-/**
- * @brief Read the battery state from the connected controller.
- * @param[out] event Reference to the event instance where the data will be written.
- */
-void XboxController::readBattery(XboxBatteryEvent& event) {
-  _battery.readLast(event);
-}
-
-/**
- * @brief Sets the callback to be invoked when the controller sends update to the battery state.
- * @param callback Reference to the callback function.
- */
-void XboxController::onBatteryUpdate(const std::function<void(XboxBatteryEvent& e)>& callback) {
-  _battery.onUpdate(callback);
-}
 
 /**
  * @brief Send the vibrations command to the connected controller.
