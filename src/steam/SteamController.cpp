@@ -85,3 +85,27 @@ bool SteamController::deinit() {
 void SteamController::readControls(SteamControlsEvent& event) {
   _controls.readLast(event);
 }
+
+/**
+ * @brief Sets the callback to be invoked when the controller sends update to the controls state.
+ * @param callback Reference to the callback function.
+ */
+void SteamController::onControlsUpdate(const std::function<void(SteamControlsEvent& e)>& callback) {
+  _controls.onUpdate(callback);
+}
+
+/**
+ * @brief Sets the callback to be invoked when the controller connects.
+ * @param callback Reference to a callback function.
+ */
+void SteamController::onConnect(const std::function<void(SteamController& c)>& callback) {
+  _onConnect = [callback, this]() -> void { callback(*this); };
+}
+
+/**
+ * @brief Sets the callback to be invoked when the controller disconnects.
+ * @param callback Reference to the callback function.
+ */
+void SteamController::onDisconnect(const std::function<void(SteamController& c)>& callback) {
+  _onConnect = [callback, this]() -> void { callback(*this); };
+}

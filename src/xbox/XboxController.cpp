@@ -45,7 +45,7 @@ void XboxController::readControls(XboxControlsEvent& event) {
  * @brief Sets the callback to be invoked when the controller sends update to the controls state.
  * @param callback Reference to the callback function.
  */
-void XboxController::onControlsUpdate(const OnControlsUpdate& callback) {
+void XboxController::onControlsUpdate(const std::function<void(XboxControlsEvent& e)>& callback) {
   _controls.onUpdate(callback);
 }
 
@@ -61,7 +61,7 @@ void XboxController::readBattery(XboxBatteryEvent& event) {
  * @brief Sets the callback to be invoked when the controller sends update to the battery state.
  * @param callback Reference to the callback function.
  */
-void XboxController::onBatteryUpdate(const OnBatteryUpdate& callback) {
+void XboxController::onBatteryUpdate(const std::function<void(XboxBatteryEvent& e)>& callback) {
   _battery.onUpdate(callback);
 }
 
@@ -71,4 +71,20 @@ void XboxController::onBatteryUpdate(const OnBatteryUpdate& callback) {
  */
 void XboxController::writeVibrations(const XboxVibrationsCommand& cmd) {
   _vibrations.write(cmd);
+}
+
+/**
+ * @brief Sets the callback to be invoked when the controller connects.
+ * @param callback Reference to a callback function.
+ */
+void XboxController::onConnect(const std::function<void(XboxController& c)>& callback) {
+  _onConnect = [callback, this]() -> void { callback(*this); };
+}
+
+/**
+ * @brief Sets the callback to be invoked when the controller disconnects.
+ * @param callback Reference to the callback function.
+ */
+void XboxController::onDisconnect(const std::function<void(XboxController& c)>& callback) {
+  _onDisconnect = [callback, this]() -> void { callback(*this); };
 }

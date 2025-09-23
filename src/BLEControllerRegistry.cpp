@@ -105,7 +105,8 @@ void BLEControllerRegistry::deregisterController(BLEBaseController* pCtrl) {
 
   if (pCtrl->isAllocated() && (!pClient || !pClient->isConnected())) {
     // connect is likely in progress, we can try to cancel it
-    if (auto* pClient = pCtrl->getClient(); pClient) {
+    auto* pClient = pCtrl->getClient();
+    if (pClient) {
       if (pClient->cancelConnect()) {
         BLEGC_LOGD(LOG_TAG, "Cancel connect command sent successfully");
       } else {
@@ -286,7 +287,7 @@ void BLEControllerRegistry::_callbackTaskFn(void* pvParameters) {
   while (true) {
     const auto val = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    auto* pCtrl = reinterpret_cast<BLEBaseController*>(val);
+    const auto* pCtrl = reinterpret_cast<BLEBaseController*>(val);
     if (pCtrl->isConnected()) {
       pCtrl->callOnConnect();
     } else {
