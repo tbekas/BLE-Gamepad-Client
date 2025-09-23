@@ -4,9 +4,6 @@
 
 class BLEBaseController;
 
-using OnConnect = std::function<void(BLEBaseController& pCtrl)>;
-using OnDisconnect = std::function<void(BLEBaseController& pCtrl)>;
-
 class BLEBaseController {
  public:
   virtual ~BLEBaseController() = default;
@@ -18,8 +15,6 @@ class BLEBaseController {
   NimBLEAddress getLastAddress() const;
   NimBLEAddress getAllowedAddress() const;
   bool isConnected() const;
-  void onConnect(const OnConnect& onConnect);
-  void onDisconnect(const OnDisconnect& onDisconnect);
   void disconnect();
 
  friend class BLEControllerRegistry;
@@ -33,8 +28,8 @@ class BLEBaseController {
   void markConnected();
   void markDisconnected();
   bool isPendingDeregistration() const;
-  void callOnConnect();
-  void callOnDisconnect();
+  void callOnConnect() const;
+  void callOnDisconnect() const;
   NimBLEClient* getClient() const;
 
   virtual bool isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) = 0;
@@ -46,6 +41,6 @@ class BLEBaseController {
   NimBLEAddress _address;
   NimBLEAddress _allowedAddress;
   NimBLEAddress _lastAddress;
-  OnConnect _onConnect;
-  OnDisconnect _onDisconnect;
+  std::function<void()> _onConnect;
+  std::function<void()> _onDisconnect;
 };

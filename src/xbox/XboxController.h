@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+#include <string>
 #include <NimBLEAddress.h>
 #include "BLEBaseController.h"
 #include "BLEValueReceiver.h"
@@ -7,11 +9,6 @@
 #include "XboxControlsEvent.h"
 #include "XboxBatteryEvent.h"
 #include "XboxVibrationsCommand.h"
-
-using OnControlsUpdate = std::function<void(XboxControlsEvent& e)>;
-using OnBatteryUpdate = std::function<void(XboxBatteryEvent& e)>;
-
-template class BLEValueWriter<XboxVibrationsCommand>;
 
 class XboxController final : public BLEBaseController {
  public:
@@ -21,10 +18,13 @@ class XboxController final : public BLEBaseController {
   ~XboxController() = default;
 
   void readControls(XboxControlsEvent& event);
-  void onControlsUpdate(const OnControlsUpdate& callback);
+  void onControlsUpdate(const std::function<void(XboxControlsEvent& e)>& callback);
+
   void readBattery(XboxBatteryEvent& event);
-  void onBatteryUpdate(const OnBatteryUpdate& callback);
+  void onBatteryUpdate(const std::function<void(XboxBatteryEvent& e)>& callback);
   void writeVibrations(const XboxVibrationsCommand& cmd);
+  void onConnect(const std::function<void(XboxController& c)>& callback);
+  void onDisconnect(const std::function<void(XboxController& c)>& callback);
 
  protected:
   bool isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) override;

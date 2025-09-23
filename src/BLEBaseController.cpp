@@ -10,8 +10,8 @@ BLEBaseController::BLEBaseController(const NimBLEAddress allowedAddress)
       _address(),
       _allowedAddress(allowedAddress),
       _lastAddress(),
-      _onConnect([](BLEBaseController& ) {}),
-      _onDisconnect([](BLEBaseController& ) {}) {}
+      _onConnect([] {}),
+      _onDisconnect([] {}) {}
 
 void BLEBaseController::begin() {
   BLEGamepadClient::initBLEDevice();
@@ -80,12 +80,12 @@ bool BLEBaseController::isPendingDeregistration() const {
   return _pendingDeregistration;
 }
 
-void BLEBaseController::callOnConnect() {
-  _onConnect(*this);
+void BLEBaseController::callOnConnect() const {
+  _onConnect();
 }
 
-void BLEBaseController::callOnDisconnect() {
-  _onDisconnect(*this);
+void BLEBaseController::callOnDisconnect() const {
+  _onDisconnect();
 }
 
 NimBLEClient* BLEBaseController::getClient() const {
@@ -101,25 +101,10 @@ NimBLEClient* BLEBaseController::getClient() const {
   return pClient;
 }
 
-/**
- * @brief Sets the callback to be invoked when the controller connects.
- * @param onConnect Reference to a callback function.
- */
-void BLEBaseController::onConnect(const OnConnect& onConnect) {
-  _onConnect = onConnect;
-}
-
-/**
- * @brief Sets the callback to be invoked when the controller disconnects.
- * @param onDisconnect Reference to the callback function.
- */
-void BLEBaseController::onDisconnect(const OnDisconnect& onDisconnect) {
-  _onDisconnect = onDisconnect;
-}
-
 void BLEBaseController::disconnect() {
   if (_connected) {
-    if (auto* pClient = getClient(); pClient) {
+    auto* pClient = getClient();
+    if (pClient) {
       if (pClient->disconnect()) {
         BLEGC_LOGD(LOG_TAG, "Disconnect command sent successfully");
       } else {

@@ -37,6 +37,7 @@ jobs:
           [env]
           platform = espressif32
           framework = arduino
+          build_unflags = -std=gnu++14
           build_flags = 
             -D CONFIG_BT_BLEGC_LOG_LEVEL=5
             -D CONFIG_BT_BLEGC_COPY_REPORT_DATA=1

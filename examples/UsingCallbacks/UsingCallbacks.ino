@@ -6,11 +6,11 @@ void onControlsUpdate(XboxControlsEvent& e) {
     e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);
 }
 
-void onConnect(BLEBaseController& ctrl) {
+void onConnect(XboxController& ctrl) {
   Serial.printf("controller connected, address: %s\n", ctrl.getAddress().toString().c_str());
 }
 
-void onDisconnect(BLEBaseController& ctrl) {
+void onDisconnect(XboxController& ctrl) {
   Serial.printf("controller disconnected, address: %s\n", ctrl.getLastAddress().toString().c_str());
 }
 
