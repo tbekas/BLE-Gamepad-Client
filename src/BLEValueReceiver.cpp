@@ -14,7 +14,6 @@ static auto* LOG_TAG = "BLEValueReceiver";
 template <typename T>
 BLEValueReceiver<T>::BLEValueReceiver()
     :
-      _pChar(nullptr),
       _callbackTask(nullptr),
       _storeMutex(nullptr),
       _store(),
@@ -39,29 +38,32 @@ BLEValueReceiver<T>::~BLEValueReceiver() {
 }
 
 template <typename T>
-bool BLEValueReceiver<T>::init(NimBLEClient* pClient) {
-  _pChar = T.getCharacteristic(pClient);
-  if (!_pChar) {
+bool BLEValueReceiver<T>::init(NimBLERemoteCharacteristic* pChar) {
+  if (!pChar) {
     return false;
   }
 
-  if (!_pChar->canNotify()) {
-    BLEGC_LOGE(LOG_TAG, "Characteristic not able to notify. %s", blegc::remoteCharToStr(_pChar).c_str());
+  if (!pChar->canNotify()) {
+    BLEGC_LOGE(LOG_TAG, "Characteristic not able to notify. %s", blegc::remoteCharToStr(pChar).c_str());
     return false;
   }
 
   auto handlerFn = std::bind(&BLEValueReceiver::_handleNotify, this, std::placeholders::_1, std::placeholders::_2,
                              std::placeholders::_3, std::placeholders::_4);
 
-  BLEGC_LOGD(LOG_TAG, "Subscribing to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
+  BLEGC_LOGD(LOG_TAG, "Subscribing to notifications. %s", blegc::remoteCharToStr(pChar).c_str());
 
-  if (!_pChar->subscribe(true, handlerFn, false)) {
-    BLEGC_LOGE(LOG_TAG, "Failed to subscribe to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
+  if (!pChar->subscribe(true, handlerFn, false)) {
+    BLEGC_LOGE(LOG_TAG, "Failed to subscribe to notifications. %s", blegc::remoteCharToStr(pChar).c_str());
     return false;
   }
 
-  BLEGC_LOGD(LOG_TAG, "Successfully subscribed to notifications. %s", blegc::remoteCharToStr(_pChar).c_str());
+  BLEGC_LOGD(LOG_TAG, "Successfully subscribed to notifications. %s", blegc::remoteCharToStr(pChar).c_str());
 
+  auto* pClient = pChar->getClient();
+  if (pClient) {
+    _store.event.controllerAddress = pClient->getPeerAddress();
+  }
   return true;
 }
 
@@ -100,25 +102,17 @@ void BLEValueReceiver<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
   BLEGC_LOGT(LOG_TAG, "Received a notification. %s", blegc::remoteCharToStr(pChar).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  if (std::is_base_of<BLEAbstractEvent, T>::value) {
-    BLEAbstractEvent& e = _store.event;
-
-    if (auto* pClient = pChar->getClient()) {
-      e.controllerAddress = pClient->getPeerAddress();
-    }
-
 #if CONFIG_BT_BLEGC_COPY_REPORT_DATA
-    if (e.dataCap < dataLen) {
-      e.data = std::make_shared<uint8_t[]>(dataLen);
-      e.dataCap = dataLen;
-      e.dataLen = dataLen;
+    if (_store.event.dataCap < dataLen) {
+      _store.event.data = std::make_shared<uint8_t[]>(dataLen);
+      _store.event.dataCap = dataLen;
+      _store.event.dataLen = dataLen;
     }
 
-    memcpy(e.data.get(), pData, dataLen);
+    memcpy(_store.event.data.get(), pData, dataLen);
 #endif
-  }
 
-  auto result = _decoder(_store.event, pData, dataLen);
+  auto result = _store.event.decode(pData, dataLen);
   configASSERT(xSemaphoreGive(_storeMutex));
 
   switch (result) {

@@ -1,23 +1,21 @@
 #pragma once
 
 #include <NimBLEDevice.h>
-#include "BLECharacteristicSpec.h"
-#include "coders.h"
 
 template <typename T>
 class BLEValueWriter {
  public:
-  BLEValueWriter(const BLEValueEncoder<T>& encoder, const BLECharacteristicSpec& charSpec);
+  BLEValueWriter();
   ~BLEValueWriter();
 
  /**
   * @brief Send the command to the connected controller.
   * @param cmd Command to send.
   */
-  void write(const T& cmd);
+  void write(T& cmd);
 
  protected:
-  bool init(NimBLEClient* pClient);
+  bool init(NimBLERemoteCharacteristic* pChar);
 
  private:
   struct Store {
@@ -27,9 +25,6 @@ class BLEValueWriter {
     size_t capacity{};
   };
   static void _sendDataFn(void* pvParameters);
-
-  const BLEValueEncoder<T>& _encoder;
-  const BLECharacteristicSpec& _charSpec;
 
   NimBLERemoteCharacteristic* _pChar;
   TaskHandle_t _sendDataTask;

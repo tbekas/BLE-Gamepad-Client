@@ -36,13 +36,13 @@ static constexpr uint8_t disableLizardModeCmd[] = {
 };
 // clang-format on
 
-static const auto settingsCharSpec =
-    BLECharacteristicSpec{.serviceUUID = NimBLEUUID("100f6c32-1735-4313-b402-38567131e5f3"),
-                          .characteristicUUID = NimBLEUUID("100f6c34-1735-4313-b402-38567131e5f3"),
-                          .properties = uint8_t{BLE_GATT_CHR_PROP_WRITE}};
+static const std::string settingsSvcUUID = "100f6c32-1735-4313-b402-38567131e5f3";
+static const std::string settingsCharUUID = "100f6c34-1735-4313-b402-38567131e5f3";
+
+using namespace blegc;
 
 SteamController::SteamController(NimBLEAddress allowedAddress)
-    : BLEBaseController(allowedAddress), BLEValueReceiver(SteamControlsEvent::Decoder, SteamControlsEvent::CharSpec) {}
+    : BLEBaseController(allowedAddress) {}
 
 SteamController::SteamController(const std::string& allowedAddress)
     : SteamController(NimBLEAddress(allowedAddress, BLE_ADDR_PUBLIC)) {}
@@ -53,29 +53,26 @@ bool SteamController::isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevic
   return pAdvertisedDevice->haveName() && pAdvertisedDevice->getName() == "SteamController";
 }
 bool SteamController::init(NimBLEClient* pClient) {
-  if (!blegc::discoverAttributes(pClient)) {
+  if (!discoverAttributes(pClient)) {
     return false;
   }
 
-  const auto* pChar = blegc::findCharacteristic(pClient, settingsCharSpec);
-  if (!pChar) {
+  const auto* pSettingsChar = findWritableCharacteristic(pClient, settingsSvcUUID, settingsCharUUID);
+  if (!pSettingsChar) {
     return false;
   }
 
-  if (!pChar->canWrite()) {
-    BLEGC_LOGE(LOG_TAG, "Characteristic not able to write. %s", blegc::remoteCharToStr(pChar).c_str());
+  if (!pSettingsChar->writeValue(&clearMappingsCmd[0], sizeof(clearMappingsCmd))) {
     return false;
   }
 
-  if (!pChar->writeValue(&clearMappingsCmd[0], sizeof(clearMappingsCmd))) {
+  if (!pSettingsChar->writeValue(&disableLizardModeCmd[0], sizeof(disableLizardModeCmd))) {
     return false;
   }
 
-  if (!pChar->writeValue(&disableLizardModeCmd[0], sizeof(disableLizardModeCmd))) {
-    return false;
-  }
+  auto* pControlsChar = findNotifiableCharacteristic(pClient, hidSvcUUID, inputReportChrUUID, 2);
 
-  return BLEValueReceiver::init(pClient);
+  return BLEValueReceiver::init(pControlsChar);
 }
 bool SteamController::deinit() {
   return true;

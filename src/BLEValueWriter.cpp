@@ -1,9 +1,7 @@
 #include "BLEValueWriter.h"
 
 #include <NimBLEDevice.h>
-#include <bitset>
 #include <functional>
-#include "BLECharacteristicSpec.h"
 #include "logger.h"
 #include "utils.h"
 #include "config.h"
@@ -15,9 +13,8 @@ constexpr size_t MAX_CAPACITY = CONFIG_BT_BLEGC_WRITER_MAX_CAPACITY;
 constexpr size_t INIT_CAPACITY = 8;
 
 template <typename T>
-BLEValueWriter<T>::BLEValueWriter(const BLEValueEncoder<T>& encoder,
-                                  const BLECharacteristicSpec& charSpec)
-    : _encoder(encoder), _charSpec(charSpec), _pChar(nullptr), _sendDataTask(nullptr), _storeMutex(nullptr), _store() {
+BLEValueWriter<T>::BLEValueWriter()
+    : _pChar(nullptr), _sendDataTask(nullptr), _storeMutex(nullptr), _store() {
   _store.capacity = INIT_CAPACITY;
   _store.pBuffer = new uint8_t[_store.capacity];
   _store.pSendBuffer = new uint8_t[_store.capacity];
@@ -41,26 +38,27 @@ BLEValueWriter<T>::~BLEValueWriter() {
 }
 
 template <typename T>
-bool BLEValueWriter<T>::init(NimBLEClient* pClient) {
-  _pChar = blegc::findCharacteristic(pClient, _charSpec);
-  if (!_pChar) {
+bool BLEValueWriter<T>::init(NimBLERemoteCharacteristic* pChar) {
+  if (!pChar) {
     return false;
   }
 
-  if (!_pChar->canWrite()) {
-    BLEGC_LOGE(LOG_TAG, "Characteristic not able to write. %s", blegc::remoteCharToStr(_pChar).c_str());
+  if (!pChar->canWrite()) {
+    BLEGC_LOGE(LOG_TAG, "Characteristic not able to write. %s", blegc::remoteCharToStr(pChar).c_str());
     return false;
   }
+
+  _pChar = pChar;
 
   return true;
 }
 
 template <typename T>
-void BLEValueWriter<T>::write(const T& cmd) {
+void BLEValueWriter<T>::write(T& cmd) {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   size_t used;
   BLEEncodeResult result;
-  while ((result = _encoder(cmd, used, _store.pBuffer, _store.capacity)) == BLEEncodeResult::BufferTooShort &&
+  while ((result = cmd.encode(used, _store.pBuffer, _store.capacity)) == BLEEncodeResult::BufferTooShort &&
          _store.capacity < MAX_CAPACITY) {
     delete[] _store.pBuffer;
     delete[] _store.pSendBuffer;

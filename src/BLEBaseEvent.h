@@ -4,10 +4,14 @@
 #include <memory>
 #include "logger.h"
 
-struct BLEAbstractEvent {
-  virtual ~BLEAbstractEvent() = default;
+enum class BLEDecodeResult : uint8_t { Success = 0, InvalidReport = 1, NotSupported = 2 };
+
+struct BLEBaseEvent {
+  virtual ~BLEBaseEvent() = default;
   /// @brief Peer address of the controller that send this event.
   NimBLEAddress controllerAddress{};
+
+  virtual BLEDecodeResult decode(uint8_t data[], size_t dataLen) = 0;
 
 #if CONFIG_BT_BLEGC_COPY_REPORT_DATA
   std::shared_ptr<uint8_t[]> data{nullptr};
@@ -33,16 +37,4 @@ struct BLEAbstractEvent {
     CONFIG_BT_BLEGC_LOGGER("To use printReportHexdump set CONFIG_BT_BLEGC_COPY_REPORT_DATA to 1\n");
 #endif
   }
-};
-
-template <typename T>
-struct BLEBaseEvent : BLEAbstractEvent {
- protected:
-  virtual BLEDecodeResult decode(T&, uint8_t data[], size_t dataLen) = 0;
-  virtual NimBLERemoteCharacteristic getCharacteristic(NimBLEClient *pClient) = 0;
-  friend BLEValueReceiver;
-
-private:
-  BLEBaseEvent() = default;
-  friend T;
 };

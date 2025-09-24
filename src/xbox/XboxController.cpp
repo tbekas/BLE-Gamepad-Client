@@ -4,13 +4,10 @@
 #include <bitset>
 #include "BLEValueReceiver.h"
 #include "utils.h"
-#include "XboxVibrationsCommand.h"
 
-XboxController::XboxController(const NimBLEAddress allowedAddress)
-    : BLEBaseController(allowedAddress),
-      BLEValueReceiver<XboxControlsEvent>(XboxControlsEvent::Decoder, XboxControlsEvent::CharSpec),
-      BLEValueReceiver<XboxBatteryEvent>(XboxBatteryEvent::Decoder, XboxBatteryEvent::CharSpec),
-      BLEValueWriter(XboxVibrationsCommand::Encoder, XboxVibrationsCommand::CharSpec) {}
+using namespace blegc;
+
+XboxController::XboxController(const NimBLEAddress allowedAddress) : BLEBaseController(allowedAddress) {}
 
 XboxController::XboxController(const std::string& allowedAddress)
     : XboxController(NimBLEAddress(allowedAddress, BLE_ADDR_PUBLIC)) {}
@@ -26,10 +23,14 @@ bool XboxController::deinit() {
 }
 
 bool XboxController::init(NimBLEClient* pClient) {
-  if (!blegc::discoverAttributes(pClient)) {
+  if (!discoverAttributes(pClient)) {
     return false;
   }
 
-  return BLEValueReceiver<XboxControlsEvent>::init(pClient) && BLEValueReceiver<XboxBatteryEvent>::init(pClient) &&
-         BLEValueWriter::init(pClient);
+  auto* pControlsChar = findNotifiableCharacteristic(pClient, hidSvcUUID, inputReportChrUUID);
+  auto* pBatteryChar = findNotifiableCharacteristic(pClient, batterySvcUUID, batteryLevelCharUUID);
+  auto* pVibrationsChar = findWritableCharacteristic(pClient, hidSvcUUID, inputReportChrUUID);
+
+  return BLEValueReceiver<XboxControlsEvent>::init(pControlsChar) &&
+         BLEValueReceiver<XboxBatteryEvent>::init(pBatteryChar) && BLEValueWriter::init(pVibrationsChar);
 }
