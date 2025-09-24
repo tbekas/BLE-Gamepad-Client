@@ -46,8 +46,8 @@ controller’s MAC address to the serial output when it connects.
 #include <Arduino.h>
 #include <BLEGamepadClient.h>
 
-void onConnect(NimBLEAddress address) {
-  Serial.printf("controller connected, address: %s\n", address.toString().c_str());
+void onConnect(XboxController& ctrl) {
+  Serial.printf("controller connected, address: %s\n", ctrl.getAddress().toString().c_str());
 }
 
 XboxController controller;
