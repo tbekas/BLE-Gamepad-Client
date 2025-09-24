@@ -37,7 +37,7 @@ void setup(void) {
 void loop() {
   if (controller.isConnected()) {
     XboxControlsEvent e;
-    controller.readControls(e);
+    controller.read(e);
 
     Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
       e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);

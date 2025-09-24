@@ -4,9 +4,14 @@
 #include <memory>
 #include "logger.h"
 
+enum class BLEDecodeResult : uint8_t { Success = 0, InvalidReport = 1, NotSupported = 2 };
+
 struct BLEBaseEvent {
+  virtual ~BLEBaseEvent() = default;
   /// @brief Peer address of the controller that send this event.
   NimBLEAddress controllerAddress{};
+
+  virtual BLEDecodeResult decode(uint8_t data[], size_t dataLen) = 0;
 
 #if CONFIG_BT_BLEGC_COPY_REPORT_DATA
   std::shared_ptr<uint8_t[]> data{nullptr};

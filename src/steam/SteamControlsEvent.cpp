@@ -2,9 +2,7 @@
 
 #include <NimBLEDevice.h>
 #include <bitset>
-#include "../BLECharacteristicSpec.h"
-#include "../logger.h"
-#include "../coders.h"
+#include "logger.h"
 
 // Sources
 // https://github.com/torvalds/linux/blob/master/drivers/hid/hid-steam.c
@@ -17,15 +15,6 @@
 #define CONTAINS_LEFT_PAD_DATA 0x0100
 #define CONTAINS_RIGHT_PAD_DATA 0x0200
 #define CONTAINS_GYRO_DATA 0x1000
-
-BLEDecodeResult decodeControlsEvent(SteamControlsEvent& e, uint8_t data[], size_t dataLen);
-
-const BLEValueDecoder<SteamControlsEvent> SteamControlsEvent::Decoder(decodeControlsEvent);
-const BLECharacteristicSpec SteamControlsEvent::CharSpec{
-    .serviceUUID = NimBLEUUID(blegc::hidSvcUUID),
-    .characteristicUUID = NimBLEUUID(blegc::inputReportChrUUID),
-    .properties = BLE_GATT_CHR_PROP_NOTIFY,
-    .idx = 2};
 
 constexpr size_t controlsDataLen = 19;
 
@@ -55,7 +44,7 @@ inline float decodeTrigger(const uint8_t b) {
   return static_cast<float>(b) / UINT8_MAX;
 }
 
-BLEDecodeResult decodeControlsEvent(SteamControlsEvent& e, uint8_t data[], size_t dataLen) {
+BLEDecodeResult SteamControlsEvent::decode(uint8_t data[], size_t dataLen) {
   if (dataLen != controlsDataLen) {
     return BLEDecodeResult::InvalidReport;
   }
@@ -73,57 +62,57 @@ BLEDecodeResult decodeControlsEvent(SteamControlsEvent& e, uint8_t data[], size_
   auto offset = 3;
   if (contentInfo & CONTAINS_BUTTONS_DATA) {
     const uint8_t byte0 = data[offset];
-    e.rightTriggerButton = decodeButton(byte0, 0);
-    e.leftTriggerButton = decodeButton(byte0, 1);
-    e.rightBumper = decodeButton(byte0, 2);
-    e.leftBumper = decodeButton(byte0, 3);
-    e.buttonY = decodeButton(byte0, 4);
-    e.buttonB = decodeButton(byte0, 5);
-    e.buttonX = decodeButton(byte0, 6);
-    e.buttonA = decodeButton(byte0, 7);
+    this->rightTriggerButton = decodeButton(byte0, 0);
+    this->leftTriggerButton = decodeButton(byte0, 1);
+    this->rightBumper = decodeButton(byte0, 2);
+    this->leftBumper = decodeButton(byte0, 3);
+    this->buttonY = decodeButton(byte0, 4);
+    this->buttonB = decodeButton(byte0, 5);
+    this->buttonX = decodeButton(byte0, 6);
+    this->buttonA = decodeButton(byte0, 7);
 
     const uint8_t byte1 = data[offset + 1];
 
-    e.dpadUp = decodeButton(byte1, 0);
-    e.dpadRight = decodeButton(byte1, 1);
-    e.dpadLeft = decodeButton(byte1, 2);
-    e.dpadDown = decodeButton(byte1, 3);
-    e.selectButton = decodeButton(byte1, 4);
-    e.steamButton = decodeButton(byte1, 5);
-    e.startButton = decodeButton(byte1, 6);
-    e.leftGripButton = decodeButton(byte1, 7);
+    this->dpadUp = decodeButton(byte1, 0);
+    this->dpadRight = decodeButton(byte1, 1);
+    this->dpadLeft = decodeButton(byte1, 2);
+    this->dpadDown = decodeButton(byte1, 3);
+    this->selectButton = decodeButton(byte1, 4);
+    this->steamButton = decodeButton(byte1, 5);
+    this->startButton = decodeButton(byte1, 6);
+    this->leftGripButton = decodeButton(byte1, 7);
 
     const uint8_t byte2 = data[offset + 2];
-    e.rightGripButton = decodeButton(byte2, 0);
-    e.leftPadClick = decodeButton(byte2, 1);
-    e.rightPadClick = decodeButton(byte2, 2);
-    e.leftPadTouch = decodeButton(byte2, 3);
-    e.rightPadTouch = decodeButton(byte2, 4);
-    e.stickButton = decodeButton(byte2, 6);
+    this->rightGripButton = decodeButton(byte2, 0);
+    this->leftPadClick = decodeButton(byte2, 1);
+    this->rightPadClick = decodeButton(byte2, 2);
+    this->leftPadTouch = decodeButton(byte2, 3);
+    this->rightPadTouch = decodeButton(byte2, 4);
+    this->stickButton = decodeButton(byte2, 6);
     offset += 3;
   }
 
   if (contentInfo & CONTAINS_TRIGGERS_DATA) {
-    e.leftTrigger = decodeTrigger(data[offset]);
-    e.rightTrigger = decodeTrigger(data[offset + 1]);
+    this->leftTrigger = decodeTrigger(data[offset]);
+    this->rightTrigger = decodeTrigger(data[offset + 1]);
     offset += 2;
   }
 
   if (contentInfo & CONTAINS_THUMBSTICK_DATA) {
-    e.stickX = decodePad(data[offset], data[offset + 1]);
-    e.stickY = decodePad(data[offset + 2], data[offset + 3]);
+    this->stickX = decodePad(data[offset], data[offset + 1]);
+    this->stickY = decodePad(data[offset + 2], data[offset + 3]);
     offset += 4;
   }
 
   if (contentInfo & CONTAINS_LEFT_PAD_DATA) {
-    e.leftPadX = decodePad(data[offset], data[offset + 1]);
-    e.leftPadY = decodePad(data[offset + 2], data[offset + 3]);
+    this->leftPadX = decodePad(data[offset], data[offset + 1]);
+    this->leftPadY = decodePad(data[offset + 2], data[offset + 3]);
     offset += 4;
   }
 
   if (contentInfo & CONTAINS_RIGHT_PAD_DATA) {
-    e.rightPadX = decodePad(data[offset], data[offset + 1]);
-    e.rightPadY = decodePad(data[offset + 2], data[offset + 3]);
+    this->rightPadX = decodePad(data[offset], data[offset + 1]);
+    this->rightPadY = decodePad(data[offset + 2], data[offset + 3]);
     offset += 4;
   }
 

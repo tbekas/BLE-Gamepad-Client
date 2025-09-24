@@ -1,9 +1,8 @@
 #pragma once
 
-#include "../BLECharacteristicSpec.h"
-#include "../coders.h"
+#include "BLEBaseCommand.h"
 
-struct XboxVibrationsCommand {
+struct XboxVibrationsCommand final : BLEBaseCommand {
   /// @brief Power applied to the motor behind left trigger. Allowed values are between 0.0 and 1.0, where 1.0
   /// represents the full power.
   float leftTriggerMotor{0.0f};
@@ -31,6 +30,5 @@ struct XboxVibrationsCommand {
   /// @brief Number of vibration-pause cycles. Defaults to 1 cycle.
   uint8_t cycles{1};
 
-  static const BLEValueEncoder<XboxVibrationsCommand> Encoder;
-  static const BLECharacteristicSpec CharSpec;
+  BLEEncodeResult encode(size_t& usedBytes, uint8_t buffer[], size_t bufferLen) override;
 };

@@ -33,7 +33,7 @@ BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask)
       _clientEventConsumerTask(nullptr),
       _connectionSlots(nullptr),
       _clientCallbacks(*this),
-      _controllers(new std::vector<BLEBaseController*>()) {
+      _controllers(new std::vector<BLEAbstractController*>()) {
   xTaskCreate(_callbackTaskFn, "_callbackTask", 10000, this, 0, &_callbackTask);
   configASSERT(_callbackTask);
 
@@ -62,9 +62,9 @@ BLEControllerRegistry::~BLEControllerRegistry() {
   delete pControllers;
 }
 
-void BLEControllerRegistry::registerController(BLEBaseController* pCtrl) {
+void BLEControllerRegistry::registerController(BLEAbstractController* pCtrl) {
   auto* pControllersOld = _controllers.load();
-  auto* pControllersNew = new std::vector<BLEBaseController*>();
+  auto* pControllersNew = new std::vector<BLEAbstractController*>();
   do {
     pControllersNew->clear();
     for (auto* pSomeCtrl : *pControllersOld) {
@@ -94,7 +94,7 @@ void BLEControllerRegistry::registerController(BLEBaseController* pCtrl) {
   BLEGC_LOGD(LOG_TAG, "Controller registered");
 }
 
-void BLEControllerRegistry::deregisterController(BLEBaseController* pCtrl) {
+void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl) {
   pCtrl->markPendingDeregistration();
 
   auto* pClient = pCtrl->getClient();
@@ -117,7 +117,7 @@ void BLEControllerRegistry::deregisterController(BLEBaseController* pCtrl) {
   }
 
   auto* pControllersOld = _controllers.load();
-  auto* pControllersNew = new std::vector<BLEBaseController*>();
+  auto* pControllersNew = new std::vector<BLEAbstractController*>();
   do {
     pControllersNew->clear();
     bool found = false;
@@ -190,7 +190,7 @@ void BLEControllerRegistry::tryConnectController(const NimBLEAdvertisedDevice* p
   }
 }
 
-BLEBaseController* BLEControllerRegistry::_getController(const NimBLEAddress address) const {
+BLEAbstractController* BLEControllerRegistry::_getController(const NimBLEAddress address) const {
   for (auto* pCtrl : *_controllers.load()) {
     if (pCtrl->getAddress() == address) {
       return pCtrl;
@@ -255,7 +255,7 @@ bool BLEControllerRegistry::_allocateController(const NimBLEAdvertisedDevice* pA
   return false;
 }
 
-bool BLEControllerRegistry::_deallocateController(BLEBaseController* pCtrl) {
+bool BLEControllerRegistry::_deallocateController(BLEAbstractController* pCtrl) {
   if (!pCtrl->isAllocated()) {
     BLEGC_LOGE(LOG_TAG, "Attempting to deallocate controller that is not allocated, last address: %s",
                std::string(pCtrl->getLastAddress()).c_str());
@@ -287,7 +287,7 @@ void BLEControllerRegistry::_callbackTaskFn(void* pvParameters) {
   while (true) {
     const auto val = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    const auto* pCtrl = reinterpret_cast<BLEBaseController*>(val);
+    auto* pCtrl = reinterpret_cast<BLEAbstractController*>(val);
     if (pCtrl->isConnected()) {
       pCtrl->callOnConnect();
     } else {

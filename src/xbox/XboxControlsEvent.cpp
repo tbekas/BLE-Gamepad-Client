@@ -2,19 +2,9 @@
 
 #include <NimBLEDevice.h>
 #include <bitset>
-#include "../BLECharacteristicSpec.h"
-#include "../logger.h"
-#include "../coders.h"
+#include "logger.h"
 
 static auto* LOG_TAG = "XboxControlsEvent";
-
-BLEDecodeResult decodeControlsEvent(XboxControlsEvent& e, uint8_t data[], size_t dataLen);
-
-const BLEValueDecoder<XboxControlsEvent> XboxControlsEvent::Decoder(decodeControlsEvent);
-const BLECharacteristicSpec XboxControlsEvent::CharSpec{
-    .serviceUUID = NimBLEUUID(blegc::hidSvcUUID),
-    .characteristicUUID = NimBLEUUID(blegc::inputReportChrUUID),
-    .properties = BLE_GATT_CHR_PROP_NOTIFY};
 
 constexpr size_t controlsDataLen = 16;
 constexpr uint16_t axisMax = 0xffff;
@@ -43,51 +33,51 @@ inline bool decodeButton(uint8_t byte, int bit) {
   return byte & 1 << bit;
 }
 
-BLEDecodeResult decodeControlsEvent(XboxControlsEvent& e, uint8_t data[], size_t dataLen) {
+BLEDecodeResult XboxControlsEvent::decode(uint8_t data[], size_t dataLen) {
   if (dataLen != controlsDataLen) {
     return BLEDecodeResult::InvalidReport;
   }
 
-  e.leftStickX = decodeStickX(data[0], data[1]);
-  e.leftStickY = decodeStickY(data[2], data[3]);
-  e.rightStickX = decodeStickX(data[4], data[5]);
-  e.rightStickY = decodeStickY(data[6], data[7]);
-  e.leftTrigger = decodeTrigger(data[8], data[9]);
-  e.rightTrigger = decodeTrigger(data[10], data[11]);
+  this->leftStickX = decodeStickX(data[0], data[1]);
+  this->leftStickY = decodeStickY(data[2], data[3]);
+  this->rightStickX = decodeStickX(data[4], data[5]);
+  this->rightStickY = decodeStickY(data[6], data[7]);
+  this->leftTrigger = decodeTrigger(data[8], data[9]);
+  this->rightTrigger = decodeTrigger(data[10], data[11]);
 
   // clang-format off
-  e.dpadUp = e.dpadRight = e.dpadDown = e.dpadLeft = false;
+  this->dpadUp = this->dpadRight = this->dpadDown = this->dpadLeft = false;
   uint8_t byte12 = data[12];
   switch (byte12) {
-    case 1: e.dpadUp = true; break;
-    case 2: e.dpadUp = e.dpadRight = true; break;
-    case 3: e.dpadRight = true; break;
-    case 4: e.dpadRight = e.dpadDown = true; break;
-    case 5: e.dpadDown = true; break;
-    case 6: e.dpadDown = e.dpadLeft = true; break;
-    case 7: e.dpadLeft = true; break;
-    case 8: e.dpadLeft = e.dpadUp = true; break;
+    case 1: this->dpadUp = true; break;
+    case 2: this->dpadUp = this->dpadRight = true; break;
+    case 3: this->dpadRight = true; break;
+    case 4: this->dpadRight = this->dpadDown = true; break;
+    case 5: this->dpadDown = true; break;
+    case 6: this->dpadDown = this->dpadLeft = true; break;
+    case 7: this->dpadLeft = true; break;
+    case 8: this->dpadLeft = this->dpadUp = true; break;
     default: break;
   }
   // clang-format on
 
   uint8_t byte13 = data[13];
-  e.buttonA = decodeButton(byte13, 0);
-  e.buttonB = decodeButton(byte13, 1);
-  e.buttonX = decodeButton(byte13, 3);
-  e.buttonY = decodeButton(byte13, 4);
-  e.leftBumper = decodeButton(byte13, 6);
-  e.rightBumper = decodeButton(byte13, 7);
+  this->buttonA = decodeButton(byte13, 0);
+  this->buttonB = decodeButton(byte13, 1);
+  this->buttonX = decodeButton(byte13, 3);
+  this->buttonY = decodeButton(byte13, 4);
+  this->leftBumper = decodeButton(byte13, 6);
+  this->rightBumper = decodeButton(byte13, 7);
 
   uint8_t byte14 = data[14];
-  e.viewButton = decodeButton(byte14, 2);
-  e.menuButton = decodeButton(byte14, 3);
-  e.xboxButton = decodeButton(byte14, 4);
-  e.leftStickButton = decodeButton(byte14, 5);
-  e.rightStickButton = decodeButton(byte14, 6);
+  this->viewButton = decodeButton(byte14, 2);
+  this->menuButton = decodeButton(byte14, 3);
+  this->xboxButton = decodeButton(byte14, 4);
+  this->leftStickButton = decodeButton(byte14, 5);
+  this->rightStickButton = decodeButton(byte14, 6);
 
   uint8_t byte15 = data[15];
-  e.shareButton = decodeButton(byte15, 0);
+  this->shareButton = decodeButton(byte15, 0);
 
   return BLEDecodeResult::Success;
 }
