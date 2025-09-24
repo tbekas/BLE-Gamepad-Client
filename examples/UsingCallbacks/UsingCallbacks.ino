@@ -21,7 +21,7 @@ void setup(void) {
   controller.begin();
   controller.onConnect(onConnect);
   controller.onDisconnect(onDisconnect);
-  controller.onUpdate(onControlsUpdate);
+  controller.onUpdate(onUpdate);
 }
 
 void loop() {
