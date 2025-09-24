@@ -11,7 +11,6 @@ find_package(Doxygen REQUIRED)
 set(MAINPAGE_FILE "${CMAKE_CURRENT_BINARY_DIR}/index.md")
 file(READ "${PROJECT_SOURCE_DIR}/README.md" README_CONTENT)
 string(PREPEND README_CONTENT "# Overview\n")
-string(REGEX REPLACE "(<img[^>]*src=\")docs\/([^\"]+)" \\1\\2 README_CONTENT ${README_CONTENT}) # this removes "docs/" part from <img /> src path
 file(WRITE "${MAINPAGE_FILE}" "${README_CONTENT}")
 
 set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${MAINPAGE_FILE}")
