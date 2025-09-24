@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <BLEGamepadClient.h>
 
-void onControlsUpdate(XboxControlsEvent& e) {
+void onUpdate(XboxControlsEvent& e) {
   Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
     e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);
 }
@@ -21,7 +21,7 @@ void setup(void) {
   controller.begin();
   controller.onConnect(onConnect);
   controller.onDisconnect(onDisconnect);
-  controller.onControlsUpdate(onControlsUpdate);
+  controller.onUpdate(onControlsUpdate);
 }
 
 void loop() {
