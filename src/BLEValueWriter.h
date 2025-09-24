@@ -9,8 +9,15 @@ class BLEValueWriter {
  public:
   BLEValueWriter(const BLEValueEncoder<T>& encoder, const BLECharacteristicSpec& charSpec);
   ~BLEValueWriter();
+
+ /**
+  * @brief Send the command to the connected controller.
+  * @param cmd Command to send.
+  */
+  void write(const T& cmd);
+
+ protected:
   bool init(NimBLEClient* pClient);
-  void write(const T& value);
 
  private:
   struct Store {

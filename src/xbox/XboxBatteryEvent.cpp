@@ -1,9 +1,9 @@
 #include "XboxBatteryEvent.h"
 
 #include <NimBLEDevice.h>
-#include "../BLECharacteristicSpec.h"
-#include "../coders.h"
-#include "../logger.h"
+#include "BLECharacteristicSpec.h"
+#include "coders.h"
+#include "logger.h"
 
 static auto* LOG_TAG = "XboxControlsEvent";
 

@@ -12,10 +12,8 @@
 static auto* LOG_TAG = "BLEValueReceiver";
 
 template <typename T>
-BLEValueReceiver<T>::BLEValueReceiver(const BLEValueDecoder<T>& decoder,
-                                      const BLECharacteristicSpec& charSpec)
-    : _decoder(decoder),
-      _charSpec(charSpec),
+BLEValueReceiver<T>::BLEValueReceiver()
+    :
       _pChar(nullptr),
       _callbackTask(nullptr),
       _storeMutex(nullptr),
@@ -42,7 +40,7 @@ BLEValueReceiver<T>::~BLEValueReceiver() {
 
 template <typename T>
 bool BLEValueReceiver<T>::init(NimBLEClient* pClient) {
-  _pChar = blegc::findCharacteristic(pClient, _charSpec);
+  _pChar = T.getCharacteristic(pClient);
   if (!_pChar) {
     return false;
   }
@@ -68,15 +66,15 @@ bool BLEValueReceiver<T>::init(NimBLEClient* pClient) {
 }
 
 template <typename T>
-void BLEValueReceiver<T>::readLast(T& out) {
+void BLEValueReceiver<T>::read(T& event) {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  out = _store.event;
+  event = _store.event;
   configASSERT(xSemaphoreGive(_storeMutex));
 }
 
 template <typename T>
-void BLEValueReceiver<T>::onUpdate(const OnUpdate<T>& onUpdate) {
-  _onUpdateCallback = onUpdate;
+void BLEValueReceiver<T>::onUpdate(const OnUpdate<T>& callback) {
+  _onUpdateCallback = callback;
   _onUpdateCallbackSet = true;
 }
 
@@ -102,8 +100,8 @@ void BLEValueReceiver<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
   BLEGC_LOGT(LOG_TAG, "Received a notification. %s", blegc::remoteCharToStr(pChar).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  if (std::is_base_of<BLEBaseEvent, T>::value) {
-    BLEBaseEvent& e = _store.event;
+  if (std::is_base_of<BLEAbstractEvent, T>::value) {
+    BLEAbstractEvent& e = _store.event;
 
     if (auto* pClient = pChar->getClient()) {
       e.controllerAddress = pClient->getPeerAddress();

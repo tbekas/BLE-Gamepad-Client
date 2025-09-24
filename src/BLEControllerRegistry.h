@@ -21,8 +21,8 @@ class BLEControllerRegistry {
   BLEControllerRegistry(TaskHandle_t& autoScanTask);
   ~BLEControllerRegistry();
 
-  void registerController(BLEBaseController* pCtrl);
-  void deregisterController(BLEBaseController* pCtrl);
+  void registerController(BLEAbstractController* pCtrl);
+  void deregisterController(BLEAbstractController* pCtrl);
   void tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   unsigned int getAvailableConnectionSlotCount() const;
 
@@ -37,9 +37,9 @@ class BLEControllerRegistry {
     BLEControllerRegistry& _controllerRegistry;
   };
 
-  BLEBaseController* _getController(NimBLEAddress address) const;
+  BLEAbstractController* _getController(NimBLEAddress address) const;
   bool _allocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
-  bool _deallocateController(BLEBaseController* pCtrl);
+  bool _deallocateController(BLEAbstractController* pCtrl);
   void _sendClientEvent(const BLEClientEvent& msg) const;
   static void _callbackTaskFn(void* pvParameters);
   static void _clientEventConsumerFn(void* pvParameters);
@@ -49,6 +49,6 @@ class BLEControllerRegistry {
   QueueHandle_t _clientEventQueue;
   TaskHandle_t _clientEventConsumerTask;
   SemaphoreHandle_t _connectionSlots;
-  std::atomic<std::vector<BLEBaseController*>*> _controllers;
+  std::atomic<std::vector<BLEAbstractController*>*> _controllers;
   ClientCallbacks _clientCallbacks;
 };

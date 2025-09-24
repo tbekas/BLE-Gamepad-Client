@@ -1,9 +1,9 @@
 #include "XboxVibrationsCommand.h"
 
 #include <NimBLEDevice.h>
-#include "../BLECharacteristicSpec.h"
-#include "../logger.h"
-#include "../coders.h"
+#include "BLECharacteristicSpec.h"
+#include "logger.h"
+#include "coders.h"
 
 static auto* LOG_TAG = "XboxVibrationsCommand";
 

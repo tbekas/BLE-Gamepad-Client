@@ -17,7 +17,7 @@ class BLEGamepadClient {
   static bool isAutoScanEnabled();
   static void deleteBonds();
 
-  friend class BLEBaseController;
+  friend class BLEAbstractController;
 
  private:
   static TaskHandle_t _autoScanTask;

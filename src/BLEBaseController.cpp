@@ -5,21 +5,19 @@
 
 static auto* LOG_TAG = "BLEBaseController";
 
-BLEBaseController::BLEBaseController(const NimBLEAddress allowedAddress)
+BLEAbstractController::BLEAbstractController(const NimBLEAddress allowedAddress)
     : _pendingDeregistration(false),
       _address(),
       _allowedAddress(allowedAddress),
-      _lastAddress(),
-      _onConnect([] {}),
-      _onDisconnect([] {}) {}
+      _lastAddress() {}
 
-void BLEBaseController::begin() {
+void BLEAbstractController::begin() {
   BLEGamepadClient::initBLEDevice();
 
   BLEGamepadClient::_controllerRegistry.registerController(this);
 }
 
-void BLEBaseController::end() {
+void BLEAbstractController::end() {
   BLEGamepadClient::_controllerRegistry.deregisterController(this);
 }
 /**
@@ -28,15 +26,15 @@ void BLEBaseController::end() {
  *
  * @return The relevant address based on the current connection state.
  */
-NimBLEAddress BLEBaseController::getAddress() const {
+NimBLEAddress BLEAbstractController::getAddress() const {
   return _address;
 }
 
-void BLEBaseController::setAddress(const NimBLEAddress address) {
+void BLEAbstractController::setAddress(const NimBLEAddress address) {
   _address = address;
 }
 
-NimBLEAddress BLEBaseController::getAllowedAddress() const {
+NimBLEAddress BLEAbstractController::getAllowedAddress() const {
   return _allowedAddress;
 }
 
@@ -44,51 +42,43 @@ NimBLEAddress BLEBaseController::getAllowedAddress() const {
  * @brief Is controller connected to the board and fully initialized.
  * @return True if controller is connected and fully initialized, false otherwise.
  */
-bool BLEBaseController::isConnected() const {
+bool BLEAbstractController::isConnected() const {
   return _connected;
 }
 
-NimBLEAddress BLEBaseController::getLastAddress() const {
+NimBLEAddress BLEAbstractController::getLastAddress() const {
   return _lastAddress;
 }
 
-void BLEBaseController::setLastAddress(const NimBLEAddress address) {
+void BLEAbstractController::setLastAddress(const NimBLEAddress address) {
   _lastAddress = address;
 }
 
-bool BLEBaseController::isAllocated() const {
+bool BLEAbstractController::isAllocated() const {
   return !_address.isNull();
 }
 
-void BLEBaseController::markPendingDeregistration() {
+void BLEAbstractController::markPendingDeregistration() {
   _pendingDeregistration = true;
 }
 
-void BLEBaseController::markCompletedDeregistration() {
+void BLEAbstractController::markCompletedDeregistration() {
   _pendingDeregistration = false;
 }
 
-void BLEBaseController::markConnected() {
+void BLEAbstractController::markConnected() {
   _connected = true;
 }
 
-void BLEBaseController::markDisconnected() {
+void BLEAbstractController::markDisconnected() {
   _connected = false;
 }
 
-bool BLEBaseController::isPendingDeregistration() const {
+bool BLEAbstractController::isPendingDeregistration() const {
   return _pendingDeregistration;
 }
 
-void BLEBaseController::callOnConnect() const {
-  _onConnect();
-}
-
-void BLEBaseController::callOnDisconnect() const {
-  _onDisconnect();
-}
-
-NimBLEClient* BLEBaseController::getClient() const {
+NimBLEClient* BLEAbstractController::getClient() const {
   if (_address.isNull()) {
     return nullptr;
   }
@@ -101,7 +91,7 @@ NimBLEClient* BLEBaseController::getClient() const {
   return pClient;
 }
 
-void BLEBaseController::disconnect() {
+void BLEAbstractController::disconnect() {
   if (_connected) {
     auto* pClient = getClient();
     if (pClient) {

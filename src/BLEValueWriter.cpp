@@ -56,11 +56,11 @@ bool BLEValueWriter<T>::init(NimBLEClient* pClient) {
 }
 
 template <typename T>
-void BLEValueWriter<T>::write(const T& value) {
+void BLEValueWriter<T>::write(const T& cmd) {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
   size_t used;
   BLEEncodeResult result;
-  while ((result = _encoder(value, used, _store.pBuffer, _store.capacity)) == BLEEncodeResult::BufferTooShort &&
+  while ((result = _encoder(cmd, used, _store.pBuffer, _store.capacity)) == BLEEncodeResult::BufferTooShort &&
          _store.capacity < MAX_CAPACITY) {
     delete[] _store.pBuffer;
     delete[] _store.pSendBuffer;

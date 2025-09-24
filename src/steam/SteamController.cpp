@@ -2,8 +2,8 @@
 
 #include <NimBLEDevice.h>
 #include <bitset>
-#include "../BLEValueReceiver.h"
-#include "../utils.h"
+#include "BLEValueReceiver.h"
+#include "utils.h"
 
 static auto* LOG_TAG = "SteamController";
 
@@ -36,14 +36,13 @@ static constexpr uint8_t disableLizardModeCmd[] = {
 };
 // clang-format on
 
-static const auto settingsCharSpec = BLECharacteristicSpec{
-  .serviceUUID = NimBLEUUID("100f6c32-1735-4313-b402-38567131e5f3"),
-  .characteristicUUID = NimBLEUUID("100f6c34-1735-4313-b402-38567131e5f3"),
-  .properties = uint8_t{BLE_GATT_CHR_PROP_WRITE}};
+static const auto settingsCharSpec =
+    BLECharacteristicSpec{.serviceUUID = NimBLEUUID("100f6c32-1735-4313-b402-38567131e5f3"),
+                          .characteristicUUID = NimBLEUUID("100f6c34-1735-4313-b402-38567131e5f3"),
+                          .properties = uint8_t{BLE_GATT_CHR_PROP_WRITE}};
 
 SteamController::SteamController(NimBLEAddress allowedAddress)
-    : BLEBaseController(allowedAddress),
-      _controls(SteamControlsEvent::Decoder, SteamControlsEvent::CharSpec) {}
+    : BLEBaseController(allowedAddress), BLEValueReceiver(SteamControlsEvent::Decoder, SteamControlsEvent::CharSpec) {}
 
 SteamController::SteamController(const std::string& allowedAddress)
     : SteamController(NimBLEAddress(allowedAddress, BLE_ADDR_PUBLIC)) {}
@@ -76,36 +75,8 @@ bool SteamController::init(NimBLEClient* pClient) {
     return false;
   }
 
-  return _controls.init(pClient);
+  return BLEValueReceiver::init(pClient);
 }
 bool SteamController::deinit() {
   return true;
-}
-
-void SteamController::readControls(SteamControlsEvent& event) {
-  _controls.readLast(event);
-}
-
-/**
- * @brief Sets the callback to be invoked when the controller sends update to the controls state.
- * @param callback Reference to the callback function.
- */
-void SteamController::onControlsUpdate(const std::function<void(SteamControlsEvent& e)>& callback) {
-  _controls.onUpdate(callback);
-}
-
-/**
- * @brief Sets the callback to be invoked when the controller connects.
- * @param callback Reference to a callback function.
- */
-void SteamController::onConnect(const std::function<void(SteamController& c)>& callback) {
-  _onConnect = [callback, this]() -> void { callback(*this); };
-}
-
-/**
- * @brief Sets the callback to be invoked when the controller disconnects.
- * @param callback Reference to the callback function.
- */
-void SteamController::onDisconnect(const std::function<void(SteamController& c)>& callback) {
-  _onConnect = [callback, this]() -> void { callback(*this); };
 }

@@ -4,7 +4,8 @@
 #include <memory>
 #include "logger.h"
 
-struct BLEBaseEvent {
+struct BLEAbstractEvent {
+  virtual ~BLEAbstractEvent() = default;
   /// @brief Peer address of the controller that send this event.
   NimBLEAddress controllerAddress{};
 
@@ -32,4 +33,16 @@ struct BLEBaseEvent {
     CONFIG_BT_BLEGC_LOGGER("To use printReportHexdump set CONFIG_BT_BLEGC_COPY_REPORT_DATA to 1\n");
 #endif
   }
+};
+
+template <typename T>
+struct BLEBaseEvent : BLEAbstractEvent {
+ protected:
+  virtual BLEDecodeResult decode(T&, uint8_t data[], size_t dataLen) = 0;
+  virtual NimBLERemoteCharacteristic getCharacteristic(NimBLEClient *pClient) = 0;
+  friend BLEValueReceiver;
+
+private:
+  BLEBaseEvent() = default;
+  friend T;
 };

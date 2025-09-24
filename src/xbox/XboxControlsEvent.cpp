@@ -2,9 +2,9 @@
 
 #include <NimBLEDevice.h>
 #include <bitset>
-#include "../BLECharacteristicSpec.h"
-#include "../logger.h"
-#include "../coders.h"
+#include "BLECharacteristicSpec.h"
+#include "logger.h"
+#include "coders.h"
 
 static auto* LOG_TAG = "XboxControlsEvent";
 

@@ -2,9 +2,9 @@
 
 #include <NimBLEDevice.h>
 #include <bitset>
-#include "../BLECharacteristicSpec.h"
-#include "../logger.h"
-#include "../coders.h"
+#include "BLECharacteristicSpec.h"
+#include "logger.h"
+#include "coders.h"
 
 // Sources
 // https://github.com/torvalds/linux/blob/master/drivers/hid/hid-steam.c
