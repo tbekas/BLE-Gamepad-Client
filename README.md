@@ -57,7 +57,7 @@ the [examples directory](https://github.com/tbekas/BLE-Gamepad-Client/tree/0.8.0
 
 ### Steam Controller
 
-<img src="https://tbekas.github.io/BLE-Gamepad-Client/steam_controller.png" width="320" alt="Steam Controller" />
+![Steam Controller](https://tbekas.github.io/BLE-Gamepad-Client/steam_controller.png)
 
 #### Firmware:
 
@@ -74,7 +74,7 @@ Install BLE firmware using these instructions: [Steam Controller BLE](https://he
 
 ### Xbox One Wireless Controller (models 1697 and 1708 - 2 buttons)
 
-<img src="https://tbekas.github.io/BLE-Gamepad-Client/xbox_one_controller.png" width="320" alt="Xbox One Controller" />
+![Xbox One Controller](https://tbekas.github.io/BLE-Gamepad-Client/xbox_one_controller.png)
 
 #### Firmware:
 
@@ -95,7 +95,7 @@ instructions: [Update your Xbox Wireless Controller](https://support.xbox.com/en
 
 ### Xbox Series S/X Wireless Controller (model 1914 - 3 buttons)
 
-<img src="https://tbekas.github.io/BLE-Gamepad-Client/xbox_series_controller.png" width="320" alt="Xbox One Controller" />
+![Xbox Series Controller](https://tbekas.github.io/BLE-Gamepad-Client/xbox_series_controller.png)
 
 #### Firmware:
 
