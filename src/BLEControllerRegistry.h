@@ -22,7 +22,7 @@ class BLEControllerRegistry {
   ~BLEControllerRegistry();
 
   void registerController(BLEAbstractController* pCtrl);
-  void deregisterController(BLEAbstractController* pCtrl);
+  void deregisterController(BLEAbstractController* pCtrl, bool notifyAutoScan = false);
   void tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   unsigned int getAvailableConnectionSlotCount() const;
 
