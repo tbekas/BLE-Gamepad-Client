@@ -22,10 +22,12 @@ BLEAutoScanner::BLEAutoScanner(TaskHandle_t& autoScanTask,
 
 void BLEAutoScanner::enableAutoScan() {
   _autoScanEnabled = true;
+  xTaskNotifyGive(_autoScanTask);
 }
 
 void BLEAutoScanner::disableAutoScan() {
   _autoScanEnabled = false;
+  xTaskNotifyGive(_autoScanTask);
 }
 
 bool BLEAutoScanner::isAutoScanEnabled() const {
@@ -56,7 +58,7 @@ void BLEAutoScanner::_autoScanTaskFn(void* pvParameters) {
       BLEGC_LOGD(LOG_TAG, "Stopping scan");
       pScan->stop();
     } else {
-      BLEGC_LOGD(LOG_TAG, "No action");
+      BLEGC_LOGT(LOG_TAG, "No action");
     }
   }
 }

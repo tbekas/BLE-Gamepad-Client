@@ -94,7 +94,7 @@ void BLEControllerRegistry::registerController(BLEAbstractController* pCtrl) {
   BLEGC_LOGD(LOG_TAG, "Controller registered");
 }
 
-void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl) {
+void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl, bool notifyAutoScan) {
   pCtrl->markPendingDeregistration();
 
   auto* pClient = pCtrl->getClient();
@@ -140,7 +140,7 @@ void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl) {
 
   if (pControllersNew->size() < CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
     if (xSemaphoreTake(_connectionSlots, 0) == pdTRUE) {
-      xTaskNotifyGive(_autoScanTask);
+      notifyAutoScan && xTaskNotifyGive(_autoScanTask);
     } else {
       BLEGC_LOGE(LOG_TAG, "Cannot remove a connection slot");
     }
@@ -184,6 +184,7 @@ void BLEControllerRegistry::tryConnectController(const NimBLEAdvertisedDevice* p
 
   BLEGC_LOGI(LOG_TAG, "Attempting to connect to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
 
+  // Calling pClient->connect() automatically stops scan
   if (!pClient->connect(true, true, true)) {
     BLEGC_LOGE(LOG_TAG, "Failed to initiate connection, address: %s", std::string(pClient->getPeerAddress()).c_str());
     _sendClientEvent({address, BLEClientConnectingFailed});
@@ -330,7 +331,6 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
         xTaskNotify(self->_callbackTask, reinterpret_cast<uint32_t>(pCtrl), eSetValueWithOverwrite);
 
         BLEGC_LOGD(LOG_TAG, "Controller successfully initialized");
-
         break;
       }
       case BLEClientDisconnected: {
@@ -346,7 +346,7 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
         }
 
         if (pCtrl->isPendingDeregistration()) {
-          self->deregisterController(pCtrl);
+          self->deregisterController(pCtrl, false);
         }
         break;
       }
@@ -354,7 +354,7 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
         self->_deallocateController(pCtrl);
 
         if (pCtrl->isPendingDeregistration()) {
-          self->deregisterController(pCtrl);
+          self->deregisterController(pCtrl, false);
         }
         break;
       }

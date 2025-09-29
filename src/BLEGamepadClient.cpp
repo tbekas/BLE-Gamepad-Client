@@ -29,6 +29,8 @@ void BLEGamepadClient::initBLEDevice() {
  * are connected.
  */
 void BLEGamepadClient::enableAutoScan() {
+  initBLEDevice();
+
   _autoScanner.enableAutoScan();
 }
 
@@ -38,6 +40,8 @@ void BLEGamepadClient::enableAutoScan() {
  * @copydetails enableAutoScan
  */
 void BLEGamepadClient::disableAutoScan() {
+  initBLEDevice();
+
   _autoScanner.disableAutoScan();
 }
 
