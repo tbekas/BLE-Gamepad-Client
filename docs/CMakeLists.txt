@@ -29,5 +29,4 @@ doxygen_add_docs(
         "${MAINPAGE_FILE}"
         "${PROJECT_SOURCE_DIR}/docs"
         "${PROJECT_SOURCE_DIR}/src"
-        "${PROJECT_SOURCE_DIR}/include"
 )
