@@ -23,7 +23,7 @@
     "exclude": [
       ".git",
       ".github",
-      "docs",
+      "docs/CMakeLists.txt",
       "CMakeLists.txt"
     ]
   }
