@@ -57,6 +57,10 @@ bool SteamController::init(NimBLEClient* pClient) {
     return false;
   }
 
+  BLEDeviceInfo deviceInfo;
+  readDeviceInfo(pClient, &deviceInfo);
+  BLEGC_LOGD(LOG_TAG, "%s", std::string(deviceInfo).c_str());
+
   const auto* pSettingsChar = findWritableCharacteristic(pClient, settingsSvcUUID, settingsCharUUID);
   if (!pSettingsChar) {
     return false;
