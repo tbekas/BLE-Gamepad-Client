@@ -18,6 +18,25 @@ static constexpr uint16_t inputReportChrUUID = 0x2a4d;
 static constexpr uint16_t batteryLevelCharUUID = 0x2a19;
 static constexpr uint16_t batteryLevelDscUUID = 0x2904;
 
+static constexpr uint16_t manufacturerNameChrUUID = 0x2a29;
+static constexpr uint16_t modelNameChrUUID = 0x2a24;
+static constexpr uint16_t serialNumberChrUUID = 0x2a25;
+static constexpr uint16_t firmwareRevisionChrUUID = 0x2a26;
+static constexpr uint16_t pnpIdChrUUID = 0x2a50;
+
+struct BLEDeviceInfo {
+  std::string manufacturerName;
+  std::string modelName;
+  std::string serialNumber;
+  std::string firmwareRevision;
+  std::vector<uint8_t> pnpId;
+
+  explicit operator std::string() const {
+    return "BLEDeviceInfo manufacturerName: " + manufacturerName + ", modelName: " + modelName +
+           ", serialNumber: " + serialNumber + ", firmwareRevision: " + firmwareRevision;
+  }
+};
+
 static bool isNull(const NimBLEUUID& uuid) {
   return uuid.bitSize() == 0;
 }
@@ -127,6 +146,7 @@ static NimBLERemoteCharacteristic* findCharacteristic(NimBLEClient* pClient,
     return pChar;
   }
 
+  // TODO change this to Debug log & log error in client methods
   BLEGC_LOGE(UTILS_LOG_TAG,
              "Characteristic not found, service uuid: %s, characteristic uuid: %s, properties: [%s], idx: %d.",
              std::string(serviceUUID).c_str(),
@@ -142,11 +162,45 @@ static NimBLERemoteCharacteristic* findNotifiableCharacteristic(NimBLEClient* pC
   return findCharacteristic(pClient, serviceUUID, characteristicUUID, BLE_GATT_CHR_PROP_NOTIFY, idx);
 }
 
+static NimBLERemoteCharacteristic* findReadableCharacteristic(NimBLEClient* pClient,
+                                                              const NimBLEUUID& serviceUUID,
+                                                              const NimBLEUUID& characteristicUUID,
+                                                              const uint8_t idx = 0) {
+  return findCharacteristic(pClient, serviceUUID, characteristicUUID, BLE_GATT_CHR_PROP_READ, idx);
+}
+
 static NimBLERemoteCharacteristic* findWritableCharacteristic(NimBLEClient* pClient,
                                                               const NimBLEUUID& serviceUUID,
                                                               const NimBLEUUID& characteristicUUID,
                                                               const uint8_t idx = 0) {
   return findCharacteristic(pClient, serviceUUID, characteristicUUID, BLE_GATT_CHR_PROP_WRITE, idx);
+}
+
+static void readDeviceInfo(NimBLEClient* pClient, BLEDeviceInfo* pDeviceInfo) {
+  auto* pService = pClient->getService(deviceInfoSvcUUID);
+  if (!pService) {
+    BLEGC_LOGE(UTILS_LOG_TAG, "Service not found, service uuid: %s", std::string(NimBLEUUID(deviceInfoSvcUUID)).c_str());
+    return;
+  }
+
+  for (auto* pChar : pService->getCharacteristics(false)) {
+    if (!pChar->canRead()) {
+      BLEGC_LOGD(UTILS_LOG_TAG, "Skipping non-readable characteristic, uuid: %s", std::string(pChar->getUUID()).c_str());
+    }
+
+    const auto attValue = pChar->readValue();
+    if (pChar->getUUID() == manufacturerNameChrUUID) {
+      pDeviceInfo->manufacturerName.assign(attValue.c_str(), attValue.length());
+    } else if (pChar->getUUID() == modelNameChrUUID) {
+      pDeviceInfo->modelName.assign(attValue.c_str(), attValue.length());
+    } else if (pChar->getUUID() == serialNumberChrUUID) {
+      pDeviceInfo->serialNumber.assign(attValue.c_str(), attValue.length());
+    } else if (pChar->getUUID() == firmwareRevisionChrUUID) {
+      pDeviceInfo->firmwareRevision.assign(attValue.c_str(), attValue.length());
+    } else if (pChar->getUUID() == pnpIdChrUUID) {
+      pDeviceInfo->pnpId.assign(attValue.begin(), attValue.end());
+    }
+  }
 }
 
 };  // namespace blegc

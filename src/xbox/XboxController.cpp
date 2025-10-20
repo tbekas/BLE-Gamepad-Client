@@ -5,6 +5,8 @@
 #include "BLEValueReceiver.h"
 #include "utils.h"
 
+static auto* LOG_TAG = "XboxController";
+
 using namespace blegc;
 
 XboxController::XboxController(const NimBLEAddress allowedAddress) : BLEBaseController(allowedAddress) {}
@@ -26,6 +28,10 @@ bool XboxController::init(NimBLEClient* pClient) {
   if (!discoverAttributes(pClient)) {
     return false;
   }
+
+  BLEDeviceInfo deviceInfo;
+  readDeviceInfo(pClient, &deviceInfo);
+  BLEGC_LOGD(LOG_TAG, "%s", std::string(deviceInfo).c_str());
 
   auto* pControlsChar = findNotifiableCharacteristic(pClient, hidSvcUUID, inputReportChrUUID);
   auto* pBatteryChar = findNotifiableCharacteristic(pClient, batterySvcUUID, batteryLevelCharUUID);
