@@ -46,20 +46,22 @@ void BLEAutoScanner::_autoScanTaskFn(void* pvParameters) {
     const auto isScanning = pScan->isScanning();
     const auto shouldBeScanning = self->_autoScanEnabled & availConnSlots > 0;
 
-    BLEGC_LOGD(LOG_TAG, "Auto-scan %s, %sscan in progress, available connection slots: %d",
-        self->_autoScanEnabled ? "enabled" : "disabled",
-        isScanning ? "" : "no ",
-        availConnSlots);
-
+    std::string decisionStr;
     if (!isScanning && shouldBeScanning) {
-      BLEGC_LOGD(LOG_TAG, "Starting scan");
+      decisionStr = "starting scan";
       pScan->start(CONFIG_BT_BLEGC_SCAN_DURATION_MS);
     } else if (isScanning && !shouldBeScanning) {
-      BLEGC_LOGD(LOG_TAG, "Stopping scan");
+      decisionStr = "stopping scan";
       pScan->stop();
     } else {
-      BLEGC_LOGT(LOG_TAG, "No action");
+      decisionStr = "no action";
     }
+
+    BLEGC_LOGD(LOG_TAG, "Auto-scan %s, %sscan in progress, available connection slots: %d -> %s",
+        self->_autoScanEnabled ? "enabled" : "disabled",
+        isScanning ? "" : "no ",
+        availConnSlots,
+        decisionStr.c_str());
   }
 }
 
