@@ -2,6 +2,7 @@
 
 #include <NimBLEDevice.h>
 #include "BLEGamepadClient.h"
+#include "utils.h"
 
 static auto* LOG_TAG = "BLEBaseController";
 
@@ -76,6 +77,23 @@ void BLEAbstractController::markDisconnected() {
 
 bool BLEAbstractController::isPendingDeregistration() const {
   return _pendingDeregistration;
+}
+
+bool BLEAbstractController::hidInit(NimBLEClient* pClient) {
+  if (!blegc::discoverAttributes(pClient)) {
+    return false;
+  }
+
+  blegc::readDeviceInfo(pClient, &_deviceInfo);
+  BLEGC_LOGD(LOG_TAG, "%s", std::string(_deviceInfo).c_str());
+
+  std::vector<uint8_t> buffer;
+  blegc::readReportMap(pClient, &buffer);
+#if CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA
+  printHexdump(buffer.data(), buffer.size());
+#endif
+
+  return true;
 }
 
 NimBLEClient* BLEAbstractController::getClient() const {

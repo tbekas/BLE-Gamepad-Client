@@ -203,4 +203,27 @@ static void readDeviceInfo(NimBLEClient* pClient, BLEDeviceInfo* pDeviceInfo) {
   }
 }
 
+static void readReportMap(NimBLEClient* pClient, std::vector<uint8_t>* pReportMap) {
+  auto* pChar = findReadableCharacteristic(pClient, hidSvcUUID, reportMapCharUUID);
+  if (!pChar) {
+    return;
+  }
+
+  const auto attValue = pChar->readValue();
+  pReportMap->assign(attValue.begin(), attValue.end());
+}
+
+static void printHexdump(const uint8_t data[], const size_t dataLen) {
+  char buf[] = "00000000";
+  for (size_t j = 0; j < dataLen; ++j) {
+    CONFIG_BT_BLEGC_LOGGER("%02d: ", j % 100);
+    const uint8_t value = data[j];
+    for (int i = 7; i >= 0; --i) {
+      buf[7 - i] = value >> i & 1 ? '1' : '0';
+    }
+    CONFIG_BT_BLEGC_LOGGER(buf);
+    CONFIG_BT_BLEGC_LOGGER(" 0x%02x\n", value);
+  }
+}
+
 };  // namespace blegc

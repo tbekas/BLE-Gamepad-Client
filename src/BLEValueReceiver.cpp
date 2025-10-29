@@ -102,7 +102,7 @@ void BLEValueReceiver<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
   BLEGC_LOGT(LOG_TAG, "Received a notification. %s", blegc::remoteCharToStr(pChar).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-#if CONFIG_BT_BLEGC_COPY_REPORT_DATA
+#if CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA
     if (_store.event.dataCap < dataLen) {
       _store.event.data = std::make_shared<uint8_t[]>(dataLen);
       _store.event.dataCap = dataLen;
