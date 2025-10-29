@@ -1,6 +1,7 @@
 #pragma once
 
 #include <NimBLEDevice.h>
+#include <utils.h>
 
 class BLEAbstractController {
  public:
@@ -27,6 +28,7 @@ class BLEAbstractController {
   void markConnected();
   void markDisconnected();
   bool isPendingDeregistration() const;
+  bool hidInit(NimBLEClient* pClient);
 
   virtual void callOnConnect() = 0;
   virtual void callOnDisconnect() = 0;
@@ -39,6 +41,7 @@ class BLEAbstractController {
   NimBLEAddress _address;
   NimBLEAddress _allowedAddress;
   NimBLEAddress _lastAddress;
+  blegc::BLEDeviceInfo _deviceInfo;
 };
 
 template <typename T>

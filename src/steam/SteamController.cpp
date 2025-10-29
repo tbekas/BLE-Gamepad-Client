@@ -52,15 +52,8 @@ SteamController::SteamController() : SteamController(NimBLEAddress()) {}
 bool SteamController::isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
   return pAdvertisedDevice->haveName() && pAdvertisedDevice->getName() == "SteamController";
 }
+
 bool SteamController::init(NimBLEClient* pClient) {
-  if (!discoverAttributes(pClient)) {
-    return false;
-  }
-
-  BLEDeviceInfo deviceInfo;
-  readDeviceInfo(pClient, &deviceInfo);
-  BLEGC_LOGD(LOG_TAG, "%s", std::string(deviceInfo).c_str());
-
   const auto* pSettingsChar = findWritableCharacteristic(pClient, settingsSvcUUID, settingsCharUUID);
   if (!pSettingsChar) {
     return false;
@@ -78,6 +71,7 @@ bool SteamController::init(NimBLEClient* pClient) {
 
   return BLEValueReceiver::init(pControlsChar);
 }
+
 bool SteamController::deinit() {
   return true;
 }

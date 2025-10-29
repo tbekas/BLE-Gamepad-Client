@@ -321,7 +321,7 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
           break;
         }
 
-        if (!pCtrl->init(pCtrl->getClient())) {
+        if (!pCtrl->hidInit(pCtrl->getClient()) || !pCtrl->init(pCtrl->getClient())) {
           BLEGC_LOGW(LOG_TAG, "Failed to initialize controller, address: %s", std::string(msg.address).c_str());
           pCtrl->getClient()->disconnect();
           break;

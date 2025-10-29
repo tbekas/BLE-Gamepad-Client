@@ -23,9 +23,9 @@ Logger function used to print log messages to the output.
 **Default**: `printf`  
 <br/>
 
-`CONFIG_BT_BLEGC_COPY_REPORT_DATA`
+`CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA`
 
-Enables copying raw data from incoming reports into the `data` field of event objects. Useful for debugging.  
+Enables storing or printing data transferred to or from the device, including HID reports and the HID report map.
 
 Available values:
 * `0` - disabled

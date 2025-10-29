@@ -40,7 +40,7 @@ jobs:
           build_unflags = -std=gnu++14
           build_flags = 
             -D CONFIG_BT_BLEGC_LOG_LEVEL=5
-            -D CONFIG_BT_BLEGC_COPY_REPORT_DATA=1
+            -D CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA=1
 
           [env:esp32dev]
           board = esp32dev
