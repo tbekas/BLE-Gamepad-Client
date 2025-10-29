@@ -14,9 +14,9 @@ class BLEValueReceiver {
 
   /**
    * @brief Read the latest event from the connected controller.
-   * @param[out] event Reference to the event instance where the data will be written.
+   * @param[out] event Pointer to the event instance where the data will be written.
    */
-  void read(T& event);
+  void read(T* event);
 
   /**
    * @brief Sets the callback to be invoked when the controller sends a new event.

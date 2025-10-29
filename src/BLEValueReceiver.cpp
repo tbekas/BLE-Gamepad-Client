@@ -68,9 +68,9 @@ bool BLEValueReceiver<T>::init(NimBLERemoteCharacteristic* pChar) {
 }
 
 template <typename T>
-void BLEValueReceiver<T>::read(T& event) {
+void BLEValueReceiver<T>::read(T* event) {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  event = _store.event;
+  *event = _store.event;
   configASSERT(xSemaphoreGive(_storeMutex));
 }
 
