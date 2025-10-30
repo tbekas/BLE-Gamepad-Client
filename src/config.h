@@ -4,15 +4,11 @@
 #include <nimconfig.h>
 
 #ifndef CONFIG_BT_BLEGC_LOG_LEVEL
-#if defined(ARDUINO_ARCH_ESP32) && defined(CORE_DEBUG_LEVEL)
+#if defined(CORE_DEBUG_LEVEL)
 #define CONFIG_BT_BLEGC_LOG_LEVEL CORE_DEBUG_LEVEL
 #else
-#define CONFIG_BT_BLEGC_LOG_LEVEL 0
+#define CONFIG_BT_BLEGC_LOG_LEVEL 1
 #endif
-#endif
-
-#ifndef CONFIG_BT_BLEGC_LOGGER
-#define CONFIG_BT_BLEGC_LOGGER printf
 #endif
 
 #ifndef CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA

@@ -13,7 +13,7 @@ BLEAbstractController::BLEAbstractController(const NimBLEAddress allowedAddress)
       _lastAddress() {}
 
 void BLEAbstractController::begin() {
-  BLEGamepadClient::initBLEDevice();
+  BLEGamepadClient::init();
 
   BLEGamepadClient::_controllerRegistry.registerController(this);
 }
@@ -85,12 +85,12 @@ bool BLEAbstractController::hidInit(NimBLEClient* pClient) {
   }
 
   blegc::readDeviceInfo(pClient, &_deviceInfo);
-  BLEGC_LOGD(LOG_TAG, "%s", std::string(_deviceInfo).c_str());
+  BLEGC_LOGD("%s", std::string(_deviceInfo).c_str());
 
   std::vector<uint8_t> buffer;
   blegc::readReportMap(pClient, &buffer);
 #if CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA
-  blegc::printHexdump(buffer.data(), buffer.size());
+  BLEGC_LOG_BUFFER(buffer.data(), buffer.size());
 #endif
 
   return true;
@@ -103,7 +103,7 @@ NimBLEClient* BLEAbstractController::getClient() const {
 
   auto* pClient = NimBLEDevice::getClientByPeerAddress(_address);
   if (!pClient) {
-    BLEGC_LOGE(LOG_TAG, "BLE client not found, address %s", std::string(_address).c_str());
+    BLEGC_LOGE("BLE client not found, address %s", std::string(_address).c_str());
     return nullptr;
   }
   return pClient;
@@ -114,12 +114,12 @@ void BLEAbstractController::disconnect() {
     auto* pClient = getClient();
     if (pClient) {
       if (pClient->disconnect()) {
-        BLEGC_LOGD(LOG_TAG, "Disconnect command sent successfully");
+        BLEGC_LOGD("Disconnect command sent successfully");
       } else {
-        BLEGC_LOGD(LOG_TAG, "Disconnect command failed");
+        BLEGC_LOGD("Disconnect command failed");
       }
     }
   } else {
-    BLEGC_LOGD(LOG_TAG, "Cannot disconnect controller that's not connected");
+    BLEGC_LOGD("Cannot disconnect controller that's not connected");
   }
 }

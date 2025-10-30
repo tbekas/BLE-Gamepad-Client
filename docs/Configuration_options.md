@@ -12,15 +12,9 @@ Available values:
 * `2` = WARNING
 * `3` = INFO
 * `4` = DEBUG
-* `5` = TRACE
+* `5` = VERBOSE
 
-**Default**: `CORE_DEBUG_LEVEL` or `0` (NONE) if `CORE_DEBUG_LEVEL` is not defined  
-<br/>
-
-`CONFIG_BT_BLEGC_LOGGER`
-
-Logger function used to print log messages to the output.  
-**Default**: `printf`  
+**Default**: `CORE_DEBUG_LEVEL` or `1` (ERROR) if `CORE_DEBUG_LEVEL` is not defined  
 <br/>
 
 `CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA`

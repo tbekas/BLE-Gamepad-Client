@@ -6,8 +6,6 @@
 
 namespace blegc {
 
-static auto* UTILS_LOG_TAG = "utils";
-
 static constexpr uint16_t deviceInfoSvcUUID = 0x180a;
 static constexpr uint16_t hidSvcUUID = 0x1812;
 static constexpr uint16_t batterySvcUUID = 0x180f;
@@ -94,16 +92,16 @@ static std::string remoteCharToStr(const NimBLERemoteCharacteristic* pChar) {
 
 static bool discoverAttributes(NimBLEClient* pClient) {
   if (!pClient->discoverAttributes()) {
-    BLEGC_LOGE(UTILS_LOG_TAG, "Failed to discover attributes, address %s",
+    BLEGC_LOGE("Failed to discover attributes, address %s",
                std::string(pClient->getPeerAddress()).c_str());
     return false;
   }
 
 #if CONFIG_BT_BLEGC_LOG_LEVEL >= 4
   for (auto& pService : pClient->getServices(false)) {
-    BLEGC_LOGD(UTILS_LOG_TAG, "Discovered %s", remoteSvcToStr(pService).c_str());
+    BLEGC_LOGD("Discovered %s", remoteSvcToStr(pService).c_str());
     for (auto& pChar : pService->getCharacteristics(false)) {
-      BLEGC_LOGD(UTILS_LOG_TAG, "Discovered %s", remoteCharToStr(pChar).c_str());
+      BLEGC_LOGD("Discovered %s", remoteCharToStr(pChar).c_str());
     }
   }
 #endif
@@ -117,14 +115,13 @@ static NimBLERemoteCharacteristic* findCharacteristic(NimBLEClient* pClient,
                                                       const uint8_t idx = 0) {
   std::string propStr;
   writeProperties(propStr, properties, ", ");
-  BLEGC_LOGD(UTILS_LOG_TAG,
-             "Looking up for characteristic, service uuid: %s, characteristic uuid: %s, properties: [%s], idx: %d.",
+  BLEGC_LOGD("Looking up for characteristic, service uuid: %s, characteristic uuid: %s, properties: [%s], idx: %d.",
              std::string(serviceUUID).c_str(),
              isNull(characteristicUUID) ? "null" : std::string(characteristicUUID).c_str(), propStr.c_str(), idx);
 
   auto* pService = pClient->getService(serviceUUID);
   if (!pService) {
-    BLEGC_LOGE(UTILS_LOG_TAG, "Service not found, service uuid: %s", std::string(serviceUUID).c_str());
+    BLEGC_LOGE("Service not found, service uuid: %s", std::string(serviceUUID).c_str());
     return nullptr;
   }
 
@@ -147,8 +144,7 @@ static NimBLERemoteCharacteristic* findCharacteristic(NimBLEClient* pClient,
   }
 
   // TODO change this to Debug log & log error in client methods
-  BLEGC_LOGE(UTILS_LOG_TAG,
-             "Characteristic not found, service uuid: %s, characteristic uuid: %s, properties: [%s], idx: %d.",
+  BLEGC_LOGE("Characteristic not found, service uuid: %s, characteristic uuid: %s, properties: [%s], idx: %d.",
              std::string(serviceUUID).c_str(),
              isNull(characteristicUUID) ? "null" : std::string(characteristicUUID).c_str(), propStr.c_str(), idx);
 
@@ -179,13 +175,13 @@ static NimBLERemoteCharacteristic* findWritableCharacteristic(NimBLEClient* pCli
 static void readDeviceInfo(NimBLEClient* pClient, BLEDeviceInfo* pDeviceInfo) {
   auto* pService = pClient->getService(deviceInfoSvcUUID);
   if (!pService) {
-    BLEGC_LOGE(UTILS_LOG_TAG, "Service not found, service uuid: %s", std::string(NimBLEUUID(deviceInfoSvcUUID)).c_str());
+    BLEGC_LOGE("Service not found, service uuid: %s", std::string(NimBLEUUID(deviceInfoSvcUUID)).c_str());
     return;
   }
 
   for (auto* pChar : pService->getCharacteristics(false)) {
     if (!pChar->canRead()) {
-      BLEGC_LOGD(UTILS_LOG_TAG, "Skipping non-readable characteristic, uuid: %s", std::string(pChar->getUUID()).c_str());
+      BLEGC_LOGD("Skipping non-readable characteristic, uuid: %s", std::string(pChar->getUUID()).c_str());
     }
 
     const auto attValue = pChar->readValue();
@@ -213,17 +209,4 @@ static void readReportMap(NimBLEClient* pClient, std::vector<uint8_t>* pReportMa
   pReportMap->assign(attValue.begin(), attValue.end());
 }
 
-static void printHexdump(const uint8_t data[], const size_t dataLen) {
-  char buf[] = "00000000";
-  for (size_t j = 0; j < dataLen; ++j) {
-    CONFIG_BT_BLEGC_LOGGER("%02d: ", j % 100);
-    const uint8_t value = data[j];
-    for (int i = 7; i >= 0; --i) {
-      buf[7 - i] = value >> i & 1 ? '1' : '0';
-    }
-    CONFIG_BT_BLEGC_LOGGER(buf);
-    CONFIG_BT_BLEGC_LOGGER(" 0x%02x\n", value);
-  }
-}
-
-};  // namespace blegc
+}  // namespace blegc

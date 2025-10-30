@@ -44,7 +44,7 @@ bool BLEValueWriter<T>::init(NimBLERemoteCharacteristic* pChar) {
   }
 
   if (!pChar->canWrite()) {
-    BLEGC_LOGE(LOG_TAG, "Characteristic not able to write. %s", blegc::remoteCharToStr(pChar).c_str());
+    BLEGC_LOGE("Characteristic not able to write. %s", blegc::remoteCharToStr(pChar).c_str());
     return false;
   }
 
@@ -75,10 +75,10 @@ void BLEValueWriter<T>::write(T& cmd) {
       xTaskNotifyGive(_sendDataTask);
       break;
     case BLEEncodeResult::InvalidValue:
-      BLEGC_LOGE(LOG_TAG, "Encoding failed, invalid value");
+      BLEGC_LOGE("Encoding failed, invalid value");
       break;
     case BLEEncodeResult::BufferTooShort:
-      BLEGC_LOGE(LOG_TAG, "Encoding failed, buffer too short");
+      BLEGC_LOGE("Encoding failed, buffer too short");
       break;
   }
 }
@@ -105,11 +105,11 @@ void BLEValueWriter<T>::_sendDataFn(void* pvParameters) {
     }
 
     if (!self->_pChar) {
-      BLEGC_LOGD(LOG_TAG, "Writer not initialized, sending data aborted");
+      BLEGC_LOGD("Writer not initialized, sending data aborted");
       continue;
     }
 
-    BLEGC_LOGT(LOG_TAG, "Writing value. %s", blegc::remoteCharToStr(self->_pChar).c_str());
+    BLEGC_LOGV("Writing value. %s", blegc::remoteCharToStr(self->_pChar).c_str());
 
     self->_pChar->writeValue(self->_store.pSendBuffer, used);
   }

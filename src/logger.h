@@ -1,33 +1,38 @@
 #pragma once
-
 #include "config.h"
+#include "esp_log.h"
 
-#if CONFIG_BT_BLEGC_LOG_LEVEL >= 5
-#define BLEGC_LOGT(tag, format, ...) CONFIG_BT_BLEGC_LOGGER("T %s: " format "\n", tag, ##__VA_ARGS__)
-#else
-#define BLEGC_LOGT(tag, format, ...) (void)0
-#endif
+static auto* BLEGC_LOG_TAG = "blegc";
 
-#if CONFIG_BT_BLEGC_LOG_LEVEL >= 4
-#define BLEGC_LOGD(tag, format, ...) CONFIG_BT_BLEGC_LOGGER("D %s: " format "\n", tag, ##__VA_ARGS__)
-#else
-#define BLEGC_LOGD(tag, format, ...) (void)0
-#endif
+namespace blegc {
 
-#if CONFIG_BT_BLEGC_LOG_LEVEL >= 3
-#define BLEGC_LOGI(tag, format, ...) CONFIG_BT_BLEGC_LOGGER("I %s: " format "\n", tag, ##__VA_ARGS__)
-#else
-#define BLEGC_LOGI(tag, format, ...) (void)0
+static void setDefaultLogLevel() {
+#if CONFIG_BT_BLEGC_LOG_LEVEL == 0
+  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_NONE);
+#elif CONFIG_BT_BLEGC_LOG_LEVEL == 1
+  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_ERROR);
+#elif CONFIG_BT_BLEGC_LOG_LEVEL == 2
+  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_WARN);
+#elif CONFIG_BT_BLEGC_LOG_LEVEL == 3
+  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_INFO);
+#elif CONFIG_BT_BLEGC_LOG_LEVEL == 4
+  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_DEBUG);
+#elif CONFIG_BT_BLEGC_LOG_LEVEL == 5
+  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_VERBOSE);
+#elif CONFIG_BT_BLEGC_LOG_LEVEL >= 6
+  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_MAX);
 #endif
+}
 
-#if CONFIG_BT_BLEGC_LOG_LEVEL >= 2
-#define BLEGC_LOGW(tag, format, ...) CONFIG_BT_BLEGC_LOGGER("W %s: " format "\n", tag, ##__VA_ARGS__)
-#else
-#define BLEGC_LOGW(tag, format, ...) (void)0
-#endif
+static void setLogLevelDebug() {
+  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_DEBUG);
+}
 
-#if CONFIG_BT_BLEGC_LOG_LEVEL >= 1
-#define BLEGC_LOGE(tag, format, ...) CONFIG_BT_BLEGC_LOGGER("E %s: " format "\n", tag, ##__VA_ARGS__)
-#else
-#define BLEGC_LOGE(tag, format, ...) (void)0
-#endif
+}  // namespace blegc
+
+#define BLEGC_LOGV(format, ...) ESP_LOG_LEVEL(ESP_LOG_VERBOSE, BLEGC_LOG_TAG, format, ##__VA_ARGS__)
+#define BLEGC_LOGD(format, ...) ESP_LOG_LEVEL(ESP_LOG_DEBUG, BLEGC_LOG_TAG, format, ## __VA_ARGS__)
+#define BLEGC_LOGI(format, ...) ESP_LOG_LEVEL(ESP_LOG_INFO, BLEGC_LOG_TAG, format, ## __VA_ARGS__)
+#define BLEGC_LOGW(format, ...) ESP_LOG_LEVEL(ESP_LOG_WARN, BLEGC_LOG_TAG, format, ## __VA_ARGS__)
+#define BLEGC_LOGE(format, ...) ESP_LOG_LEVEL(ESP_LOG_ERROR, BLEGC_LOG_TAG, format, ## __VA_ARGS__)
+#define BLEGC_LOG_BUFFER(buf, bufLen) ESP_LOG_BUFFER_HEX_LEVEL(BLEGC_LOG_TAG, buf, bufLen, ESP_LOG_DEBUG)

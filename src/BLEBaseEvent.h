@@ -20,13 +20,13 @@ struct BLEBaseEvent {
   size_t dataCap{0};
 #endif
 
-  /// @brief Prints the report data attached to this event. To use this function set the config param
+  /// @brief Logs the report data attached to this event. To use this function set the config param
   /// CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA to 1.
-  void printReportHexdump() const {
+  void logReportHexdump() const {
 #if CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA
-    blegc::printHexdump(data.get(), dataLen);
+    BLEGC_LOG_BUFFER(data.get(), dataLen);
 #else
-    CONFIG_BT_BLEGC_LOGGER("To use printReportHexdump set CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA to 1\n");
+    BLEGC_LOGI("To use printReportHexdump set CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA to 1");
 #endif
   }
 };

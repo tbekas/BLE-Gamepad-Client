@@ -21,7 +21,7 @@ inline uint8_t encodeDuration(uint32_t durationMs) {
 
 BLEEncodeResult XboxVibrationsCommand::encode(size_t& usedBytes, uint8_t buffer[], size_t bufferLen) {
   if (bufferLen < vibrationsDataLen) {
-    BLEGC_LOGD(LOG_TAG, "Expected buffer of at least %d bytes, was %d bytes", vibrationsDataLen, bufferLen);
+    BLEGC_LOGD("Expected buffer of at least %d bytes, was %d bytes", vibrationsDataLen, bufferLen);
     return BLEEncodeResult::BufferTooShort;
   }
 

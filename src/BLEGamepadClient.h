@@ -11,15 +11,17 @@ class BLEGamepadClient {
  public:
   BLEGamepadClient() = delete;
 
-  static void initBLEDevice();
+  static void init(bool initBLE = true);
   static void enableAutoScan();
   static void disableAutoScan();
   static bool isAutoScanEnabled();
   static void deleteBonds();
+  static void enableDebugLog();
 
   friend class BLEAbstractController;
 
  private:
+  static bool _initialized;
   static TaskHandle_t _autoScanTask;
   static BLEAutoScanner _autoScanner;
   static BLEControllerRegistry _controllerRegistry;
