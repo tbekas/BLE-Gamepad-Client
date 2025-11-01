@@ -10,6 +10,13 @@ TaskHandle_t BLEGamepadClient::_autoScanTask;
 BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_autoScanTask);
 BLEAutoScanner BLEGamepadClient::_autoScanner(_autoScanTask, _controllerRegistry);
 
+/**
+ * @brief Initializes the library.
+ *
+ * This method is called automatically, so there is no need to invoke it explicitly in your application code.
+ *
+ * @param initBLE Specifies whether to initialize the NimBLE library.
+ */
 void BLEGamepadClient::init(const bool initBLE) {
   if (!_initialized) {
     blegc::setDefaultLogLevel();
