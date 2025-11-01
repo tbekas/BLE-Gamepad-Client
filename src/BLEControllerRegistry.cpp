@@ -17,13 +17,14 @@ BLEClientEvent::operator std::string() const {
   std::string kindStr;
   // clang-format off
   switch (kind) {
+    case BLEClientConnected: kindStr = "BLEClientConnected"; break;
     case BLEClientBonded: kindStr = "BLEClientBonded"; break;
     case BLEClientDisconnected: kindStr = "BLEClientDisconnected"; break;
     case BLEClientConnectingFailed: kindStr = "BLEClientConnectingFailed"; break;
     case BLEClientBondingFailed: kindStr = "BLEClientBondingFailed"; break;
   }
   // clang-format on
-  return "BLEClientStatus address: " + std::string(address) + ", kind: " + kindStr;
+  return "BLEClientEvent address: " + std::string(address) + ", kind: " + kindStr;
 }
 
 BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask)
@@ -275,7 +276,7 @@ bool BLEControllerRegistry::_deallocateController(BLEAbstractController* pCtrl) 
 }
 void BLEControllerRegistry::_sendClientEvent(const BLEClientEvent& msg) const {
   if (xQueueSend(_clientEventQueue, &msg, 0) != pdPASS) {
-    BLEGC_LOGE("Failed to send client status message");
+    BLEGC_LOGE("Failed to send client event message");
   }
 }
 
@@ -302,11 +303,11 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
   while (true) {
     BLEClientEvent msg{};
     if (xQueueReceive(self->_clientEventQueue, &msg, portMAX_DELAY) != pdTRUE) {
-      BLEGC_LOGE("Failed to receive client status message");
+      BLEGC_LOGE("Failed to receive client event message");
       return;
     }
 
-    BLEGC_LOGD("Handling client status message %s", std::string(msg).c_str());
+    BLEGC_LOGD("Handling message %s", std::string(msg).c_str());
 
     auto* pCtrl = self->_getController(msg.address);
     if (!pCtrl) {
@@ -314,6 +315,13 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
     }
 
     switch (msg.kind) {
+      case BLEClientConnected: {
+        if (!pCtrl->getClient()->secureConnection(true)) {  // async = true
+          BLEGC_LOGE("Failed to initiate secure connection, address: %s", std::string(msg.address).c_str());
+          pCtrl->getClient()->disconnect();
+        }
+        break;
+      }
       case BLEClientBonded: {
         if (pCtrl->isPendingDeregistration()) {
           pCtrl->getClient()->disconnect();
@@ -371,11 +379,7 @@ BLEControllerRegistry::ClientCallbacks::ClientCallbacks(BLEControllerRegistry& c
 
 void BLEControllerRegistry::ClientCallbacks::onConnect(NimBLEClient* pClient) {
   BLEGC_LOGD("Connected to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
-  if (!pClient->secureConnection(true)) {  // async = true
-    BLEGC_LOGE("Failed to initiate secure connection, address: %s",
-               std::string(pClient->getPeerAddress()).c_str());
-    _controllerRegistry._sendClientEvent({pClient->getPeerAddress(), BLEClientBondingFailed});
-  }
+  _controllerRegistry._sendClientEvent({pClient->getPeerAddress(), BLEClientConnected});
 }
 
 void BLEControllerRegistry::ClientCallbacks::onConnectFail(NimBLEClient* pClient, int reason) {
