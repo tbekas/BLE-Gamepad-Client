@@ -320,7 +320,19 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
           break;
         }
 
-        if (!pCtrl->hidInit(pCtrl->getClient()) || !pCtrl->init(pCtrl->getClient())) {
+        auto retryCount = 2;
+        while (!pCtrl->hidInit(pCtrl->getClient()) && --retryCount) {}
+
+        if (retryCount == 0) {
+          BLEGC_LOGW("Failed to initialize hid device, address: %s", std::string(msg.address).c_str());
+          pCtrl->getClient()->disconnect();
+          break;
+        }
+
+        retryCount = 2;
+        while (!pCtrl->init(pCtrl->getClient()) && --retryCount) {}
+
+        if (retryCount == 0) {
           BLEGC_LOGW("Failed to initialize controller, address: %s", std::string(msg.address).c_str());
           pCtrl->getClient()->disconnect();
           break;
