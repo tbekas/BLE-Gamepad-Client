@@ -1,6 +1,6 @@
 {
   "name": "BLE-Gamepad-Client",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "Enables connecting BLE gamepads to ESP32 boards. Supports the Xbox Wireless Controller and the Steam Controller.",
   "keywords": "gamepad, controller, hid, ble, bluetooth, xbox, steam",
   "homepage": "https://tbekas.github.io/BLE-Gamepad-Client",
