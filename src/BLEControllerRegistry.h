@@ -6,7 +6,11 @@
 #include "BLEBaseController.h"
 
 enum BLEClientEventKind : uint8_t {
-  BLEClientBonded = 0, BLEClientDisconnected = 1, BLEClientConnectingFailed = 2, BLEClientBondingFailed = 3,
+  BLEClientConnected = 0,
+  BLEClientBonded = 1,
+  BLEClientDisconnected = 2,
+  BLEClientConnectingFailed = 3,
+  BLEClientBondingFailed = 4,
 };
 
 struct BLEClientEvent {
