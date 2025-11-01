@@ -44,21 +44,21 @@ bool BLEValueReceiver<T>::init(NimBLERemoteCharacteristic* pChar) {
   }
 
   if (!pChar->canNotify()) {
-    BLEGC_LOGE(LOG_TAG, "Characteristic not able to notify. %s", blegc::remoteCharToStr(pChar).c_str());
+    BLEGC_LOGE("Characteristic not able to notify. %s", blegc::remoteCharToStr(pChar).c_str());
     return false;
   }
 
   auto handlerFn = std::bind(&BLEValueReceiver::_handleNotify, this, std::placeholders::_1, std::placeholders::_2,
                              std::placeholders::_3, std::placeholders::_4);
 
-  BLEGC_LOGD(LOG_TAG, "Subscribing to notifications. %s", blegc::remoteCharToStr(pChar).c_str());
+  BLEGC_LOGD("Subscribing to notifications. %s", blegc::remoteCharToStr(pChar).c_str());
 
   if (!pChar->subscribe(true, handlerFn, false)) {
-    BLEGC_LOGE(LOG_TAG, "Failed to subscribe to notifications. %s", blegc::remoteCharToStr(pChar).c_str());
+    BLEGC_LOGE("Failed to subscribe to notifications. %s", blegc::remoteCharToStr(pChar).c_str());
     return false;
   }
 
-  BLEGC_LOGD(LOG_TAG, "Successfully subscribed to notifications. %s", blegc::remoteCharToStr(pChar).c_str());
+  BLEGC_LOGD("Successfully subscribed to notifications. %s", blegc::remoteCharToStr(pChar).c_str());
 
   auto* pClient = pChar->getClient();
   if (pClient) {
@@ -99,7 +99,7 @@ void BLEValueReceiver<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
                                         uint8_t* pData,
                                         size_t dataLen,
                                         bool isNotify) {
-  BLEGC_LOGT(LOG_TAG, "Received a notification. %s", blegc::remoteCharToStr(pChar).c_str());
+  BLEGC_LOGV("Received a notification. %s", blegc::remoteCharToStr(pChar).c_str());
 
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
 #if CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA
@@ -122,10 +122,10 @@ void BLEValueReceiver<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
       }
       break;
     case BLEDecodeResult::NotSupported:
-      BLEGC_LOGT(LOG_TAG, "Report not supported. %s", blegc::remoteCharToStr(pChar).c_str());
+      BLEGC_LOGV("Report not supported. %s", blegc::remoteCharToStr(pChar).c_str());
       break;
     case BLEDecodeResult::InvalidReport:
-      BLEGC_LOGE(LOG_TAG, "Invalid report. %s", blegc::remoteCharToStr(pChar).c_str());
+      BLEGC_LOGE("Invalid report. %s", blegc::remoteCharToStr(pChar).c_str());
       break;
   }
 }

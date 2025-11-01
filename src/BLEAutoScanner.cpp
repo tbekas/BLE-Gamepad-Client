@@ -22,12 +22,12 @@ BLEAutoScanner::BLEAutoScanner(TaskHandle_t& autoScanTask,
 
 void BLEAutoScanner::enableAutoScan() {
   _autoScanEnabled = true;
-  xTaskNotifyGive(_autoScanTask);
+  NimBLEDevice::isInitialized() && xTaskNotifyGive(_autoScanTask);
 }
 
 void BLEAutoScanner::disableAutoScan() {
   _autoScanEnabled = false;
-  xTaskNotifyGive(_autoScanTask);
+  NimBLEDevice::isInitialized() && xTaskNotifyGive(_autoScanTask);
 }
 
 bool BLEAutoScanner::isAutoScanEnabled() const {
@@ -57,7 +57,7 @@ void BLEAutoScanner::_autoScanTaskFn(void* pvParameters) {
       decisionStr = "no action";
     }
 
-    BLEGC_LOGD(LOG_TAG, "Auto-scan %s, %sscan in progress, available connection slots: %d -> %s",
+    BLEGC_LOGD("Auto-scan %s, %sscan in progress, available connection slots: %d -> %s",
         self->_autoScanEnabled ? "enabled" : "disabled",
         isScanning ? "" : "no ",
         availConnSlots,
@@ -68,7 +68,7 @@ void BLEAutoScanner::_autoScanTaskFn(void* pvParameters) {
 BLEAutoScanner::ScanCallbacks::ScanCallbacks(BLEAutoScanner& autoScanner) : _autoScanner(autoScanner) {}
 
 void BLEAutoScanner::ScanCallbacks::onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
-  BLEGC_LOGD(LOG_TAG, "Device discovered, address: %s, address type: %d, name: %s",
+  BLEGC_LOGD("Device discovered, address: %s, address type: %d, name: %s",
              std::string(pAdvertisedDevice->getAddress()).c_str(), pAdvertisedDevice->getAddressType(),
              pAdvertisedDevice->getName().c_str());
 
@@ -76,6 +76,6 @@ void BLEAutoScanner::ScanCallbacks::onResult(const NimBLEAdvertisedDevice* pAdve
 }
 
 void BLEAutoScanner::ScanCallbacks::onScanEnd(const NimBLEScanResults& results, int reason) {
-  BLEGC_LOGD(LOG_TAG, "Scan ended, reason: 0x%04x %s", reason, NimBLEUtils::returnCodeToString(reason));
+  BLEGC_LOGD("Scan ended, reason: 0x%04x %s", reason, NimBLEUtils::returnCodeToString(reason));
   xTaskNotifyGive(_autoScanner._autoScanTask);
 }

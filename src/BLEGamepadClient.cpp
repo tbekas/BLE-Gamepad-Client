@@ -5,15 +5,20 @@
 #include "BLEControllerRegistry.h"
 #include "logger.h"
 
-static auto* LOG_TAG = "BLEGamepadClient";
-
+bool BLEGamepadClient::_initialized = false;
 TaskHandle_t BLEGamepadClient::_autoScanTask;
 BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_autoScanTask);
 BLEAutoScanner BLEGamepadClient::_autoScanner(_autoScanTask, _controllerRegistry);
 
-void BLEGamepadClient::initBLEDevice() {
-  if (!NimBLEDevice::isInitialized()) {
-    BLEGC_LOGD(LOG_TAG, "Initializing NimBLE");
+void BLEGamepadClient::init(const bool initBLE) {
+  if (!_initialized) {
+    blegc::setDefaultLogLevel();
+
+    _initialized = true;
+  }
+
+  if (initBLE && !NimBLEDevice::isInitialized()) {
+    BLEGC_LOGD("Initializing NimBLE");
     NimBLEDevice::init(CONFIG_BT_BLEGC_DEVICE_NAME);
     NimBLEDevice::setPower(CONFIG_BT_BLEGC_POWER_DBM);
     NimBLEDevice::setSecurityAuth(CONFIG_BT_BLEGC_SECURITY_AUTH);
@@ -29,7 +34,7 @@ void BLEGamepadClient::initBLEDevice() {
  * are connected.
  */
 void BLEGamepadClient::enableAutoScan() {
-  initBLEDevice();
+  init(false);
 
   _autoScanner.enableAutoScan();
 }
@@ -40,7 +45,7 @@ void BLEGamepadClient::enableAutoScan() {
  * @copydetails enableAutoScan
  */
 void BLEGamepadClient::disableAutoScan() {
-  initBLEDevice();
+  init(false);
 
   _autoScanner.disableAutoScan();
 }
@@ -53,6 +58,8 @@ void BLEGamepadClient::disableAutoScan() {
  * @return True if auto-scan is enabled; false otherwise.
  */
 bool BLEGamepadClient::isAutoScanEnabled() {
+  init(false);
+
   return _autoScanner.isAutoScanEnabled();
 }
 
@@ -60,7 +67,16 @@ bool BLEGamepadClient::isAutoScanEnabled() {
  * @brief Deletes all stored bonding information.
  */
 void BLEGamepadClient::deleteBonds() {
-  initBLEDevice();
+  init();
 
   NimBLEDevice::deleteAllBonds();
+}
+
+/**
+ * @brief Enables debug-level logging.
+ */
+void BLEGamepadClient::enableDebugLog() {
+  init(false);
+
+  blegc::setLogLevelDebug();
 }
