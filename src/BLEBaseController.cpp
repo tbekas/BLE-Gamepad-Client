@@ -4,8 +4,6 @@
 #include "BLEGamepadClient.h"
 #include "utils.h"
 
-static auto* LOG_TAG = "BLEBaseController";
-
 BLEAbstractController::BLEAbstractController(const NimBLEAddress allowedAddress)
     : _pendingDeregistration(false),
       _address(),

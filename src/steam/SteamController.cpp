@@ -5,8 +5,6 @@
 #include "BLEValueReceiver.h"
 #include "utils.h"
 
-static auto* LOG_TAG = "SteamController";
-
 // This is a small subset of available commands and register ids. Check the Linux driver for more
 // https://github.com/torvalds/linux/blob/master/drivers/hid/hid-steam.c
 #define CMD_CLEAR_MAPPINGS 0x81

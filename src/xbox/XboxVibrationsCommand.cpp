@@ -3,8 +3,6 @@
 #include <NimBLEDevice.h>
 #include "logger.h"
 
-static auto* LOG_TAG = "XboxVibrationsCommand";
-
 constexpr size_t vibrationsDataLen = 8;
 
 inline uint8_t encodeMotorEnable(float power, int bit) {

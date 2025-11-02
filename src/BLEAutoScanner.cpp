@@ -4,8 +4,6 @@
 #include "BLEControllerRegistry.h"
 #include "logger.h"
 
-static auto* LOG_TAG = "BLEAutoScanner";
-
 BLEAutoScanner::BLEAutoScanner(TaskHandle_t& autoScanTask,
                                BLEControllerRegistry& controllerRegistry)
     : _autoScanTask(autoScanTask),

@@ -3,8 +3,6 @@
 #include <NimBLEDevice.h>
 #include "logger.h"
 
-static auto* LOG_TAG = "XboxControlsEvent";
-
 constexpr size_t batteryDataLen = 1;
 
 BLEDecodeResult XboxBatteryEvent::decode(uint8_t data[], size_t dataLen) {

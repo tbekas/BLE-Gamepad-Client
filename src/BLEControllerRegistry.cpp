@@ -11,8 +11,6 @@
 #include "config.h"
 #include "logger.h"
 
-static auto* LOG_TAG = "BLEControllerRegistry";
-
 BLEClientEvent::operator std::string() const {
   std::string kindStr;
   // clang-format off

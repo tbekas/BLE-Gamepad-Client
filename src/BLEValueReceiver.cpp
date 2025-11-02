@@ -9,8 +9,6 @@
 #include "xbox/XboxBatteryEvent.h"
 #include "xbox/XboxControlsEvent.h"
 
-static auto* LOG_TAG = "BLEValueReceiver";
-
 template <typename T>
 BLEValueReceiver<T>::BLEValueReceiver()
     :
