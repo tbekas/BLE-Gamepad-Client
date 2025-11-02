@@ -4,8 +4,6 @@
 #include <bitset>
 #include "logger.h"
 
-static auto* LOG_TAG = "XboxControlsEvent";
-
 constexpr size_t controlsDataLen = 16;
 constexpr uint16_t axisMax = 0xffff;
 constexpr uint16_t triggerMax = 0x3ff;

@@ -7,8 +7,6 @@
 #include "config.h"
 #include "xbox/XboxVibrationsCommand.h"
 
-static auto* LOG_TAG = "BLEValueWriter";
-
 constexpr size_t MAX_CAPACITY = CONFIG_BT_BLEGC_WRITER_MAX_CAPACITY;
 constexpr size_t INIT_CAPACITY = 8;
 

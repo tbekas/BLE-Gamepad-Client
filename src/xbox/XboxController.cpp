@@ -5,8 +5,6 @@
 #include "BLEValueReceiver.h"
 #include "utils.h"
 
-static auto* LOG_TAG = "XboxController";
-
 using namespace blegc;
 
 XboxController::XboxController(const NimBLEAddress allowedAddress) : BLEBaseController(allowedAddress) {}
