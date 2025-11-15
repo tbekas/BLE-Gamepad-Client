@@ -24,7 +24,7 @@ struct BLEBaseEvent {
   /// CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA to 1.
   void logReportHexdump() const {
 #if CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA
-    BLEGC_LOG_BUFFER(data.get(), dataLen);
+    BLEGC_LOGD_BUFFER(data.get(), dataLen);
 #else
     BLEGC_LOGI("To use printReportHexdump set CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA to 1");
 #endif

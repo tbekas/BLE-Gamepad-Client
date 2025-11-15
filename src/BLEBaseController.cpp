@@ -88,7 +88,7 @@ bool BLEAbstractController::hidInit(NimBLEClient* pClient) {
   std::vector<uint8_t> buffer;
   blegc::readReportMap(pClient, &buffer);
 #if CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA
-  BLEGC_LOG_BUFFER(buffer.data(), buffer.size());
+  BLEGC_LOGD_BUFFER(buffer.data(), buffer.size());
 #endif
 
   return true;
