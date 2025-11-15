@@ -1,6 +1,7 @@
 #pragma once
 
 #include <NimBLEDevice.h>
+#include <functional>
 #include <utils.h>
 
 class BLEAbstractController {

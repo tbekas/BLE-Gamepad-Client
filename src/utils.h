@@ -6,21 +6,37 @@
 
 namespace blegc {
 
+static constexpr uint16_t appearance(const uint16_t category, const uint8_t subcategory) {
+  return category <<  6 | subcategory;
+}
+
+// https://bitbucket.org/bluetooth-SIG/public/src/main/assigned_numbers/uuids/service_uuids.yaml
 static constexpr uint16_t deviceInfoSvcUUID = 0x180a;
 static constexpr uint16_t hidSvcUUID = 0x1812;
 static constexpr uint16_t batterySvcUUID = 0x180f;
+
+// https://bitbucket.org/bluetooth-SIG/public/src/main/assigned_numbers/uuids/characteristic_uuids.yaml
 static constexpr uint16_t hidInfoCharUUID = 0x2a4a;
 static constexpr uint16_t reportMapCharUUID = 0x2a4b;
 static constexpr uint16_t hidControlCharUUID = 0x2a4c;
 static constexpr uint16_t inputReportChrUUID = 0x2a4d;
 static constexpr uint16_t batteryLevelCharUUID = 0x2a19;
 static constexpr uint16_t batteryLevelDscUUID = 0x2904;
-
 static constexpr uint16_t manufacturerNameChrUUID = 0x2a29;
 static constexpr uint16_t modelNameChrUUID = 0x2a24;
 static constexpr uint16_t serialNumberChrUUID = 0x2a25;
 static constexpr uint16_t firmwareRevisionChrUUID = 0x2a26;
 static constexpr uint16_t pnpIdChrUUID = 0x2a50;
+
+// https://bitbucket.org/bluetooth-SIG/public/src/main/assigned_numbers/core/appearance_values.yaml
+static constexpr uint16_t keyboardAppearance = appearance(0x00F, 0x01);
+static constexpr uint16_t mouseAppearance = appearance(0x00F, 0x02);
+static constexpr uint16_t joystickAppearance = appearance(0x00F, 0x03);
+static constexpr uint16_t gamepadAppearance = appearance(0x00F, 0x04);
+
+// https://bitbucket.org/bluetooth-SIG/public/src/main/assigned_numbers/company_identifiers/company_identifiers.yaml
+static constexpr uint16_t microsoftCompanyId = 0x0006;
+static constexpr uint16_t valveCorporationCompanyId = 0x055D;
 
 struct BLEDeviceInfo {
   std::string manufacturerName;
@@ -207,6 +223,21 @@ static void readReportMap(NimBLEClient* pClient, std::vector<uint8_t>* pReportMa
 
   const auto attValue = pChar->readValue();
   pReportMap->assign(attValue.begin(), attValue.end());
+}
+
+static bool haveShortenedName(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
+  return pAdvertisedDevice->haveType(BLE_HS_ADV_TYPE_INCOMP_NAME);
+}
+
+static std::string getShortenedName(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
+  return pAdvertisedDevice->getPayloadByType(BLE_HS_ADV_TYPE_INCOMP_NAME);
+}
+
+static uint16_t getManufacturerId(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
+  auto mfgData = pAdvertisedDevice->getManufacturerData();
+  configASSERT(mfgData.size() >= 2);
+  uint16_t manufacturerId = (mfgData[1] << 8) + mfgData[0]; // low endian to native endian conversion
+  return manufacturerId;
 }
 
 }  // namespace blegc

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BLEAutoScanner.h"
+#include "BLEAutoScan.h"
 #include "BLEControllerRegistry.h"
 
 // export headers
@@ -12,17 +12,16 @@ class BLEGamepadClient {
   BLEGamepadClient() = delete;
 
   static void init(bool initBLE = true);
-  static void enableAutoScan();
-  static void disableAutoScan();
-  static bool isAutoScanEnabled();
   static void deleteBonds();
   static void enableDebugLog();
+  static BLEAutoScan* getAutoScan();
 
   friend class BLEAbstractController;
 
  private:
   static bool _initialized;
-  static TaskHandle_t _autoScanTask;
-  static BLEAutoScanner _autoScanner;
+  static TaskHandle_t _startStopScanTask;
+  static TaskHandle_t _scanCallbackTask;
+  static BLEAutoScan _autoScan;
   static BLEControllerRegistry _controllerRegistry;
 };

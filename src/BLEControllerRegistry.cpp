@@ -25,14 +25,15 @@ BLEClientEvent::operator std::string() const {
   return "BLEClientEvent address: " + std::string(address) + ", kind: " + kindStr;
 }
 
-BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask)
-    : _autoScanTask(autoScanTask),
+BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask, TaskHandle_t& scanCallbackTask)
+    : _startStopScanTask(autoScanTask),
+      _scanCallbackTask(scanCallbackTask),
       _callbackTask(nullptr),
       _clientEventQueue(nullptr),
       _clientEventConsumerTask(nullptr),
       _connectionSlots(nullptr),
-      _clientCallbacks(*this),
-      _controllers(new std::vector<BLEAbstractController*>()) {
+      _controllers(new std::vector<BLEAbstractController*>()),
+      _clientCallbacks(*this) {
   xTaskCreate(_callbackTaskFn, "_callbackTask", 10000, this, 0, &_callbackTask);
   configASSERT(_callbackTask);
 
@@ -82,7 +83,7 @@ void BLEControllerRegistry::registerController(BLEAbstractController* pCtrl) {
 
   if (pControllersNew->size() <= CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
     if (xSemaphoreGive(_connectionSlots) == pdTRUE) {
-      xTaskNotifyGive(_autoScanTask);
+      _startStopScan();
     } else {
       BLEGC_LOGE("Cannot add a connection slot");
     }
@@ -92,7 +93,7 @@ void BLEControllerRegistry::registerController(BLEAbstractController* pCtrl) {
   BLEGC_LOGD("Controller registered");
 }
 
-void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl, bool notifyAutoScan) {
+void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl, bool startStopScan) {
   pCtrl->markPendingDeregistration();
 
   auto* pClient = pCtrl->getClient();
@@ -138,7 +139,9 @@ void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl, b
 
   if (pControllersNew->size() < CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
     if (xSemaphoreTake(_connectionSlots, 0) == pdTRUE) {
-      notifyAutoScan && xTaskNotifyGive(_autoScanTask);
+      if (startStopScan) {
+        _startStopScan();
+      }
     } else {
       BLEGC_LOGE("Cannot remove a connection slot");
     }
@@ -182,7 +185,8 @@ void BLEControllerRegistry::tryConnectController(const NimBLEAdvertisedDevice* p
 
   BLEGC_LOGI("Attempting to connect to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
 
-  // Calling pClient->connect() automatically stops scan
+  // Calling pClient->connect() implicitly stops scan, so we need to invoke callback
+  _runScanCallback();
   if (!pClient->connect(true, true, true)) {
     BLEGC_LOGE("Failed to initiate connection, address: %s", std::string(pClient->getPeerAddress()).c_str());
     _sendClientEvent({address, BLEClientConnectingFailed});
@@ -278,6 +282,18 @@ void BLEControllerRegistry::_sendClientEvent(const BLEClientEvent& msg) const {
   }
 }
 
+void BLEControllerRegistry::_runCtrlCallback(const BLEAbstractController* pCtrl) const {
+  xTaskNotify(_callbackTask, reinterpret_cast<uint32_t>(pCtrl), eSetValueWithOverwrite);
+}
+
+void BLEControllerRegistry::_startStopScan() const {
+  xTaskNotify(_startStopScanTask, 0, eSetValueWithOverwrite);
+}
+
+void BLEControllerRegistry::_runScanCallback() const {
+  xTaskNotify(_scanCallbackTask, 0, eSetValueWithOverwrite);
+}
+
 unsigned int BLEControllerRegistry::getAvailableConnectionSlotCount() const {
   return uxSemaphoreGetCount(_connectionSlots);
 }
@@ -345,7 +361,7 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
         }
 
         pCtrl->markConnected();
-        xTaskNotify(self->_callbackTask, reinterpret_cast<uint32_t>(pCtrl), eSetValueWithOverwrite);
+        self->_runCtrlCallback(pCtrl);
 
         BLEGC_LOGD("Controller successfully initialized");
         break;
@@ -359,7 +375,7 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
 
         if (pCtrl->isConnected()) {
           pCtrl->markDisconnected();
-          xTaskNotify(self->_callbackTask, reinterpret_cast<uint32_t>(pCtrl), eSetValueWithOverwrite);
+          self->_runCtrlCallback(pCtrl);
         }
 
         if (pCtrl->isPendingDeregistration()) {
@@ -380,7 +396,7 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
         break;
       }
     }
-    xTaskNotifyGive(self->_autoScanTask);
+    self->_startStopScan();
   }
 }
 
