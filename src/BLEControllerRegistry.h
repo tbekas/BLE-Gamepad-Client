@@ -22,11 +22,11 @@ struct BLEClientEvent {
 
 class BLEControllerRegistry {
  public:
-  BLEControllerRegistry(TaskHandle_t& autoScanTask);
+  BLEControllerRegistry(TaskHandle_t& autoScanTask, TaskHandle_t& scanCallbackTask);
   ~BLEControllerRegistry();
 
   void registerController(BLEAbstractController* pCtrl);
-  void deregisterController(BLEAbstractController* pCtrl, bool notifyAutoScan = false);
+  void deregisterController(BLEAbstractController* pCtrl, bool startStopScan = false);
   void tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   unsigned int getAvailableConnectionSlotCount() const;
 
@@ -45,10 +45,14 @@ class BLEControllerRegistry {
   bool _allocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   bool _deallocateController(BLEAbstractController* pCtrl);
   void _sendClientEvent(const BLEClientEvent& msg) const;
+  void _runCtrlCallback(const BLEAbstractController* pCtrl) const;
+  void _startStopScan() const;
+  void _runScanCallback() const;
   static void _callbackTaskFn(void* pvParameters);
   static void _clientEventConsumerFn(void* pvParameters);
 
-  TaskHandle_t& _autoScanTask;
+  TaskHandle_t& _startStopScanTask;
+  TaskHandle_t& _scanCallbackTask;
   TaskHandle_t _callbackTask;
   QueueHandle_t _clientEventQueue;
   TaskHandle_t _clientEventConsumerTask;

@@ -35,4 +35,4 @@ static void setLogLevelDebug() {
 #define BLEGC_LOGI(format, ...) ESP_LOG_LEVEL(ESP_LOG_INFO, BLEGC_LOG_TAG, format, ## __VA_ARGS__)
 #define BLEGC_LOGW(format, ...) ESP_LOG_LEVEL(ESP_LOG_WARN, BLEGC_LOG_TAG, format, ## __VA_ARGS__)
 #define BLEGC_LOGE(format, ...) ESP_LOG_LEVEL(ESP_LOG_ERROR, BLEGC_LOG_TAG, format, ## __VA_ARGS__)
-#define BLEGC_LOG_BUFFER(buf, bufLen) ESP_LOG_BUFFER_HEX_LEVEL(BLEGC_LOG_TAG, buf, bufLen, ESP_LOG_DEBUG)
+#define BLEGC_LOGD_BUFFER(buf, bufLen) ESP_LOG_BUFFER_HEX_LEVEL(BLEGC_LOG_TAG, buf, bufLen, ESP_LOG_DEBUG)
