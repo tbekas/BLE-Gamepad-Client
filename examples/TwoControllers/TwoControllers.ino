@@ -7,7 +7,7 @@
 #include <BLEGamepadClient.h>
 
 XboxController controller1;
-XboxController controller2("5f:7a:30:78:22:2a"); // MAC address is an optional parameter
+XboxController controller2;
 
 void setup(void) {
   Serial.begin(115200);

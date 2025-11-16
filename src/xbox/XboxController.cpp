@@ -8,12 +8,7 @@
 
 using namespace blegc;
 
-XboxController::XboxController(const NimBLEAddress allowedAddress) : BLEBaseController(allowedAddress) {}
-
-XboxController::XboxController(const std::string& allowedAddress)
-    : XboxController(NimBLEAddress(allowedAddress, BLE_ADDR_PUBLIC)) {}
-
-XboxController::XboxController() : XboxController(NimBLEAddress()) {}
+XboxController::XboxController() : BLEBaseController() {}
 
 bool XboxController::isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
   if (!pAdvertisedDevice->haveServiceUUID()) {

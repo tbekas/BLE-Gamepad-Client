@@ -4,11 +4,8 @@
 #include "BLEGamepadClient.h"
 #include "utils.h"
 
-BLEAbstractController::BLEAbstractController(const NimBLEAddress allowedAddress)
-    : _pendingDeregistration(false),
-      _address(),
-      _allowedAddress(allowedAddress),
-      _lastAddress() {}
+BLEAbstractController::BLEAbstractController()
+    : _pendingDeregistration(false), _connected(false), _address(), _lastAddress() {}
 
 void BLEAbstractController::begin() {
   BLEGamepadClient::init();
@@ -31,10 +28,6 @@ NimBLEAddress BLEAbstractController::getAddress() const {
 
 void BLEAbstractController::setAddress(const NimBLEAddress address) {
   _address = address;
-}
-
-NimBLEAddress BLEAbstractController::getAllowedAddress() const {
-  return _allowedAddress;
 }
 
 /**
