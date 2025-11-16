@@ -10,8 +10,6 @@ class SteamController;
 
 class SteamController final : public BLEBaseController<SteamController>, public BLEValueReceiver<SteamControlsEvent> {
  public:
-  explicit SteamController(NimBLEAddress allowedAddress);
-  explicit SteamController(const std::string& allowedAddress);
   SteamController();
   ~SteamController() override = default;
 

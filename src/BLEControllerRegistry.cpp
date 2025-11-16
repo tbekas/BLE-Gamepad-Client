@@ -212,18 +212,6 @@ bool BLEControllerRegistry::_allocateController(const NimBLEAdvertisedDevice* pA
 
   const auto address = pAdvertisedDevice->getAddress();
 
-  // allocate ctrl with matching allowed address
-  for (auto* pCtrl : *_controllers.load()) {
-    if (pCtrl->isAllocated() || !pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
-      continue;
-    }
-
-    if (!pCtrl->getAllowedAddress().isNull() && pCtrl->getAllowedAddress() == address) {
-      pCtrl->setAddress(address);
-      return true;
-    }
-  }
-
   // allocate ctrl allocated last time
   for (auto* pCtrl : *_controllers.load()) {
     if (pCtrl->isAllocated() || !pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
@@ -242,10 +230,8 @@ bool BLEControllerRegistry::_allocateController(const NimBLEAdvertisedDevice* pA
       continue;
     }
 
-    if (pCtrl->getAllowedAddress().isNull()) {
-      pCtrl->setAddress(address);
-      return true;
-    }
+    pCtrl->setAddress(address);
+    return true;
   }
 
   BLEGC_LOGD("No suitable controller to allocate for a device, address %s", std::string(address).c_str());

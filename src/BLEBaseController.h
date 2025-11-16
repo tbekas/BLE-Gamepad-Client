@@ -7,13 +7,12 @@
 class BLEAbstractController {
  public:
   virtual ~BLEAbstractController() = default;
-  explicit BLEAbstractController(NimBLEAddress allowedAddress);
+  explicit BLEAbstractController();
 
   void begin();
   void end();
   NimBLEAddress getAddress() const;
   NimBLEAddress getLastAddress() const;
-  NimBLEAddress getAllowedAddress() const;
   bool isConnected() const;
   void disconnect();
 
@@ -40,7 +39,6 @@ class BLEAbstractController {
   volatile bool _pendingDeregistration;
   bool _connected;
   NimBLEAddress _address;
-  NimBLEAddress _allowedAddress;
   NimBLEAddress _lastAddress;
   blegc::BLEDeviceInfo _deviceInfo;
 };
@@ -48,8 +46,8 @@ class BLEAbstractController {
 template <typename T>
 class BLEBaseController : public BLEAbstractController {
  public:
-  explicit BLEBaseController(const NimBLEAddress& allowedAddress)
-      : BLEAbstractController(allowedAddress), _onConnect([](T&) {}), _onDisconnect([](T&) {}) {}
+  explicit BLEBaseController()
+      : _onConnect([](T&) {}), _onDisconnect([](T&) {}) {}
 
   /**
    * @brief Sets the callback to be invoked when the controller connects.

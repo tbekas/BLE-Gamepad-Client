@@ -14,8 +14,6 @@ class XboxController final : public BLEBaseController<XboxController>,
                              public BLEValueReceiver<XboxBatteryEvent>,
                              public BLEValueWriter<XboxVibrationsCommand> {
  public:
-  explicit XboxController(NimBLEAddress allowedAddress);
-  explicit XboxController(const std::string& allowedAddress);
   XboxController();
   ~XboxController() = default;
 

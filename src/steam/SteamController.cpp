@@ -39,13 +39,7 @@ static const std::string settingsCharUUID = "100f6c34-1735-4313-b402-38567131e5f
 
 using namespace blegc;
 
-SteamController::SteamController(NimBLEAddress allowedAddress)
-    : BLEBaseController(allowedAddress) {}
-
-SteamController::SteamController(const std::string& allowedAddress)
-    : SteamController(NimBLEAddress(allowedAddress, BLE_ADDR_PUBLIC)) {}
-
-SteamController::SteamController() : SteamController(NimBLEAddress()) {}
+SteamController::SteamController() {}
 
 bool SteamController::isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
   return pAdvertisedDevice->haveName() && pAdvertisedDevice->getName() == "SteamController";
