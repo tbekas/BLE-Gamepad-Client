@@ -24,6 +24,7 @@ class BLEAbstractController {
   const static NimBLEAddress _nullAddress;
 
   NimBLEClient* getClient() const;
+  void setClient(NimBLEClient* pClient);
   bool tryAllocate(NimBLEAddress address);
   bool tryDeallocate();
   bool isAllocated() const;
@@ -41,6 +42,7 @@ class BLEAbstractController {
 
   std::atomic_bool _pendingDeregistration;
   std::atomic<const NimBLEAddress*> _address;
+  NimBLEClient* _pClient;
   bool _connected;
   NimBLEAddress _lastAddress;
   blegc::BLEDeviceInfo _deviceInfo;

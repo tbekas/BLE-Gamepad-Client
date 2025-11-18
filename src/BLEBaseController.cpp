@@ -7,7 +7,11 @@
 const NimBLEAddress BLEAbstractController::_nullAddress = NimBLEAddress();
 
 BLEAbstractController::BLEAbstractController()
-    : _pendingDeregistration(false), _connected(false), _address(&_nullAddress), _lastAddress(NimBLEAddress()) {}
+    : _pendingDeregistration(false),
+      _connected(false),
+      _address(&_nullAddress),
+      _pClient(nullptr),
+      _lastAddress(NimBLEAddress()) {}
 
 void BLEAbstractController::begin() {
   BLEGamepadClient::init();
@@ -110,17 +114,10 @@ bool BLEAbstractController::hidInit(NimBLEClient* pClient) {
 }
 
 NimBLEClient* BLEAbstractController::getClient() const {
-  const auto address(*_address.load());
-  if (address.isNull()) {
-    return nullptr;
-  }
-
-  auto* pClient = NimBLEDevice::getClientByPeerAddress(address);
-  if (!pClient) {
-    BLEGC_LOGE("BLE client not found, address %s", std::string(address).c_str());
-    return nullptr;
-  }
-  return pClient;
+  return _pClient;
+}
+void BLEAbstractController::setClient(NimBLEClient* pClient) {
+  _pClient = pClient;
 }
 
 void BLEAbstractController::disconnect() {

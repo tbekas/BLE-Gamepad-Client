@@ -46,8 +46,8 @@ class BLEControllerRegistry {
     explicit operator std::string() const;
   };
 
-  BLEAbstractController* _getController(NimBLEAddress address) const;
-  bool _findAndAllocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
+  BLEAbstractController* _findController(NimBLEAddress address) const;
+  BLEAbstractController* _findAndAllocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   void _sendClientEvent(const BLEClientEvent& msg) const;
   void _runCtrlCallback(const BLEAbstractController* pCtrl) const;
   void _startStopScan() const;
