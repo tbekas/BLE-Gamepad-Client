@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdio>
 #include <nimconfig.h>
+#include <cstdio>
 
 #ifndef CONFIG_BT_BLEGC_LOG_LEVEL
 #if defined(CORE_DEBUG_LEVEL)
@@ -13,14 +13,6 @@
 
 #ifndef CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA
 #define CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA 0
-#endif
-
-#ifndef CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS
-#if defined(CONFIG_BT_NIMBLE_MAX_CONNECTIONS)
-#define CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS CONFIG_BT_NIMBLE_MAX_CONNECTIONS
-#else
-#define CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS 9
-#endif
 #endif
 
 #ifndef CONFIG_BT_BLEGC_WRITER_MAX_CAPACITY

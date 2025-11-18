@@ -1,34 +1,24 @@
 #pragma once
 
+#include <NimBLEDevice.h>
 #include <atomic>
 #include <memory>
-#include <NimBLEDevice.h>
 #include "BLEBaseController.h"
-
-enum BLEClientEventKind : uint8_t {
-  BLEClientConnected = 0,
-  BLEClientBonded = 1,
-  BLEClientDisconnected = 2,
-  BLEClientConnectingFailed = 3,
-  BLEClientBondingFailed = 4,
-};
-
-struct BLEClientEvent {
-  NimBLEAddress address;
-  BLEClientEventKind kind;
-
-  explicit operator std::string() const;
-};
 
 class BLEControllerRegistry {
  public:
+  struct BLEControllerAllocationInfo {
+    unsigned int allocated = 0;
+    unsigned int notAllocated = 0;
+  };
+
   BLEControllerRegistry(TaskHandle_t& autoScanTask, TaskHandle_t& scanCallbackTask);
   ~BLEControllerRegistry();
 
   void registerController(BLEAbstractController* pCtrl);
   void deregisterController(BLEAbstractController* pCtrl, bool startStopScan = false);
   void tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
-  unsigned int getAvailableConnectionSlotCount() const;
+  BLEControllerAllocationInfo getControllerAllocationInfo() const;
 
  private:
   class ClientCallbacks final : public NimBLEClientCallbacks {
@@ -41,9 +31,23 @@ class BLEControllerRegistry {
     BLEControllerRegistry& _controllerRegistry;
   };
 
+  enum BLEClientEventKind : uint8_t {
+    BLEClientConnected = 0,
+    BLEClientBonded = 1,
+    BLEClientDisconnected = 2,
+    BLEClientConnectingFailed = 3,
+    BLEClientBondingFailed = 4,
+  };
+
+  struct BLEClientEvent {
+    NimBLEAddress address;
+    BLEClientEventKind kind;
+
+    explicit operator std::string() const;
+  };
+
   BLEAbstractController* _getController(NimBLEAddress address) const;
-  bool _allocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
-  bool _deallocateController(BLEAbstractController* pCtrl);
+  bool _findAndAllocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   void _sendClientEvent(const BLEClientEvent& msg) const;
   void _runCtrlCallback(const BLEAbstractController* pCtrl) const;
   void _startStopScan() const;
@@ -56,7 +60,6 @@ class BLEControllerRegistry {
   TaskHandle_t _callbackTask;
   QueueHandle_t _clientEventQueue;
   TaskHandle_t _clientEventConsumerTask;
-  SemaphoreHandle_t _connectionSlots;
   std::atomic<std::vector<BLEAbstractController*>*> _controllers;
   ClientCallbacks _clientCallbacks;
 };
