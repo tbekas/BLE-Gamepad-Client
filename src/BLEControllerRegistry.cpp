@@ -84,15 +84,14 @@ void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl, b
   configASSERT(pCtrl->isPendingDeregistration());
 
   auto* pClient = pCtrl->getClient();
-  if (pClient && pClient->getPeerAddress() == pCtrl->getAddress() && pClient->isConnected()) {  //
+  if (pClient && pClient->isConnected()) {
     pClient->disconnect();
     return;  // deregistration will continue after completing disconnect
   }
 
-  if (pCtrl->isAllocated() && (!pClient || !pClient->isConnected())) {
+  if (pCtrl->isAllocated()) {
     // connect is likely in progress, we can try to cancel it
-    auto* pClient = pCtrl->getClient();
-    if (pClient) {
+    if (pClient && !pClient->isConnected()) {
       if (pClient->cancelConnect()) {
         BLEGC_LOGD("Cancel connect command sent successfully");
       } else {
@@ -117,6 +116,7 @@ void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl, b
 
     if (!found) {
       BLEGC_LOGD("Controller not registered");
+      pCtrl->markCompletedDeregistration();
       delete pControllersNew;
       return;
     }
