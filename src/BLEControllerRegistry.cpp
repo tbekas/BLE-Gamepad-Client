@@ -190,12 +190,17 @@ BLEAbstractController* BLEControllerRegistry::_findController(const NimBLEAddres
 BLEAbstractController* BLEControllerRegistry::_findAndAllocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
   const auto address = pAdvertisedDevice->getAddress();
 
-  // allocate ctrl allocated last time
+  std::vector<BLEAbstractController*> suitableControllers;
+
   for (auto* pCtrl : *_controllers.load()) {
-    if (!pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
+    if (pCtrl->isAllocated() || !pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
       continue;
     }
+    suitableControllers.push_back(pCtrl);
+  }
 
+  // allocate ctrl allocated last time
+  for (auto* pCtrl : suitableControllers) {
     if (!pCtrl->getLastAddress().isNull() && pCtrl->getLastAddress() == address) {
       if (pCtrl->tryAllocate(address)) {
         return pCtrl;
@@ -204,11 +209,7 @@ BLEAbstractController* BLEControllerRegistry::_findAndAllocateController(const N
   }
 
   // allocate any controller
-  for (auto* pCtrl : *_controllers.load()) {
-    if (!pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
-      continue;
-    }
-
+  for (auto* pCtrl : suitableControllers) {
     if (pCtrl->tryAllocate(address)) {
       return pCtrl;
     }
