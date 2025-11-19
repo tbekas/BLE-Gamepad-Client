@@ -1,8 +1,10 @@
 #pragma once
 
 #include <NimBLEDevice.h>
-#include <functional>
 #include <utils.h>
+#include <atomic>
+#include <functional>
+#include <memory>
 
 class BLEAbstractController {
  public:
@@ -19,11 +21,13 @@ class BLEAbstractController {
   friend class BLEControllerRegistry;
 
  protected:
+  const static NimBLEAddress _nullAddress;
+
   NimBLEClient* getClient() const;
-  void setAddress(NimBLEAddress address);
-  void setLastAddress(NimBLEAddress address);
+  void setClient(NimBLEClient* pClient);
+  bool tryAllocate(NimBLEAddress address);
+  bool tryDeallocate();
   bool isAllocated() const;
-  void markPendingDeregistration();
   void markCompletedDeregistration();
   void markConnected();
   void markDisconnected();
@@ -36,9 +40,10 @@ class BLEAbstractController {
   virtual bool init(NimBLEClient* pClient) = 0;
   virtual bool deinit() = 0;
 
-  volatile bool _pendingDeregistration;
+  std::atomic_bool _pendingDeregistration;
+  std::atomic<const NimBLEAddress*> _address;
+  NimBLEClient* _pClient;
   bool _connected;
-  NimBLEAddress _address;
   NimBLEAddress _lastAddress;
   blegc::BLEDeviceInfo _deviceInfo;
 };
@@ -46,8 +51,7 @@ class BLEAbstractController {
 template <typename T>
 class BLEBaseController : public BLEAbstractController {
  public:
-  explicit BLEBaseController()
-      : _onConnect([](T&) {}), _onDisconnect([](T&) {}) {}
+  explicit BLEBaseController() : _onConnect([](T&) {}), _onDisconnect([](T&) {}) {}
 
   /**
    * @brief Sets the callback to be invoked when the controller connects.
@@ -64,6 +68,7 @@ class BLEBaseController : public BLEAbstractController {
  protected:
   void callOnConnect() override { _onConnect(*static_cast<T*>(this)); }
   void callOnDisconnect() override { _onDisconnect(*static_cast<T*>(this)); }
+
  private:
   std::function<void(T&)> _onConnect;
   std::function<void(T&)> _onDisconnect;

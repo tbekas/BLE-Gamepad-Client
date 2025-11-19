@@ -4,8 +4,14 @@
 #include "BLEGamepadClient.h"
 #include "utils.h"
 
+const NimBLEAddress BLEAbstractController::_nullAddress = NimBLEAddress();
+
 BLEAbstractController::BLEAbstractController()
-    : _pendingDeregistration(false), _connected(false), _address(), _lastAddress() {}
+    : _pendingDeregistration(false),
+      _connected(false),
+      _address(&_nullAddress),
+      _pClient(nullptr),
+      _lastAddress(NimBLEAddress()) {}
 
 void BLEAbstractController::begin() {
   BLEGamepadClient::init();
@@ -14,6 +20,12 @@ void BLEAbstractController::begin() {
 }
 
 void BLEAbstractController::end() {
+  auto valueOld = _pendingDeregistration.exchange(true);
+
+  if (valueOld) {
+    return;
+  }
+
   BLEGamepadClient::_controllerRegistry.deregisterController(this);
 }
 /**
@@ -23,11 +35,33 @@ void BLEAbstractController::end() {
  * @return The relevant address based on the current connection state.
  */
 NimBLEAddress BLEAbstractController::getAddress() const {
-  return _address;
+  return {*_address.load()};
 }
 
-void BLEAbstractController::setAddress(const NimBLEAddress address) {
-  _address = address;
+bool BLEAbstractController::tryAllocate(const NimBLEAddress address) {
+  const auto* pAddressNew = new NimBLEAddress(address);
+  const auto* pAddressOld = _address.load();
+  do {
+    if (!pAddressOld->isNull()) {
+      delete pAddressNew;
+      return false;
+    }
+  } while (!_address.compare_exchange_weak(pAddressOld, pAddressNew));
+
+  return true;
+}
+
+bool BLEAbstractController::tryDeallocate() {
+  const auto* pAddressOld = _address.load();
+  do {
+    if (pAddressOld->isNull()) {
+      return false;
+    }
+  } while (!_address.compare_exchange_weak(pAddressOld, &_nullAddress));
+
+  _lastAddress = NimBLEAddress(*pAddressOld);
+  delete pAddressOld;
+  return true;
 }
 
 /**
@@ -42,20 +76,12 @@ NimBLEAddress BLEAbstractController::getLastAddress() const {
   return _lastAddress;
 }
 
-void BLEAbstractController::setLastAddress(const NimBLEAddress address) {
-  _lastAddress = address;
-}
-
 bool BLEAbstractController::isAllocated() const {
-  return !_address.isNull();
-}
-
-void BLEAbstractController::markPendingDeregistration() {
-  _pendingDeregistration = true;
+  return !_address.load()->isNull();
 }
 
 void BLEAbstractController::markCompletedDeregistration() {
-  _pendingDeregistration = false;
+  _pendingDeregistration.exchange(false);
 }
 
 void BLEAbstractController::markConnected() {
@@ -88,16 +114,10 @@ bool BLEAbstractController::hidInit(NimBLEClient* pClient) {
 }
 
 NimBLEClient* BLEAbstractController::getClient() const {
-  if (_address.isNull()) {
-    return nullptr;
-  }
-
-  auto* pClient = NimBLEDevice::getClientByPeerAddress(_address);
-  if (!pClient) {
-    BLEGC_LOGE("BLE client not found, address %s", std::string(_address).c_str());
-    return nullptr;
-  }
-  return pClient;
+  return _pClient;
+}
+void BLEAbstractController::setClient(NimBLEClient* pClient) {
+  _pClient = pClient;
 }
 
 void BLEAbstractController::disconnect() {

@@ -34,12 +34,6 @@ Maximum capacity, in bytes, of the internal buffer used to send data to the cont
 **Default**: 1024  
 <br/>
 
-`CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS`
-
-The maximum number of connection slots that can be created.  
-**Default**: `CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS` (default 3) or 9 if `CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS` is not defined  
-<br/>
-
 `CONFIG_BT_BLEGC_SCAN_DURATION_MS`
 
 Duration (in milliseconds) of a single scan. The next scan starts automatically after the previous one ends.  

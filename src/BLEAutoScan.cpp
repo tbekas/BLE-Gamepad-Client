@@ -57,6 +57,7 @@ void BLEAutoScan::disable() {
 bool BLEAutoScan::isEnabled() const {
   return _enabled;
 }
+
 bool BLEAutoScan::isScanning() const {
   return NimBLEDevice::isInitialized() && NimBLEDevice::getScan()->isScanning();
 }
@@ -74,6 +75,7 @@ void BLEAutoScan::notify() const {
 void BLEAutoScan::onScanStart(const std::function<void()>& callback) {
   _onScanStart = callback;
 }
+
 void BLEAutoScan::onScanStop(const std::function<void()>& callback) {
   _onScanStop = callback;
 }
@@ -105,10 +107,11 @@ void BLEAutoScan::_startStopScanTaskFn(void* pvParameters) {
     const auto isRestart = static_cast<bool>(val);
 
     auto* pScan = NimBLEDevice::getScan();
-    const auto availConnSlots = self->_controllerRegistry.getAvailableConnectionSlotCount();
+    const auto allocInfo = self->_controllerRegistry.getControllerAllocationInfo();
 
     const auto isScanning = pScan->isScanning();
-    const auto shouldBeScanning = self->_enabled & availConnSlots > 0;
+    const auto shouldBeScanning =
+        self->_enabled & allocInfo.notAllocated > 0 && allocInfo.allocated < CONFIG_BT_NIMBLE_MAX_CONNECTIONS;
 
     std::string decisionStr;
     if (!isScanning && shouldBeScanning) {
@@ -142,8 +145,9 @@ void BLEAutoScan::_startStopScanTaskFn(void* pvParameters) {
       decisionStr = "do nothing";
     }
 
-    BLEGC_LOGD("Auto-scan enabled: %d, scan in progress: %d, avail connection slots: %d, restart count: %d -> %s",
-               self->_enabled, isScanning, availConnSlots, self->_restartCount, decisionStr.c_str());
+    BLEGC_LOGD("Auto-scan enabled: %d, is scanning: %d, allocated ctrls: %d/%d, scan restarts: %d -> %s",
+               self->_enabled, isScanning, allocInfo.allocated, allocInfo.allocated + allocInfo.notAllocated,
+               self->_restartCount, decisionStr.c_str());
   }
 }
 

@@ -11,7 +11,7 @@
 #include "config.h"
 #include "logger.h"
 
-BLEClientEvent::operator std::string() const {
+BLEControllerRegistry::BLEClientEvent::operator std::string() const {
   std::string kindStr;
   // clang-format off
   switch (kind) {
@@ -31,19 +31,16 @@ BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask, TaskHan
       _callbackTask(nullptr),
       _clientEventQueue(nullptr),
       _clientEventConsumerTask(nullptr),
-      _connectionSlots(nullptr),
       _controllers(new std::vector<BLEAbstractController*>()),
       _clientCallbacks(*this) {
   xTaskCreate(_callbackTaskFn, "_callbackTask", 10000, this, 0, &_callbackTask);
   configASSERT(_callbackTask);
 
-  _connectionSlots = xSemaphoreCreateCounting(CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS, 0);
-  configASSERT(_connectionSlots);
   _clientEventQueue = xQueueCreate(10, sizeof(BLEClientEvent));
   configASSERT(_clientEventQueue);
 
-  xTaskCreatePinnedToCore(_clientEventConsumerFn, "_clientEventConsumerTask", 10000, this, 0,
-                          &_clientEventConsumerTask, CONFIG_BT_NIMBLE_PINNED_TO_CORE);
+  xTaskCreatePinnedToCore(_clientEventConsumerFn, "_clientEventConsumerTask", 10000, this, 0, &_clientEventConsumerTask,
+                          CONFIG_BT_NIMBLE_PINNED_TO_CORE);
   configASSERT(_clientEventConsumerTask);
 }
 
@@ -53,9 +50,6 @@ BLEControllerRegistry::~BLEControllerRegistry() {
   }
   if (_clientEventQueue != nullptr) {
     vQueueDelete(_clientEventQueue);
-  }
-  if (_connectionSlots != nullptr) {
-    vSemaphoreDelete(_connectionSlots);
   }
 
   const auto* pControllers = _controllers.load();
@@ -71,6 +65,7 @@ void BLEControllerRegistry::registerController(BLEAbstractController* pCtrl) {
       pControllersNew->push_back(pSomeCtrl);
       if (pSomeCtrl == pCtrl) {
         BLEGC_LOGD("Controller already registered");
+        delete pControllersNew;
         return;
       }
     }
@@ -81,20 +76,12 @@ void BLEControllerRegistry::registerController(BLEAbstractController* pCtrl) {
 
   delete pControllersOld;
 
-  if (pControllersNew->size() <= CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
-    if (xSemaphoreGive(_connectionSlots) == pdTRUE) {
-      _startStopScan();
-    } else {
-      BLEGC_LOGE("Cannot add a connection slot");
-    }
-  } else {
-    BLEGC_LOGD("Max amount of connection slots reached. Increase CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS to add more.");
-  }
+  _startStopScan();
   BLEGC_LOGD("Controller registered");
 }
 
 void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl, bool startStopScan) {
-  pCtrl->markPendingDeregistration();
+  configASSERT(pCtrl->isPendingDeregistration());
 
   auto* pClient = pCtrl->getClient();
   if (pClient && pClient->isConnected()) {
@@ -102,10 +89,9 @@ void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl, b
     return;  // deregistration will continue after completing disconnect
   }
 
-  if (pCtrl->isAllocated() && (!pClient || !pClient->isConnected())) {
+  if (pCtrl->isAllocated()) {
     // connect is likely in progress, we can try to cancel it
-    auto* pClient = pCtrl->getClient();
-    if (pClient) {
+    if (pClient && !pClient->isConnected()) {
       if (pClient->cancelConnect()) {
         BLEGC_LOGD("Cancel connect command sent successfully");
       } else {
@@ -130,6 +116,8 @@ void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl, b
 
     if (!found) {
       BLEGC_LOGD("Controller not registered");
+      pCtrl->markCompletedDeregistration();
+      delete pControllersNew;
       return;
     }
   } while (!_controllers.compare_exchange_weak(pControllersOld,
@@ -137,14 +125,8 @@ void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl, b
 
   delete pControllersOld;
 
-  if (pControllersNew->size() < CONFIG_BT_BLEGC_MAX_CONNECTION_SLOTS) {
-    if (xSemaphoreTake(_connectionSlots, 0) == pdTRUE) {
-      if (startStopScan) {
-        _startStopScan();
-      }
-    } else {
-      BLEGC_LOGE("Cannot remove a connection slot");
-    }
+  if (startStopScan) {
+    _startStopScan();
   }
 
   pCtrl->markCompletedDeregistration();
@@ -152,36 +134,27 @@ void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl, b
 }
 
 void BLEControllerRegistry::tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
-  if (!_allocateController(pAdvertisedDevice)) {
+  auto* pCtrl = _findAndAllocateController(pAdvertisedDevice);
+  if (!pCtrl) {
     return;
   }
 
   const auto address = pAdvertisedDevice->getAddress();
 
-  auto* pClient = NimBLEDevice::getClientByPeerAddress(address);
-  if (pClient) {
-    BLEGC_LOGD("Using existing client for a device, address: %s", std::string(address).c_str());
-  } else {
-    pClient = NimBLEDevice::getDisconnectedClient();
+  BLEGC_LOGD("Creating a client for a device, address: %s", std::string(address).c_str());
+  auto* pClient = NimBLEDevice::createClient(address);
 
-    if (pClient) {
-      BLEGC_LOGD("Reusing disconnected client for a device, address: %s", std::string(address).c_str());
-      pClient->setPeerAddress(address);
-    } else{
-      BLEGC_LOGD("Creating a client for a device, address: %s", std::string(address).c_str());
-      pClient = NimBLEDevice::createClient(address);
-
-      if (!pClient) {
-        BLEGC_LOGE("Failed to create client for a device, address: %s", std::string(address).c_str());
-
-        _sendClientEvent({address, BLEClientConnectingFailed});
-        return;
-      }
-
-      pClient->setConnectTimeout(CONFIG_BT_BLEGC_CONN_TIMEOUT_MS);
-      pClient->setClientCallbacks(&_clientCallbacks, false);
-    }
+  if (!pClient) {
+    BLEGC_LOGE("Failed to create client for a device, address: %s", std::string(address).c_str());
+    _sendClientEvent({address, BLEClientConnectingFailed});
+    return;
   }
+
+  pClient->setSelfDelete(false, false);
+  pClient->setConnectTimeout(CONFIG_BT_BLEGC_CONN_TIMEOUT_MS);
+  pClient->setClientCallbacks(&_clientCallbacks, false);
+
+  pCtrl->setClient(pClient);
 
   BLEGC_LOGI("Attempting to connect to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
 
@@ -192,76 +165,59 @@ void BLEControllerRegistry::tryConnectController(const NimBLEAdvertisedDevice* p
     _sendClientEvent({address, BLEClientConnectingFailed});
   }
 }
+BLEControllerRegistry::BLEControllerAllocationInfo BLEControllerRegistry::getControllerAllocationInfo() const {
+  BLEControllerAllocationInfo result;
+  for (auto* pCtrl : *_controllers.load()) {
+    if (pCtrl->isAllocated()) {
+      result.allocated++;
+    } else {
+      result.notAllocated++;
+    }
+  }
+  return result;
+}
 
-BLEAbstractController* BLEControllerRegistry::_getController(const NimBLEAddress address) const {
+BLEAbstractController* BLEControllerRegistry::_findController(const NimBLEAddress address) const {
   for (auto* pCtrl : *_controllers.load()) {
     if (pCtrl->getAddress() == address) {
       return pCtrl;
     }
   }
 
-  BLEGC_LOGE("Controller not found, address: %s", std::string(address).c_str());
   return nullptr;
 }
 
-bool BLEControllerRegistry::_allocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
-  if (xSemaphoreTake(_connectionSlots, 0) != pdTRUE) {
-    BLEGC_LOGD("No connections slots left");
-    return false;
-  }
-
+BLEAbstractController* BLEControllerRegistry::_findAndAllocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
   const auto address = pAdvertisedDevice->getAddress();
 
   // allocate ctrl allocated last time
   for (auto* pCtrl : *_controllers.load()) {
-    if (pCtrl->isAllocated() || !pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
+    if (!pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
       continue;
     }
 
     if (!pCtrl->getLastAddress().isNull() && pCtrl->getLastAddress() == address) {
-      pCtrl->setAddress(address);
-      return true;
+      if (pCtrl->tryAllocate(address)) {
+        return pCtrl;
+      }
     }
   }
 
   // allocate any controller
   for (auto* pCtrl : *_controllers.load()) {
-    if (pCtrl->isAllocated() || !pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
+    if (!pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
       continue;
     }
 
-    pCtrl->setAddress(address);
-    return true;
+    if (pCtrl->tryAllocate(address)) {
+      return pCtrl;
+    }
   }
 
-  BLEGC_LOGD("No suitable controller to allocate for a device, address %s", std::string(address).c_str());
-
-  if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
-    BLEGC_LOGE("Failed to release connection slot");
-    return false;
-  }
-
-  return false;
+  BLEGC_LOGD("No suitable controller found to allocate for a device, address %s", std::string(address).c_str());
+  return nullptr;
 }
 
-bool BLEControllerRegistry::_deallocateController(BLEAbstractController* pCtrl) {
-  if (!pCtrl->isAllocated()) {
-    BLEGC_LOGE("Attempting to deallocate controller that is not allocated, last address: %s",
-               std::string(pCtrl->getLastAddress()).c_str());
-    return false;
-  }
-
-  BLEGC_LOGD("Deallocating controller %s", std::string(pCtrl->getAddress()).c_str());
-
-  pCtrl->setLastAddress(pCtrl->getAddress());
-  pCtrl->setAddress(NimBLEAddress());
-
-  if (xSemaphoreGive(_connectionSlots) != pdTRUE) {
-    BLEGC_LOGE("Failed to release connection slot");
-    return false;
-  }
-  return true;
-}
 void BLEControllerRegistry::_sendClientEvent(const BLEClientEvent& msg) const {
   if (xQueueSend(_clientEventQueue, &msg, 0) != pdPASS) {
     BLEGC_LOGE("Failed to send client event message");
@@ -278,10 +234,6 @@ void BLEControllerRegistry::_startStopScan() const {
 
 void BLEControllerRegistry::_runScanCallback() const {
   xTaskNotify(_scanCallbackTask, 0, eSetValueWithOverwrite);
-}
-
-unsigned int BLEControllerRegistry::getAvailableConnectionSlotCount() const {
-  return uxSemaphoreGetCount(_connectionSlots);
 }
 
 void BLEControllerRegistry::_callbackTaskFn(void* pvParameters) {
@@ -309,8 +261,9 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
 
     BLEGC_LOGD("Handling message %s", std::string(msg).c_str());
 
-    auto* pCtrl = self->_getController(msg.address);
+    auto* pCtrl = self->_findController(msg.address);
     if (!pCtrl) {
+      BLEGC_LOGE("Controller not found, address: %s", std::string(msg.address).c_str());
       break;
     }
 
@@ -329,7 +282,8 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
         }
 
         auto retryCount = 2;
-        while (!pCtrl->hidInit(pCtrl->getClient()) && --retryCount) {}
+        while (!pCtrl->hidInit(pCtrl->getClient()) && --retryCount) {
+        }
 
         if (retryCount == 0) {
           BLEGC_LOGW("Failed to initialize hid device, address: %s", std::string(msg.address).c_str());
@@ -338,7 +292,8 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
         }
 
         retryCount = 2;
-        while (!pCtrl->init(pCtrl->getClient()) && --retryCount) {}
+        while (!pCtrl->init(pCtrl->getClient()) && --retryCount) {
+        }
 
         if (retryCount == 0) {
           BLEGC_LOGW("Failed to initialize controller, address: %s", std::string(msg.address).c_str());
@@ -357,7 +312,16 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
           BLEGC_LOGW("Failed to deinitialize controller, address: %s", std::string(msg.address).c_str());
         }
 
-        self->_deallocateController(pCtrl);
+        if (!pCtrl->tryDeallocate()) {
+          BLEGC_LOGE("Failed to deallocate controller %s", std::string(msg.address).c_str());
+          break;
+        }
+
+        if (!NimBLEDevice::deleteClient(pCtrl->getClient())) {
+          BLEGC_LOGE("Failed to delete client %s", std::string(msg.address).c_str());
+        }
+
+        pCtrl->setClient(nullptr);
 
         if (pCtrl->isConnected()) {
           pCtrl->markDisconnected();
@@ -370,7 +334,16 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
         break;
       }
       case BLEClientConnectingFailed: {
-        self->_deallocateController(pCtrl);
+        if (!pCtrl->tryDeallocate()) {
+          BLEGC_LOGE("Failed to deallocate controller %s", std::string(msg.address).c_str());
+          break;
+        }
+
+        if (pCtrl->getClient() != nullptr && !NimBLEDevice::deleteClient(pCtrl->getClient())) {
+          BLEGC_LOGE("Failed to delete client %s", std::string(msg.address).c_str());
+        }
+
+        pCtrl->setClient(nullptr);
 
         if (pCtrl->isPendingDeregistration()) {
           self->deregisterController(pCtrl, false);
@@ -411,7 +384,7 @@ void BLEControllerRegistry::ClientCallbacks::onAuthenticationComplete(NimBLEConn
 }
 
 void BLEControllerRegistry::ClientCallbacks::onDisconnect(NimBLEClient* pClient, int reason) {
-  BLEGC_LOGI("Device disconnected, address: %s, reason: 0x%04x %s",
-             std::string(pClient->getPeerAddress()).c_str(), reason, NimBLEUtils::returnCodeToString(reason));
+  BLEGC_LOGI("Device disconnected, address: %s, reason: 0x%04x %s", std::string(pClient->getPeerAddress()).c_str(),
+             reason, NimBLEUtils::returnCodeToString(reason));
   _controllerRegistry._sendClientEvent({pClient->getPeerAddress(), BLEClientDisconnected});
 }
