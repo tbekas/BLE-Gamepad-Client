@@ -209,7 +209,7 @@ BLEAbstractController* BLEControllerRegistry::_findAndAllocateController(const N
   }
 
   // allocate any controller
-  for (auto* pCtrl : *_controllers.load()) {
+  for (auto* pCtrl : suitableControllers) {
     if (pCtrl->tryAllocate(address)) {
       return pCtrl;
     }
