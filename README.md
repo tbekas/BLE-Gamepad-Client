@@ -6,12 +6,12 @@
 This library enables connecting BLE (Bluetooth Low Energy) gamepads to ESP32 boards. Supported gamepads include the Xbox
 Wireless Controller and the Steam Controller.
 
-# Arduino Library
+## Arduino Library
 
 * Open Arduino Library Manager: Tools -> Manage Libraries.
 * Search for `BLE-Gamepad-Client` and install it.
 
-# PlatformIO dependency
+## PlatformIO dependency
 
 Add the following line to
 the [lib_deps](https://docs.platformio.org/en/latest/projectconf/sections/env/options/library/lib_deps.html) option
@@ -21,7 +21,7 @@ of [platformio.ini](https://docs.platformio.org/en/latest/projectconf/index.html
 tbekas/BLE-Gamepad-Client@^0.9.0
 ```
 
-# Example usage
+## Example usage
 
 ```cpp
 #include <Arduino.h>
@@ -48,26 +48,26 @@ void loop() {
 }
 ```
 
-# More examples
+## More examples
 
 Checkout the code examples in
 the [examples directory](https://github.com/tbekas/BLE-Gamepad-Client/tree/0.9.0/examples).
 
-# Supported gamepads
+## Supported gamepads
 
 ### Steam Controller
 
 ![Steam Controller](docs/steam_controller.png)
 
-#### Firmware:
+#### Firmware
 
 Install BLE firmware using these instructions: [Steam Controller BLE](https://help.steampowered.com/en/faqs/view/1796-5FC3-88B3-C85F).
 
-#### Pairing instructions:
+#### Pairing instructions
 
 * Turn on your controller by pressing the Steam button while holding the Y button.
 
-#### Classes:
+#### Classes
 
 * `SteamController`
 * `SteamControlsEvent`
@@ -76,17 +76,17 @@ Install BLE firmware using these instructions: [Steam Controller BLE](https://he
 
 ![Xbox One Controller](docs/xbox_one_controller.png)
 
-#### Firmware:
+#### Firmware
 
 Update controller's firmware to version 5.x using these
 instructions: [Update your Xbox Wireless Controller](https://support.xbox.com/en-US/help/hardware-network/controller/update-xbox-wireless-controller).
 
-#### Pairing instructions:
+#### Pairing instructions
 
 * Turn on your controller by pressing the Xbox button.
 * Press and hold the controller’s pair button for 3 seconds, then release.
 
-#### Classes:
+#### Classes
 
 * `XboxController`
 * `XboxControlsEvent`
@@ -97,24 +97,24 @@ instructions: [Update your Xbox Wireless Controller](https://support.xbox.com/en
 
 ![Xbox Series Controller](docs/xbox_series_controller.png)
 
-#### Firmware:
+#### Firmware
 
 Your controller most likely already runs firmware version 5.x. If not, follow these instructions to update
 it: [Update your Xbox Wireless Controller](https://support.xbox.com/en-US/help/hardware-network/controller/update-xbox-wireless-controller).
 
-#### Pairing instructions:
+#### Pairing instructions
 
 * Turn on your controller by pressing the Xbox button.
 * Press and hold the controller’s pair button for 3 seconds, then release.
 
-#### Classes:
+#### Classes
 
 * `XboxController`
 * `XboxControlsEvent`
 * `XboxBatteryEvent`
 * `XboxVibrationsCommand`
 
-# Acknowledgments
+## Acknowledgments
 
 * [h2zero](https://github.com/h2zero) for the excellent [NimBLE-Arduino](https://github.com/h2zero/NimBLE-Arduino)
   library, which this library is built upon.

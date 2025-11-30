@@ -1,0 +1,46 @@
+# BLE-Gamepad-Client
+
+This library enables connecting BLE (Bluetooth Low Energy) gamepads to ESP32 boards. Supported gamepads include the Xbox
+Wireless Controller and the Steam Controller.
+
+## Arduino Library
+
+* Open Arduino Library Manager: Tools -> Manage Libraries.
+* Search for `BLE-Gamepad-Client` and install it.
+
+## PlatformIO dependency
+
+Add the following line to
+the [lib_deps](https://docs.platformio.org/en/latest/projectconf/sections/env/options/library/lib_deps.html) option
+of [platformio.ini](https://docs.platformio.org/en/latest/projectconf/index.html) file.
+
+```yaml
+tbekas/BLE-Gamepad-Client@^0.9.0
+```
+
+## Example usage
+
+```cpp
+#include <Arduino.h>
+#include <BLEGamepadClient.h>
+
+XboxController controller;
+
+void setup(void) {
+  Serial.begin(115200);
+  controller.begin();
+}
+
+void loop() {
+  if (controller.isConnected()) {
+    XboxControlsEvent e;
+    controller.read(&e);
+
+    Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
+      e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);
+  } else {
+    Serial.println("controller not connected");
+  }
+  delay(100);
+}
+```
