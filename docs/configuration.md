@@ -22,6 +22,7 @@ Available values:
 Enables storing or printing data transferred to or from the device, including HID reports and the HID report map.
 
 Available values:
+
 * `0` - disabled
 * `1` - enabled
 

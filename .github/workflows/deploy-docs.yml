@@ -19,25 +19,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install CMake
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install MkDocs
         run: |
-          sudo apt update
-          sudo apt install -y cmake
-      - name: Install Doxygen
-        run: |
-          wget -nv https://www.doxygen.nl/files/doxygen-1.14.0.linux.bin.tar.gz
-          tar -xzf doxygen-1.14.0.linux.bin.tar.gz
-          echo "$PWD/doxygen-1.14.0/bin" >> $GITHUB_PATH
-      - name: CMake build
-        run: cmake -B build
-      - name: Generate Doxygen docs
-        run: doxygen build/docs/Doxyfile.lib_docs
+          python -m pip install --upgrade pip
+          pip install mkdocs==1.6.1 mkdocs-material==9.7.0
+      - name: Generate MkDocs site
+        run: mkdocs build --strict
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: build/docs/html/
+          path: site/
   deploy:
     needs: build
     environment:

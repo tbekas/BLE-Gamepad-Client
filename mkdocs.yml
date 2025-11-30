@@ -1,0 +1,18 @@
+site_name: BLE-Gamepad-Client
+site_url: https://tbekas.github.io/BLE-Gamepad-Client/
+repo_url: https://github.com/tbekas/BLE-Gamepad-Client
+nav:
+  - Home: index.md
+  - Controllers: controllers.md
+  - Configuration: configuration.md
+  - Auto Scan: auto_scan.md
+theme: material
+plugins:
+  - search
+use_directory_urls: true
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
