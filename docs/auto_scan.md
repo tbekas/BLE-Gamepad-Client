@@ -14,7 +14,7 @@ Below is the visual representation of state transitions.
 ```mermaid
 stateDiagram-v2
     direction TB
-    ScanningStopped: Not Scanning
+    Idle
     Scanning
     Connecting
     Connected
@@ -27,6 +27,6 @@ stateDiagram-v2
     Connected --> Disconnected : device lost or disconnect()
     Disconnected --> Scanning
     ConnectingFailed --> Scanning
-    ScanningStopped --> Scanning : begin()
-    Scanning --> ScanningStopped : end() or scan timeout
+    Idle --> Scanning : begin() or notify()
+    Scanning --> Idle : scan timeout or end()
 ```
