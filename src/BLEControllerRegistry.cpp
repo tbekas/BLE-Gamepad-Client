@@ -208,10 +208,21 @@ BLEAbstractController* BLEControllerRegistry::_findAndAllocateController(const N
     }
   }
 
-  // allocate any controller
+  // allocate ctrl never allocated
   for (auto* pCtrl : suitableControllers) {
-    if (pCtrl->tryAllocate(address)) {
-      return pCtrl;
+    if (pCtrl->getLastAddress().isNull()) {
+      if (pCtrl->tryAllocate(address)) {
+        return pCtrl;
+      }
+    }
+  }
+
+  // allocate any other controller (don't try to allocate controllers already tried)
+  for (auto* pCtrl : suitableControllers) {
+    if (!pCtrl->getLastAddress().isNull() && pCtrl->getLastAddress() != address) {
+      if (pCtrl->tryAllocate(address)) {
+        return pCtrl;
+      }
     }
   }
 
