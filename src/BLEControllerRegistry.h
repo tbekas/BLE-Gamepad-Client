@@ -16,7 +16,7 @@ class BLEControllerRegistry {
   ~BLEControllerRegistry();
 
   void registerController(BLEAbstractController* pCtrl);
-  void deregisterController(BLEAbstractController* pCtrl, bool startStopScan = false);
+  void deregisterController(BLEAbstractController* pCtrl, bool notifyAutoScan = false);
   void tryConnectController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   BLEControllerAllocationInfo getControllerAllocationInfo() const;
 
@@ -31,7 +31,7 @@ class BLEControllerRegistry {
     BLEControllerRegistry& _controllerRegistry;
   };
 
-  enum BLEClientEventKind : uint8_t {
+  enum class BLEClientEventKind : uint8_t {
     BLEClientConnected = 0,
     BLEClientBonded = 1,
     BLEClientDisconnected = 2,
@@ -50,7 +50,8 @@ class BLEControllerRegistry {
   BLEAbstractController* _findAndAllocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   void _sendClientEvent(const BLEClientEvent& msg) const;
   void _runCtrlCallback(const BLEAbstractController* pCtrl) const;
-  void _startStopScan() const;
+  void _startScan() const;
+  void _notifyAutoScan() const;
   void _runScanCallback() const;
   static void _callbackTaskFn(void* pvParameters);
   static void _clientEventConsumerFn(void* pvParameters);
