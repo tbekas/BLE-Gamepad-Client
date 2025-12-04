@@ -9,6 +9,7 @@ BLEAutoScan::BLEAutoScan(TaskHandle_t& startStopScanTask,
                          BLEControllerRegistry& controllerRegistry)
     : _startStopScanTask(startStopScanTask),
       _scanCallbackTask(scanCallbackTask),
+      _startTimeMs(0),
       _restartCount(0),
       _controllerRegistry(controllerRegistry),
       _bleScanCallbacks(*this),
@@ -69,7 +70,8 @@ bool BLEAutoScan::isScanning() const {
  * @copydetails enable
  */
 void BLEAutoScan::notify() const {
-  NimBLEDevice::isInitialized() && xTaskNotify(_startStopScanTask, 0, eSetValueWithOverwrite);
+  NimBLEDevice::isInitialized() &&
+      xTaskNotify(_startStopScanTask, static_cast<uint8_t>(BLEAutoScanNotification::Auto), eSetValueWithOverwrite);
 }
 
 void BLEAutoScan::onScanStart(const std::function<void()>& callback) {
@@ -97,57 +99,77 @@ void BLEAutoScan::_scanCallbackTaskFn(void* pvParameters) {
   }
 }
 
+void BLEAutoScan::_startHighDuty(NimBLEScan* pScan) {
+  pScan->setWindow(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_WINDOW_MS);
+  pScan->setInterval(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_INTERVAL_MS);
+  pScan->setActiveScan(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_ACTIVE > 0);
+  pScan->start(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_DURATION_MS);
+}
+
+void BLEAutoScan::_startLowDuty(NimBLEScan* pScan) {
+  pScan->setWindow(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_WINDOW_MS);
+  pScan->setInterval(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_INTERVAL_MS);
+  pScan->setActiveScan(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_ACTIVE > 0);
+  pScan->start(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_DURATION_MS);
+}
+
+void BLEAutoScan::_stopScan(NimBLEScan* pScan) {
+  pScan->stop();
+}
+
 void BLEAutoScan::_startStopScanTaskFn(void* pvParameters) {
   auto* self = static_cast<BLEAutoScan*>(pvParameters);
 
   while (true) {
     const auto val = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    // Indicates whether this notification follows a previous scan completion
-    const auto isRestart = static_cast<bool>(val);
-
     auto* pScan = NimBLEDevice::getScan();
     const auto allocInfo = self->_controllerRegistry.getControllerAllocationInfo();
-
+    const auto canAllocateCtrl = allocInfo.notAllocated > 0 && allocInfo.allocated < CONFIG_BT_NIMBLE_MAX_CONNECTIONS;
     const auto isScanning = pScan->isScanning();
-    const auto shouldBeScanning =
-        self->_enabled & allocInfo.notAllocated > 0 && allocInfo.allocated < CONFIG_BT_NIMBLE_MAX_CONNECTIONS;
+    const auto currTimeMs = millis();
+    std::string decision;
 
-    std::string decisionStr;
-    if (!isScanning && shouldBeScanning) {
-      if (isRestart) {
-        if (self->_restartCount < CONFIG_BT_BLEGC_LOW_DUTY_SCAN_RESTART_LIMIT) {
-          decisionStr = "start low duty scan";
-          pScan->setWindow(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_WINDOW_MS);
-          pScan->setInterval(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_INTERVAL_MS);
-          pScan->setActiveScan(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_ACTIVE > 0);
-          pScan->start(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_DURATION_MS);
-          self->_restartCount++;
-        } else {
-          decisionStr = "scan start limit reached";
-          xTaskNotify(self->_scanCallbackTask, 0, eSetValueWithOverwrite);
+    switch (static_cast<BLEAutoScanNotification>(val)) {
+      case BLEAutoScanNotification::ScanEnd: {
+        if (self->_enabled && canAllocateCtrl) {
+
+          if (!isScanning) {
+            const auto hdEndTimeMs = self->_startTimeMs + CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_DURATION_MS;
+            const auto ldEndTimeMs = hdEndTimeMs + CONFIG_BT_BLEGC_LOW_DUTY_SCAN_DURATION_MS;
+
+            if (currTimeMs > hdEndTimeMs && currTimeMs < ldEndTimeMs) {
+              decision = "start low duty scan";
+              self->_startLowDuty(pScan);
+            } else {
+              decision = "do nothing (timeout)";
+            }
+          } else {
+            decision = "do nothing";
+          }
         }
-      } else {
-        decisionStr = "start high duty scan";
-        pScan->setWindow(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_WINDOW_MS);
-        pScan->setInterval(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_INTERVAL_MS);
-        pScan->setActiveScan(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_ACTIVE > 0);
-        pScan->start(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_DURATION_MS);
-
-        self->_restartCount = 0;
-        xTaskNotify(self->_scanCallbackTask, 1, eSetValueWithOverwrite);
+        break;
       }
-    } else if (isScanning && !shouldBeScanning) {
-      decisionStr = "stop scan";
-      pScan->stop();
-      xTaskNotify(self->_scanCallbackTask, 0, eSetValueWithOverwrite);
-    } else {
-      decisionStr = "do nothing";
+      case BLEAutoScanNotification::Auto: {
+        if (self->_enabled && canAllocateCtrl) {
+          decision = "start high duty scan";
+          self->_startTimeMs = currTimeMs;
+          self->_startHighDuty(pScan);
+        } else {
+          if (isScanning) {
+            self->_stopScan(pScan);
+            decision = "stop scan";
+          } else {
+            decision = "do nothing";
+          }
+        }
+        break;
+      }
     }
 
-    BLEGC_LOGD("Auto-scan enabled: %d, is scanning: %d, allocated ctrls: %d/%d, scan restarts: %d -> %s",
+    BLEGC_LOGD("AutoScan is enabled: %d, is scanning: %d, allocated ctrls: %d/%d, decision: %s",
                self->_enabled, isScanning, allocInfo.allocated, allocInfo.allocated + allocInfo.notAllocated,
-               self->_restartCount, decisionStr.c_str());
+               decision.c_str());
   }
 }
 
@@ -163,5 +185,5 @@ void BLEAutoScan::ScanCallbacks::onResult(const NimBLEAdvertisedDevice* pAdverti
 
 void BLEAutoScan::ScanCallbacks::onScanEnd(const NimBLEScanResults& results, int reason) {
   BLEGC_LOGD("Scan ended, reason: 0x%04x %s", reason, NimBLEUtils::returnCodeToString(reason));
-  xTaskNotify(_autoScan._startStopScanTask, 1, eSetValueWithOverwrite);
+  xTaskNotify(_autoScan._startStopScanTask, static_cast<uint8_t>(BLEAutoScanNotification::ScanEnd), eSetValueWithOverwrite);
 }

@@ -4,6 +4,10 @@
 
 class BLEAutoScan {
  public:
+  enum class BLEAutoScanNotification : uint8_t {
+   Auto = 0, ScanEnd = 1
+  };
+
   BLEAutoScan(TaskHandle_t& startStopScanTask,
               TaskHandle_t& scanCallbackTask,
               BLEControllerRegistry& controllerRegistry);
@@ -26,12 +30,17 @@ class BLEAutoScan {
     BLEAutoScan& _autoScan;
   };
 
+  void _startHighDuty(NimBLEScan* pScan);
+  void _startLowDuty(NimBLEScan* pScan);
+  void _stopScan(NimBLEScan* pScan);
+
   static void _startStopScanTaskFn(void* pvParameters);
   static void _scanCallbackTaskFn(void* pvParameters);
 
   bool _enabled = true;
   TaskHandle_t& _startStopScanTask;
   TaskHandle_t& _scanCallbackTask;
+  unsigned long _startTimeMs;
   unsigned int _restartCount;
   BLEControllerRegistry& _controllerRegistry;
   ScanCallbacks _bleScanCallbacks;
