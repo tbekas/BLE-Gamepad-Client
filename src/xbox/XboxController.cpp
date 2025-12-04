@@ -11,6 +11,15 @@ using namespace blegc;
 XboxController::XboxController() : BLEBaseController() {}
 
 bool XboxController::isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
+  if (pAdvertisedDevice->haveName()) {
+    if (pAdvertisedDevice->getName() == "Xbox Wireless Controller") {
+      return true;
+    }
+
+    BLEGC_LOGD("Name mismatch: %s", pAdvertisedDevice->getName().c_str());
+    return false;
+  }
+
   if (!pAdvertisedDevice->haveServiceUUID()) {
     BLEGC_LOGD("Service uuids missing");
     return false;
@@ -18,12 +27,6 @@ bool XboxController::isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice
 
   if (!pAdvertisedDevice->isAdvertisingService(hidSvcUUID)) {
     BLEGC_LOGD("HID service missing, uuid: 0x%02x", hidSvcUUID);
-    return false;
-  }
-
-  // if the name is present it has to be `Xbox Wireless Controller`
-  if (pAdvertisedDevice->haveName() && pAdvertisedDevice->getName() != "Xbox Wireless Controller") {
-    BLEGC_LOGD("Name mismatch: %s", pAdvertisedDevice->getName().c_str());
     return false;
   }
 
