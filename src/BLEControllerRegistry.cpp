@@ -11,6 +11,7 @@
 #include <memory>
 #include "BLEBaseController.h"
 #include "config.h"
+#include "messages.h"
 #include "logger.h"
 
 BLEControllerRegistry::BLEClientEvent::operator std::string() const {
@@ -27,17 +28,13 @@ BLEControllerRegistry::BLEClientEvent::operator std::string() const {
   return "BLEClientEvent address: " + std::string(address) + ", kind: " + kindStr;
 }
 
-BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask, TaskHandle_t& scanCallbackTask)
-    : _startStopScanTask(autoScanTask),
-      _scanCallbackTask(scanCallbackTask),
-      _callbackTask(nullptr),
+BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask, QueueHandle_t& userCallbackQueue)
+    : _autoScanTask(autoScanTask),
+      _userCallbackQueue(userCallbackQueue),
       _clientEventQueue(nullptr),
       _clientEventConsumerTask(nullptr),
-      _controllers(new std::vector<BLEAbstractController*>()),
-      _clientCallbacks(*this) {
-  xTaskCreate(_callbackTaskFn, "_callbackTask", 10000, this, 0, &_callbackTask);
-  configASSERT(_callbackTask);
-
+      _clientCallbacksImpl(*this),
+      _controllers(new std::vector<BLEAbstractController*>()) {
   _clientEventQueue = xQueueCreate(10, sizeof(BLEClientEvent));
   configASSERT(_clientEventQueue);
 
@@ -154,7 +151,7 @@ void BLEControllerRegistry::tryConnectController(const NimBLEAdvertisedDevice* p
 
   pClient->setSelfDelete(false, false);
   pClient->setConnectTimeout(CONFIG_BT_BLEGC_CONN_TIMEOUT_MS);
-  pClient->setClientCallbacks(&_clientCallbacks, false);
+  pClient->setClientCallbacks(&_clientCallbacksImpl, false);
 
   pCtrl->setClient(pClient);
 
@@ -238,29 +235,18 @@ void BLEControllerRegistry::_sendClientEvent(const BLEClientEvent& msg) const {
   }
 }
 
-void BLEControllerRegistry::_runCtrlCallback(const BLEAbstractController* pCtrl) const {
-  xTaskNotify(_callbackTask, reinterpret_cast<uint32_t>(pCtrl), eSetValueWithOverwrite);
+void BLEControllerRegistry::_sendUserCallbackMsg(const BLEUserCallback& msg) const {
+  if (xQueueSend(_userCallbackQueue, &msg, 0) != pdPASS) {
+    BLEGC_LOGE("Failed to send user callback message");
+  }
 }
 
 void BLEControllerRegistry::_notifyAutoScan() const {
-  xTaskNotify(_startStopScanTask, static_cast<uint8_t>(BLEAutoScan::BLEAutoScanNotification::Auto), eSetValueWithOverwrite);
+  xTaskNotify(_autoScanTask, static_cast<uint8_t>(BLEAutoScan::BLEAutoScanNotification::Auto), eSetValueWithOverwrite);
 }
 
 void BLEControllerRegistry::_runScanCallback() const {
   xTaskNotify(_scanCallbackTask, 0, eSetValueWithOverwrite);
-}
-
-void BLEControllerRegistry::_callbackTaskFn(void* pvParameters) {
-  while (true) {
-    const auto val = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-    auto* pCtrl = reinterpret_cast<BLEAbstractController*>(val);
-    if (pCtrl->isConnected()) {
-      pCtrl->callOnConnect();
-    } else {
-      pCtrl->callOnDisconnect();
-    }
-  }
 }
 
 void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
@@ -306,7 +292,7 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
         }
 
         pCtrl->markConnected();
-        self->_runCtrlCallback(pCtrl);
+        self->_sendUserCallbackMsg({BLEUserCallbackKind::BLEControllerConnected, pCtrl});
 
         BLEGC_LOGD("Controller successfully initialized");
         self->_notifyAutoScan();
@@ -330,8 +316,11 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
 
         if (pCtrl->isConnected()) {
           pCtrl->markDisconnected();
-          self->_runCtrlCallback(pCtrl);
+          self->_sendUserCallbackMsg({BLEUserCallbackKind::BLEControllerDisconnected, pCtrl});
         }
+
+        // TODO make pCtrl->isConnecting();
+        // if this is true, send connecting failed event
 
         if (pCtrl->isPendingDeregistration()) {
           self->deregisterController(pCtrl, false);
@@ -352,6 +341,8 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
 
         pCtrl->setClient(nullptr);
 
+        self->_sendUserCallbackMsg({BLEUserCallbackKind::BLEControllerConnectionFailed, pCtrl});
+
         if (pCtrl->isPendingDeregistration()) {
           self->deregisterController(pCtrl, false);
         }
@@ -367,21 +358,21 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
   }
 }
 
-BLEControllerRegistry::ClientCallbacks::ClientCallbacks(BLEControllerRegistry& controllerRegistry)
+BLEControllerRegistry::ClientCallbacksImpl::ClientCallbacksImpl(BLEControllerRegistry& controllerRegistry)
     : _controllerRegistry(controllerRegistry) {}
 
-void BLEControllerRegistry::ClientCallbacks::onConnect(NimBLEClient* pClient) {
+void BLEControllerRegistry::ClientCallbacksImpl::onConnect(NimBLEClient* pClient) {
   BLEGC_LOGD("Connected to a device, address: %s", std::string(pClient->getPeerAddress()).c_str());
   _controllerRegistry._sendClientEvent({pClient->getPeerAddress(), BLEClientEventKind::BLEClientConnected});
 }
 
-void BLEControllerRegistry::ClientCallbacks::onConnectFail(NimBLEClient* pClient, int reason) {
+void BLEControllerRegistry::ClientCallbacksImpl::onConnectFail(NimBLEClient* pClient, int reason) {
   BLEGC_LOGE("Failed connecting to a device, address: %s, reason: 0x%04x %s",
              std::string(pClient->getPeerAddress()).c_str(), reason, NimBLEUtils::returnCodeToString(reason));
   _controllerRegistry._sendClientEvent({pClient->getPeerAddress(), BLEClientEventKind::BLEClientConnectingFailed});
 }
 
-void BLEControllerRegistry::ClientCallbacks::onAuthenticationComplete(NimBLEConnInfo& connInfo) {
+void BLEControllerRegistry::ClientCallbacksImpl::onAuthenticationComplete(NimBLEConnInfo& connInfo) {
   if (connInfo.isBonded()) {
     BLEGC_LOGI("Bonded successfully with a device, address: %s", std::string(connInfo.getAddress()).c_str());
     _controllerRegistry._sendClientEvent({connInfo.getAddress(), BLEClientEventKind::BLEClientBonded});
@@ -391,7 +382,7 @@ void BLEControllerRegistry::ClientCallbacks::onAuthenticationComplete(NimBLEConn
   }
 }
 
-void BLEControllerRegistry::ClientCallbacks::onDisconnect(NimBLEClient* pClient, int reason) {
+void BLEControllerRegistry::ClientCallbacksImpl::onDisconnect(NimBLEClient* pClient, int reason) {
   BLEGC_LOGI("Device disconnected, address: %s, reason: 0x%04x %s", std::string(pClient->getPeerAddress()).c_str(),
              reason, NimBLEUtils::returnCodeToString(reason));
   _controllerRegistry._sendClientEvent({pClient->getPeerAddress(), BLEClientEventKind::BLEClientDisconnected});

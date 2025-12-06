@@ -18,6 +18,7 @@ class BLEAbstractController {
   bool isConnected() const;
   void disconnect();
 
+  friend class BLEUserCallbacks;
   friend class BLEControllerRegistry;
 
  protected:
@@ -34,8 +35,10 @@ class BLEAbstractController {
   bool isPendingDeregistration() const;
   bool hidInit(NimBLEClient* pClient);
 
-  virtual void callOnConnect() = 0;
-  virtual void callOnDisconnect() = 0;
+  virtual void callOnConnecting() = 0;
+  virtual void callOnConnectionFailed() = 0;
+  virtual void callOnConnected() = 0;
+  virtual void callOnDisconnected() = 0;
   virtual bool isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) = 0;
   virtual bool init(NimBLEClient* pClient) = 0;
   virtual bool deinit() = 0;
@@ -51,25 +54,33 @@ class BLEAbstractController {
 template <typename T>
 class BLEBaseController : public BLEAbstractController {
  public:
-  explicit BLEBaseController() : _onConnect([](T&) {}), _onDisconnect([](T&) {}) {}
+  explicit BLEBaseController() : _onConnected([](T&) {}), _onDisconnected([](T&) {}) {}
+
+  void onConnecting(const std::function<void(T&)>& callback) { _onConnecting = callback; }
+
+  void onConnectionFailed(const std::function<void(T&)>& callback) { _onConnectionFailed = callback; }
 
   /**
    * @brief Sets the callback to be invoked when the controller connects.
    * @param callback Reference to a callback function.
    */
-  void onConnect(const std::function<void(T&)>& callback) { _onConnect = callback; }
+  void onConnected(const std::function<void(T&)>& callback) { _onConnected = callback; }
 
   /**
    * @brief Sets the callback to be invoked when the controller disconnects.
    * @param callback Reference to the callback function.
    */
-  void onDisconnect(const std::function<void(T&)>& callback) { _onDisconnect = callback; }
+  void onDisconnected(const std::function<void(T&)>& callback) { _onDisconnected = callback; }
 
  protected:
-  void callOnConnect() override { _onConnect(*static_cast<T*>(this)); }
-  void callOnDisconnect() override { _onDisconnect(*static_cast<T*>(this)); }
+  void callOnConnecting() override { _onConnecting(*static_cast<T*>(this)); }
+  void callOnConnectionFailed() override { _onConnectionFailed(*static_cast<T*>(this)); }
+  void callOnConnected() override { _onConnected(*static_cast<T*>(this)); }
+  void callOnDisconnected() override { _onDisconnected(*static_cast<T*>(this)); }
 
  private:
-  std::function<void(T&)> _onConnect;
-  std::function<void(T&)> _onDisconnect;
+  std::function<void(T&)> _onConnecting;
+  std::function<void(T&)> _onConnectionFailed;
+  std::function<void(T&)> _onConnected;
+  std::function<void(T&)> _onDisconnected;
 };

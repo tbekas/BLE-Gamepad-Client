@@ -6,10 +6,10 @@
 #include "logger.h"
 
 bool BLEGamepadClient::_initialized = false;
-TaskHandle_t BLEGamepadClient::_startStopScanTask;
-TaskHandle_t BLEGamepadClient::_scanCallbackTask;
-BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_startStopScanTask, _scanCallbackTask);
-BLEAutoScan BLEGamepadClient::_autoScan(_startStopScanTask, _scanCallbackTask, _controllerRegistry);
+TaskHandle_t BLEGamepadClient::_autoScanTask;
+QueueHandle_t BLEGamepadClient::_callbackQueue;
+BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_autoScanTask, _callbackQueue);
+BLEAutoScan BLEGamepadClient::_autoScan(_controllerRegistry, _autoScanTask, _callbackQueue);
 
 /**
  * @brief Initializes the library.

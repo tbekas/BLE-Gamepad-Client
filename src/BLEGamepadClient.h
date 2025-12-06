@@ -20,8 +20,9 @@ class BLEGamepadClient {
 
  private:
   static bool _initialized;
-  static TaskHandle_t _startStopScanTask;
+  static TaskHandle_t _autoScanTask;
   static TaskHandle_t _scanCallbackTask;
+  static QueueHandle_t _callbackQueue;
   static BLEAutoScan _autoScan;
   static BLEControllerRegistry _controllerRegistry;
 };

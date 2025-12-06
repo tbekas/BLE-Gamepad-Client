@@ -2,27 +2,24 @@
 
 #include <NimBLEDevice.h>
 #include "BLEControllerRegistry.h"
+#include "messages.h"
 #include "logger.h"
 
-BLEAutoScan::BLEAutoScan(TaskHandle_t& startStopScanTask,
-                         TaskHandle_t& scanCallbackTask,
-                         BLEControllerRegistry& controllerRegistry)
+BLEAutoScan::BLEAutoScan(BLEControllerRegistry& controllerRegistry,
+                         TaskHandle_t& startStopScanTask,
+                         QueueHandle_t& userCallbackQueue)
     : _startStopScanTask(startStopScanTask),
-      _scanCallbackTask(scanCallbackTask),
       _startTimeMs(0),
-      _restartCount(0),
       _controllerRegistry(controllerRegistry),
-      _bleScanCallbacks(*this),
-      _onScanStart([]() {}),
-      _onScanStop([]() {}) {
+      _scanCallbacksImpl(*this),
+      _onScanStarted([]() {}),
+      _onScanStopped([]() {}),
+      _userCallbackQueue(userCallbackQueue) {
   xTaskCreate(_startStopScanTaskFn, "_startStopScanTaskFn", 10000, this, 0, &_startStopScanTask);
   configASSERT(_startStopScanTask);
 
-  xTaskCreate(_scanCallbackTaskFn, "_scanCallbackTaskFn", 10000, this, 0, &_scanCallbackTask);
-  configASSERT(_scanCallbackTask);
-
   auto* pScan = NimBLEDevice::getScan();
-  pScan->setScanCallbacks(&_bleScanCallbacks, false);
+  pScan->setScanCallbacks(&_scanCallbacksImpl, false);
   pScan->setMaxResults(0);
 }
 
@@ -74,47 +71,46 @@ void BLEAutoScan::notify() const {
       xTaskNotify(_startStopScanTask, static_cast<uint8_t>(BLEAutoScanNotification::Auto), eSetValueWithOverwrite);
 }
 
-void BLEAutoScan::onScanStart(const std::function<void()>& callback) {
-  _onScanStart = callback;
+void BLEAutoScan::onScanStarted(const std::function<void()>& callback) {
+  _onScanStarted = callback;
 }
 
-void BLEAutoScan::onScanStop(const std::function<void()>& callback) {
-  _onScanStop = callback;
+void BLEAutoScan::onScanStopped(const std::function<void()>& callback) {
+  _onScanStopped = callback;
 }
 
-void BLEAutoScan::_scanCallbackTaskFn(void* pvParameters) {
-  auto* self = static_cast<BLEAutoScan*>(pvParameters);
+void BLEAutoScan::callOnScanStarted() {
+  _onScanStarted();
+}
 
-  while (true) {
-    const auto val = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    const auto scanStarted = static_cast<bool>(val);
+void BLEAutoScan::callOnScanStopped() {
+  _onScanStopped();
+}
 
-    if (self->_enabled) {
-      if (scanStarted) {
-        self->_onScanStart();
-      } else {
-        self->_onScanStop();
-      }
-    }
+void BLEAutoScan::_sendUserCallbackMsg(const BLEUserCallback& msg) const {
+  if (xQueueSend(_userCallbackQueue, &msg, 0) != pdPASS) {
+    BLEGC_LOGE("Failed to send user callback message");
   }
 }
 
-void BLEAutoScan::_startHighDuty(NimBLEScan* pScan) {
-  pScan->setWindow(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_WINDOW_MS);
-  pScan->setInterval(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_INTERVAL_MS);
-  pScan->setActiveScan(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_ACTIVE > 0);
-  pScan->start(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_DURATION_MS);
-}
-
-void BLEAutoScan::_startLowDuty(NimBLEScan* pScan) {
-  pScan->setWindow(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_WINDOW_MS);
-  pScan->setInterval(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_INTERVAL_MS);
-  pScan->setActiveScan(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_ACTIVE > 0);
-  pScan->start(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_DURATION_MS);
+void BLEAutoScan::_startScan(NimBLEScan* pScan, bool highDuty) {
+  if (highDuty) {
+    pScan->setWindow(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_WINDOW_MS);
+    pScan->setInterval(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_INTERVAL_MS);
+    pScan->setActiveScan(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_ACTIVE > 0);
+    pScan->start(CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_DURATION_MS);
+  } else {
+    pScan->setWindow(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_WINDOW_MS);
+    pScan->setInterval(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_INTERVAL_MS);
+    pScan->setActiveScan(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_ACTIVE > 0);
+    pScan->start(CONFIG_BT_BLEGC_LOW_DUTY_SCAN_DURATION_MS);
+  }
+  _sendUserCallbackMsg({BLEUserCallbackKind::BLEScanStarted});
 }
 
 void BLEAutoScan::_stopScan(NimBLEScan* pScan) {
   pScan->stop();
+  _sendUserCallbackMsg({BLEUserCallbackKind::BLEScanStopped});
 }
 
 void BLEAutoScan::_startStopScanTaskFn(void* pvParameters) {
@@ -131,7 +127,7 @@ void BLEAutoScan::_startStopScanTaskFn(void* pvParameters) {
     std::string decision;
 
     switch (static_cast<BLEAutoScanNotification>(val)) {
-      case BLEAutoScanNotification::ScanEnd: {
+      case BLEAutoScanNotification::ScanFinished: {
         if (self->_enabled && canAllocateCtrl) {
 
           if (!isScanning) {
@@ -140,7 +136,7 @@ void BLEAutoScan::_startStopScanTaskFn(void* pvParameters) {
 
             if (currTimeMs > hdEndTimeMs && currTimeMs < ldEndTimeMs) {
               decision = "start low duty scan";
-              self->_startLowDuty(pScan);
+              self->_startScan(pScan, false);
             } else {
               decision = "do nothing (timeout)";
             }
@@ -154,7 +150,7 @@ void BLEAutoScan::_startStopScanTaskFn(void* pvParameters) {
         if (self->_enabled && canAllocateCtrl) {
           decision = "start high duty scan";
           self->_startTimeMs = currTimeMs;
-          self->_startHighDuty(pScan);
+          self->_startScan(pScan, true);
         } else {
           if (isScanning) {
             self->_stopScan(pScan);
@@ -173,9 +169,9 @@ void BLEAutoScan::_startStopScanTaskFn(void* pvParameters) {
   }
 }
 
-BLEAutoScan::ScanCallbacks::ScanCallbacks(BLEAutoScan& autoScan) : _autoScan(autoScan) {}
+BLEAutoScan::ScanCallbacksImpl::ScanCallbacksImpl(BLEAutoScan& autoScan) : _autoScan(autoScan) {}
 
-void BLEAutoScan::ScanCallbacks::onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
+void BLEAutoScan::ScanCallbacksImpl::onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
   BLEGC_LOGD("Device discovered, address: %s, address type: %d, name: %s",
              std::string(pAdvertisedDevice->getAddress()).c_str(), pAdvertisedDevice->getAddressType(),
              pAdvertisedDevice->getName().c_str());
@@ -183,7 +179,7 @@ void BLEAutoScan::ScanCallbacks::onResult(const NimBLEAdvertisedDevice* pAdverti
   _autoScan._controllerRegistry.tryConnectController(pAdvertisedDevice);
 }
 
-void BLEAutoScan::ScanCallbacks::onScanEnd(const NimBLEScanResults& results, int reason) {
+void BLEAutoScan::ScanCallbacksImpl::onScanEnd(const NimBLEScanResults& results, int reason) {
   BLEGC_LOGD("Scan ended, reason: 0x%04x %s", reason, NimBLEUtils::returnCodeToString(reason));
-  xTaskNotify(_autoScan._startStopScanTask, static_cast<uint8_t>(BLEAutoScanNotification::ScanEnd), eSetValueWithOverwrite);
+  xTaskNotify(_autoScan._startStopScanTask, static_cast<uint8_t>(BLEAutoScanNotification::ScanFinished), eSetValueWithOverwrite);
 }

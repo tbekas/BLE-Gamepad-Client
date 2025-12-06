@@ -4,6 +4,7 @@
 #include <atomic>
 #include <memory>
 #include "BLEBaseController.h"
+#include "messages.h"
 
 class BLEControllerRegistry {
  public:
@@ -12,7 +13,7 @@ class BLEControllerRegistry {
     unsigned int notAllocated = 0;
   };
 
-  BLEControllerRegistry(TaskHandle_t& autoScanTask, TaskHandle_t& scanCallbackTask);
+  BLEControllerRegistry(TaskHandle_t& autoScanTask, QueueHandle_t& userCallbackQueue);
   ~BLEControllerRegistry();
 
   void registerController(BLEAbstractController* pCtrl);
@@ -21,9 +22,9 @@ class BLEControllerRegistry {
   BLEControllerAllocationInfo getControllerAllocationInfo() const;
 
  private:
-  class ClientCallbacks final : public NimBLEClientCallbacks {
+  class ClientCallbacksImpl final : public NimBLEClientCallbacks {
    public:
-    explicit ClientCallbacks(BLEControllerRegistry& controllerRegistry);
+    explicit ClientCallbacksImpl(BLEControllerRegistry& controllerRegistry);
     void onConnect(NimBLEClient* pClient) override;
     void onConnectFail(NimBLEClient* pClient, int reason) override;
     void onAuthenticationComplete(NimBLEConnInfo& connInfo) override;
@@ -49,18 +50,16 @@ class BLEControllerRegistry {
   BLEAbstractController* _findController(NimBLEAddress address) const;
   BLEAbstractController* _findAndAllocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   void _sendClientEvent(const BLEClientEvent& msg) const;
-  void _runCtrlCallback(const BLEAbstractController* pCtrl) const;
+  void _sendUserCallbackMsg(const BLEAbstractController* pCtrl) const;
   void _startScan() const;
   void _notifyAutoScan() const;
-  void _runScanCallback() const;
-  static void _callbackTaskFn(void* pvParameters);
+  void _sendUserCallbackMsg(const BLEUserCallback& msg) const;
   static void _clientEventConsumerFn(void* pvParameters);
 
-  TaskHandle_t& _startStopScanTask;
-  TaskHandle_t& _scanCallbackTask;
-  TaskHandle_t _callbackTask;
+  TaskHandle_t& _autoScanTask;
+  QueueHandle_t& _userCallbackQueue;
   QueueHandle_t _clientEventQueue;
   TaskHandle_t _clientEventConsumerTask;
+  ClientCallbacksImpl _clientCallbacksImpl;
   std::atomic<std::vector<BLEAbstractController*>*> _controllers;
-  ClientCallbacks _clientCallbacks;
 };
