@@ -1,15 +1,21 @@
 #pragma once
 
-enum class BLEAutoScanNotification : uint8_t { Auto = 0, ScanFinished = 1 };
+enum class BLEAutoScanNotification : uint8_t {
+  Auto = 0,
+  Enabled = 1,
+  Disabled = 2,
+  ScanStopped = 3,
+  ScanFinished = 4
+};
 
 enum class BLEUserCallbackKind : uint8_t {
-  BLEControllerConnecting = 0,
-  BLEControllerConnectionFailed = 1,
-  BLEControllerConnected = 2,
-  BLEControllerDisconnected = 3,
+  ControllerConnecting = 0,
+  ControllerConnectionFailed = 1,
+  ControllerConnected = 2,
+  ControllerDisconnected = 3,
 
-  BLEScanStarted = 4,
-  BLEScanStopped = 5,
+  ScanStarted = 4,
+  ScanStopped = 5,
 };
 
 struct BLEUserCallback {

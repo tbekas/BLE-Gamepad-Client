@@ -16,12 +16,19 @@ class BLEAbstractController {
   NimBLEAddress getAddress() const;
   NimBLEAddress getLastAddress() const;
   bool isConnected() const;
+  bool isConnecting() const;
   void disconnect();
 
   friend class BLEUserCallbacks;
   friend class BLEControllerRegistry;
 
  protected:
+  enum class ConnectionState : uint8_t {
+    Connecting,
+    Connected,
+    Disconnected,
+  };
+
   const static NimBLEAddress _nullAddress;
 
   NimBLEClient* getClient() const;
@@ -30,6 +37,7 @@ class BLEAbstractController {
   bool tryDeallocate();
   bool isAllocated() const;
   void markCompletedDeregistration();
+  void markConnecting();
   void markConnected();
   void markDisconnected();
   bool isPendingDeregistration() const;
@@ -46,7 +54,8 @@ class BLEAbstractController {
   std::atomic_bool _pendingDeregistration;
   std::atomic<const NimBLEAddress*> _address;
   NimBLEClient* _pClient;
-  bool _connected;
+
+  ConnectionState _connectionState;
   NimBLEAddress _lastAddress;
   blegc::BLEDeviceInfo _deviceInfo;
 };
@@ -54,7 +63,8 @@ class BLEAbstractController {
 template <typename T>
 class BLEBaseController : public BLEAbstractController {
  public:
-  explicit BLEBaseController() : _onConnected([](T&) {}), _onDisconnected([](T&) {}) {}
+  explicit BLEBaseController()
+      : _onConnecting([](T&) {}), _onConnectionFailed([](T&) {}), _onConnected([](T&) {}), _onDisconnected([](T&) {}) {}
 
   void onConnecting(const std::function<void(T&)>& callback) { _onConnecting = callback; }
 

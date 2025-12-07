@@ -6,7 +6,7 @@
 class BLEAutoScan {
  public:
   BLEAutoScan(BLEControllerRegistry& controllerRegistry,
-              TaskHandle_t& startStopScanTask,
+              TaskHandle_t& autoScanTask,
               QueueHandle_t& userCallbackQueue);
   ~BLEAutoScan() = default;
 
@@ -38,7 +38,7 @@ class BLEAutoScan {
   static void _startStopScanTaskFn(void* pvParameters);
 
   bool _enabled = true;
-  TaskHandle_t& _startStopScanTask;
+  TaskHandle_t& _autoScanTask;
   unsigned long _startTimeMs;
   BLEControllerRegistry& _controllerRegistry;
   ScanCallbacksImpl _scanCallbacksImpl;

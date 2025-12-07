@@ -20,21 +20,22 @@ void BLEUserCallbacks::_callbackQueueConsumerTaskFn(void* pvParameters) {
     }
 
     switch (msg.kind) {
-      case BLEUserCallbackKind::BLEControllerConnecting:
+      case BLEUserCallbackKind::ControllerConnecting:
         msg.pCtrl->callOnConnecting();
-      case BLEUserCallbackKind::BLEControllerConnectionFailed:
+        break;
+      case BLEUserCallbackKind::ControllerConnectionFailed:
         msg.pCtrl->callOnConnectionFailed();
         break;
-      case BLEUserCallbackKind::BLEControllerConnected:
+      case BLEUserCallbackKind::ControllerConnected:
         msg.pCtrl->callOnConnected();
         break;
-      case BLEUserCallbackKind::BLEControllerDisconnected:
+      case BLEUserCallbackKind::ControllerDisconnected:
         msg.pCtrl->callOnDisconnected();
         break;
-      case BLEUserCallbackKind::BLEScanStarted:
+      case BLEUserCallbackKind::ScanStarted:
         self->_autoScan.callOnScanStarted();
         break;
-      case BLEUserCallbackKind::BLEScanStopped:
+      case BLEUserCallbackKind::ScanStopped:
         self->_autoScan.callOnScanStopped();
         break;
     }

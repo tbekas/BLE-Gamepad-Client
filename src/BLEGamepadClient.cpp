@@ -3,13 +3,15 @@
 #include <NimBLEDevice.h>
 #include "BLEAutoScan.h"
 #include "BLEControllerRegistry.h"
+#include "BLEUserCallbacks.h"
 #include "logger.h"
 
 bool BLEGamepadClient::_initialized = false;
 TaskHandle_t BLEGamepadClient::_autoScanTask;
-QueueHandle_t BLEGamepadClient::_callbackQueue;
-BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_autoScanTask, _callbackQueue);
-BLEAutoScan BLEGamepadClient::_autoScan(_controllerRegistry, _autoScanTask, _callbackQueue);
+QueueHandle_t BLEGamepadClient::_userCallbackQueue;
+BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_autoScanTask, _userCallbackQueue);
+BLEAutoScan BLEGamepadClient::_autoScan(_controllerRegistry, _autoScanTask, _userCallbackQueue);
+BLEUserCallbacks BLEGamepadClient::_userCallbacks(_autoScan, _userCallbackQueue);
 
 /**
  * @brief Initializes the library.

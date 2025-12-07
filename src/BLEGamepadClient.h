@@ -2,6 +2,7 @@
 
 #include "BLEAutoScan.h"
 #include "BLEControllerRegistry.h"
+#include "BLEUserCallbacks.h"
 
 // export headers
 #include "xbox/XboxController.h"
@@ -21,8 +22,8 @@ class BLEGamepadClient {
  private:
   static bool _initialized;
   static TaskHandle_t _autoScanTask;
-  static TaskHandle_t _scanCallbackTask;
-  static QueueHandle_t _callbackQueue;
+  static QueueHandle_t _userCallbackQueue;
   static BLEAutoScan _autoScan;
   static BLEControllerRegistry _controllerRegistry;
+  static BLEUserCallbacks _userCallbacks;
 };

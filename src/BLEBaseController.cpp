@@ -8,7 +8,7 @@ const NimBLEAddress BLEAbstractController::_nullAddress = NimBLEAddress();
 
 BLEAbstractController::BLEAbstractController()
     : _pendingDeregistration(false),
-      _connected(false),
+      _connectionState(ConnectionState::Disconnected),
       _address(&_nullAddress),
       _pClient(nullptr),
       _lastAddress(NimBLEAddress()) {}
@@ -69,7 +69,10 @@ bool BLEAbstractController::tryDeallocate() {
  * @return True if controller is connected and fully initialized, false otherwise.
  */
 bool BLEAbstractController::isConnected() const {
-  return _connected;
+  return _connectionState == ConnectionState::Connected;
+}
+bool BLEAbstractController::isConnecting() const {
+  return _connectionState == ConnectionState::Connecting;
 }
 
 NimBLEAddress BLEAbstractController::getLastAddress() const {
@@ -83,13 +86,16 @@ bool BLEAbstractController::isAllocated() const {
 void BLEAbstractController::markCompletedDeregistration() {
   _pendingDeregistration.exchange(false);
 }
+void BLEAbstractController::markConnecting() {
+  _connectionState = ConnectionState::Connecting;
+}
 
 void BLEAbstractController::markConnected() {
-  _connected = true;
+  _connectionState = ConnectionState::Connected;
 }
 
 void BLEAbstractController::markDisconnected() {
-  _connected = false;
+  _connectionState = ConnectionState::Disconnected;
 }
 
 bool BLEAbstractController::isPendingDeregistration() const {
@@ -121,7 +127,7 @@ void BLEAbstractController::setClient(NimBLEClient* pClient) {
 }
 
 void BLEAbstractController::disconnect() {
-  if (_connected) {
+  if (isConnected()) {
     auto* pClient = getClient();
     if (pClient) {
       if (pClient->disconnect()) {
