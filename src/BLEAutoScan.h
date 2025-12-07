@@ -1,16 +1,13 @@
 #pragma once
 
 #include "BLEControllerRegistry.h"
+#include "messages.h"
 
 class BLEAutoScan {
  public:
-  enum class BLEAutoScanNotification : uint8_t {
-   Auto = 0, ScanEnd = 1
-  };
-
-  BLEAutoScan(TaskHandle_t& startStopScanTask,
-              TaskHandle_t& scanCallbackTask,
-              BLEControllerRegistry& controllerRegistry);
+  BLEAutoScan(BLEControllerRegistry& controllerRegistry,
+              TaskHandle_t& autoScanTask,
+              QueueHandle_t& userCallbackQueue);
   ~BLEAutoScan() = default;
 
   void enable();
@@ -18,32 +15,34 @@ class BLEAutoScan {
   bool isEnabled() const;
   bool isScanning() const;
   void notify() const;
-  void onScanStart(const std::function<void()>& callback);
-  void onScanStop(const std::function<void()>& callback);
+  void onScanStarted(const std::function<void()>& callback);
+  void onScanStopped(const std::function<void()>& callback);
+
+  friend class BLEUserCallbackRunner;
 
  private:
-  class ScanCallbacks final : public NimBLEScanCallbacks {
+  class ScanCallbacksImpl final : public NimBLEScanCallbacks {
    public:
-    explicit ScanCallbacks(BLEAutoScan& autoScan);
+    explicit ScanCallbacksImpl(BLEAutoScan& autoScan);
     void onResult(const NimBLEAdvertisedDevice* pAdvertisedDevice) override;
     void onScanEnd(const NimBLEScanResults& results, int reason) override;
     BLEAutoScan& _autoScan;
   };
 
-  void _startHighDuty(NimBLEScan* pScan);
-  void _startLowDuty(NimBLEScan* pScan);
+  void callOnScanStarted();
+  void callOnScanStopped();
+  void _sendUserCallbackMsg(const BLEUserCallback& msg) const;
+  void _startScan(NimBLEScan* pScan, bool highDuty);
   void _stopScan(NimBLEScan* pScan);
 
   static void _startStopScanTaskFn(void* pvParameters);
-  static void _scanCallbackTaskFn(void* pvParameters);
 
   bool _enabled = true;
-  TaskHandle_t& _startStopScanTask;
-  TaskHandle_t& _scanCallbackTask;
+  TaskHandle_t& _autoScanTask;
   unsigned long _startTimeMs;
-  unsigned int _restartCount;
   BLEControllerRegistry& _controllerRegistry;
-  ScanCallbacks _bleScanCallbacks;
-  std::function<void()> _onScanStart;
-  std::function<void()> _onScanStop;
+  ScanCallbacksImpl _scanCallbacksImpl;
+  std::function<void()> _onScanStarted;
+  std::function<void()> _onScanStopped;
+  QueueHandle_t& _userCallbackQueue;
 };

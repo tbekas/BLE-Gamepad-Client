@@ -41,6 +41,8 @@ bool BLEValueReceiver<T>::init(NimBLERemoteCharacteristic* pChar) {
     return false;
   }
 
+  _store = Store();
+
   if (!pChar->canNotify()) {
     BLEGC_LOGE("Characteristic not able to notify. %s", blegc::remoteCharToStr(pChar).c_str());
     return false;
