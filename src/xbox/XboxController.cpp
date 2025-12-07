@@ -20,16 +20,6 @@ bool XboxController::isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice
     return false;
   }
 
-  if (!pAdvertisedDevice->haveServiceUUID()) {
-    BLEGC_LOGD("Service uuids missing");
-    return false;
-  }
-
-  if (!pAdvertisedDevice->isAdvertisingService(hidSvcUUID)) {
-    BLEGC_LOGD("HID service missing, uuid: 0x%02x", hidSvcUUID);
-    return false;
-  }
-
   if (!pAdvertisedDevice->haveAppearance()) {
     BLEGC_LOGD("Appearance missing");
     return false;
