@@ -22,9 +22,7 @@
   "export": {
     "exclude": [
       ".git",
-      ".github",
-      "docs/CMakeLists.txt",
-      "CMakeLists.txt"
+      ".github"
     ]
   }
 }
