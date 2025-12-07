@@ -19,7 +19,7 @@ class BLEAbstractController {
   bool isConnecting() const;
   void disconnect();
 
-  friend class BLEUserCallbacks;
+  friend class BLEUserCallbackRunner;
   friend class BLEControllerRegistry;
 
  protected:

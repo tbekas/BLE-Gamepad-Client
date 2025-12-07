@@ -1,6 +1,6 @@
-#include "BLEUserCallbacks.h"
+#include "BLEUserCallbackRunner.h"
 
-BLEUserCallbacks::BLEUserCallbacks(BLEAutoScan& autoScan, QueueHandle_t& userCallbackQueue)
+BLEUserCallbackRunner::BLEUserCallbackRunner(BLEAutoScan& autoScan, QueueHandle_t& userCallbackQueue)
     : _userCallbackQueue(userCallbackQueue), _userCallbackQueueConsumerTask(nullptr), _autoScan(autoScan) {
   _userCallbackQueue = xQueueCreate(10, sizeof(BLEUserCallback));
   configASSERT(_userCallbackQueue);
@@ -9,8 +9,8 @@ BLEUserCallbacks::BLEUserCallbacks(BLEAutoScan& autoScan, QueueHandle_t& userCal
   configASSERT(_userCallbackQueueConsumerTask);
 }
 
-void BLEUserCallbacks::_callbackQueueConsumerTaskFn(void* pvParameters) {
-  auto* self = static_cast<BLEUserCallbacks*>(pvParameters);
+void BLEUserCallbackRunner::_callbackQueueConsumerTaskFn(void* pvParameters) {
+  auto* self = static_cast<BLEUserCallbackRunner*>(pvParameters);
 
   while (true) {
     BLEUserCallback msg{};

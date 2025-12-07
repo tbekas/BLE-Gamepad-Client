@@ -2,12 +2,10 @@
 #include <BLEAutoScan.h>
 #include <BLEBaseController.h>
 #include <freertos/queue.h>
-#include <cstdint>
-#include "messages.h"
 
-class BLEUserCallbacks {
+class BLEUserCallbackRunner {
   public:
-  BLEUserCallbacks(BLEAutoScan& autoScan, QueueHandle_t& userCallbackQueue);
+  BLEUserCallbackRunner(BLEAutoScan& autoScan, QueueHandle_t& userCallbackQueue);
  private:
   static void _callbackQueueConsumerTaskFn(void* pvParameters);
 

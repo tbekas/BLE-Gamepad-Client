@@ -18,7 +18,7 @@ class BLEAutoScan {
   void onScanStarted(const std::function<void()>& callback);
   void onScanStopped(const std::function<void()>& callback);
 
-  friend class BLEUserCallbacks;
+  friend class BLEUserCallbackRunner;
 
  private:
   class ScanCallbacksImpl final : public NimBLEScanCallbacks {
