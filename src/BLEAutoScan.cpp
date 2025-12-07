@@ -71,8 +71,7 @@ bool BLEAutoScan::isScanning() const {
  * @copydetails enable
  */
 void BLEAutoScan::notify() const {
-  NimBLEDevice::isInitialized() &&
-      xTaskNotify(_autoScanTask, static_cast<uint8_t>(BLEAutoScanNotification::Auto), eSetValueWithOverwrite);
+  xTaskNotify(_autoScanTask, static_cast<uint8_t>(BLEAutoScanNotification::Auto), eSetValueWithOverwrite);
 }
 
 void BLEAutoScan::onScanStarted(const std::function<void()>& callback) {
@@ -123,6 +122,10 @@ void BLEAutoScan::_startStopScanTaskFn(void* pvParameters) {
   while (true) {
     const auto val = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     const auto notification = static_cast<BLEAutoScanNotification>(val);
+
+    if (!NimBLEDevice::isInitialized()) {
+      continue;
+    }
 
     auto* pScan = NimBLEDevice::getScan();
     const auto allocInfo = self->_controllerRegistry.getAllocationInfo();
