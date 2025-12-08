@@ -1,18 +1,16 @@
 #include "BLEControllerRegistry.h"
 
-#include <BLEAutoScan.h>
 #include <NimBLEClient.h>
 #include <NimBLEDevice.h>
 #include <NimBLEScan.h>
 #include <NimBLEUtils.h>
-#include <algorithm>
-#include <optional>
 #include <bitset>
 #include <memory>
-#include "BLEBaseController.h"
+#include <optional>
+#include "BLEAbstractController.h"
 #include "config.h"
-#include "messages.h"
 #include "logger.h"
+#include "messages.h"
 
 BLEControllerRegistry::ClientEvent::operator std::string() const {
   std::string kindStr;
@@ -164,7 +162,7 @@ void BLEControllerRegistry::tryConnectController(const NimBLEAdvertisedDevice* p
   }
 
   pCtrl->markConnecting();
-  _sendUserCallbackMsg({BLEUserCallbackKind::ScanStopped}); // pClient->connect() implicitly stopped a scan
+  _sendUserCallbackMsg({BLEUserCallbackKind::ScanStopped});  // pClient->connect() implicitly stopped a scan
   _sendUserCallbackMsg({BLEUserCallbackKind::ControllerConnecting, pCtrl});
 }
 BLEControllerRegistry::AllocationInfo BLEControllerRegistry::getAllocationInfo() const {
@@ -189,7 +187,8 @@ BLEAbstractController* BLEControllerRegistry::_findController(const NimBLEAddres
   return nullptr;
 }
 
-BLEAbstractController* BLEControllerRegistry::_findAndAllocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
+BLEAbstractController* BLEControllerRegistry::_findAndAllocateController(
+    const NimBLEAdvertisedDevice* pAdvertisedDevice) {
   const auto address = pAdvertisedDevice->getAddress();
 
   std::vector<BLEAbstractController*> suitableControllers;

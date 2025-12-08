@@ -3,7 +3,7 @@
 #include <NimBLEDevice.h>
 #include <atomic>
 #include <memory>
-#include "BLEBaseController.h"
+#include "BLEAbstractController.h"
 #include "messages.h"
 
 class BLEControllerRegistry {
