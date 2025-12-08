@@ -8,7 +8,8 @@
 
 using namespace blegc;
 
-XboxController::XboxController() : BLEBaseController() {}
+XboxController::XboxController() = default;
+XboxController::~XboxController() = default;
 
 bool XboxController::isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
   if (pAdvertisedDevice->haveName()) {

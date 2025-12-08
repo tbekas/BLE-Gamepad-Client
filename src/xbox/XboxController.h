@@ -15,7 +15,7 @@ class XboxController final : public BLEBaseController<XboxController>,
                              public BLEValueWriter<XboxVibrationsCommand> {
  public:
   XboxController();
-  ~XboxController() = default;
+  ~XboxController();
 
   using BLEValueReceiver<XboxControlsEvent>::read;
   using BLEValueReceiver<XboxControlsEvent>::onUpdate;
