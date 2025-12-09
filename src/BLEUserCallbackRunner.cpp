@@ -5,11 +5,23 @@ BLEUserCallbackRunner::BLEUserCallbackRunner(BLEAutoScan& autoScan, QueueHandle_
   _userCallbackQueue = xQueueCreate(10, sizeof(BLEUserCallback));
   configASSERT(_userCallbackQueue);
 
-  xTaskCreate(_callbackQueueConsumerTaskFn, "_callbackQueueConsumerTask", 10000, this, 0, &_userCallbackQueueConsumerTask);
+  xTaskCreate(_userCallbackQueueConsumerTaskFn, "_userCallbackQueueConsumerTaskFn", 10000, this, 0,
+              &_userCallbackQueueConsumerTask);
   configASSERT(_userCallbackQueueConsumerTask);
 }
+BLEUserCallbackRunner::~BLEUserCallbackRunner() {
+  if (_userCallbackQueueConsumerTask != nullptr) {
+    vTaskDelete(_userCallbackQueueConsumerTask);
+    _userCallbackQueueConsumerTask = nullptr;
+  }
 
-void BLEUserCallbackRunner::_callbackQueueConsumerTaskFn(void* pvParameters) {
+  if (_userCallbackQueue != nullptr) {
+    vQueueDelete(_userCallbackQueue);
+    _userCallbackQueue = nullptr;
+  }
+}
+
+void BLEUserCallbackRunner::_userCallbackQueueConsumerTaskFn(void* pvParameters) {
   auto* self = static_cast<BLEUserCallbackRunner*>(pvParameters);
 
   while (true) {

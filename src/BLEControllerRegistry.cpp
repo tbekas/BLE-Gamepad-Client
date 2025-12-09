@@ -27,12 +27,16 @@ BLEControllerRegistry::ClientEvent::operator std::string() const {
 }
 
 BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask, QueueHandle_t& userCallbackQueue)
-    : _autoScanTask(autoScanTask),
+    : _controllers({}),
+      _controllersMutex(nullptr),
+      _autoScanTask(autoScanTask),
       _userCallbackQueue(userCallbackQueue),
       _clientEventQueue(nullptr),
       _clientEventConsumerTask(nullptr),
-      _clientCallbacksImpl(*this),
-      _controllers(new std::vector<BLEAbstractController*>()) {
+      _clientCallbacksImpl(*this) {
+  _controllersMutex = xSemaphoreCreateMutex();
+  configASSERT(_controllersMutex);
+
   _clientEventQueue = xQueueCreate(10, sizeof(ClientEvent));
   configASSERT(_clientEventQueue);
 
@@ -44,41 +48,42 @@ BLEControllerRegistry::BLEControllerRegistry(TaskHandle_t& autoScanTask, QueueHa
 BLEControllerRegistry::~BLEControllerRegistry() {
   if (_clientEventConsumerTask != nullptr) {
     vTaskDelete(_clientEventConsumerTask);
+    _clientEventConsumerTask = nullptr;
   }
   if (_clientEventQueue != nullptr) {
     vQueueDelete(_clientEventQueue);
+    _clientEventQueue = nullptr;
   }
 
-  const auto* pControllers = _controllers.load();
-  delete pControllers;
+  if (_controllersMutex != nullptr) {
+    vSemaphoreDelete(_controllersMutex);
+    _controllersMutex = nullptr;
+  }
+
+  _controllers.clear();
 }
 
 void BLEControllerRegistry::registerController(BLEAbstractController* pCtrl) {
-  auto* pControllersOld = _controllers.load();
-  auto* pControllersNew = new std::vector<BLEAbstractController*>();
-  do {
-    pControllersNew->clear();
-    for (auto* pSomeCtrl : *pControllersOld) {
-      pControllersNew->push_back(pSomeCtrl);
-      if (pSomeCtrl == pCtrl) {
-        BLEGC_LOGD("Controller already registered");
-        delete pControllersNew;
-        return;
-      }
+
+  configASSERT(xSemaphoreTake(_controllersMutex, portMAX_DELAY));
+  for (auto* pSomeCtrl: _controllers) {
+    if (pSomeCtrl == pCtrl) {
+      BLEGC_LOGD("Controller already registered");
+      break;
     }
-    pControllersNew->push_back(pCtrl);
-  } while (
-      !_controllers.compare_exchange_weak(pControllersOld,
-                                          pControllersNew));  // this loads updated data into controllersOld on failure
+  }
+  _controllers.push_back(pCtrl);
+  configASSERT(xSemaphoreGive(_controllersMutex));
 
-  delete pControllersOld;
-
-  _notifyAutoScan();
   BLEGC_LOGD("Controller registered");
+  _notifyAutoScan();
 }
 
 void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl, bool notifyAutoScan) {
-  configASSERT(pCtrl->isPendingDeregistration());
+  if (!pCtrl->isPendingDeregistration()) {
+    BLEGC_LOGE("Controller not marked for deregistration");
+    return;
+  }
 
   auto* pClient = pCtrl->getClient();
   if (pClient && pClient->isConnected()) {
@@ -98,35 +103,28 @@ void BLEControllerRegistry::deregisterController(BLEAbstractController* pCtrl, b
     return;  // deregistration will continue after canceling connection
   }
 
-  auto* pControllersOld = _controllers.load();
-  auto* pControllersNew = new std::vector<BLEAbstractController*>();
-  do {
-    pControllersNew->clear();
-    bool found = false;
-    for (auto* pSomeCtrl : *pControllersOld) {
-      if (pSomeCtrl == pCtrl) {
-        found = true;
-        continue;
-      }
-      pControllersNew->push_back(pSomeCtrl);
+  configASSERT(xSemaphoreTake(_controllersMutex, portMAX_DELAY));
+  bool found = false;
+  for (auto it = _controllers.begin(); it != _controllers.end();) {
+    if (*it == pCtrl) {
+      _controllers.erase(it);
+      found = true;
+      break;
     }
+    ++it;
+  }
+  configASSERT(xSemaphoreGive(_controllersMutex));
 
-    if (!found) {
-      BLEGC_LOGD("Controller not registered");
-      pCtrl->markCompletedDeregistration();
-      delete pControllersNew;
-      return;
-    }
-  } while (!_controllers.compare_exchange_weak(pControllersOld,
-                                               pControllersNew));  // this loads updated data into controllersOld
+  if (!found) {
+    BLEGC_LOGD("Controller not registered");
+  }
 
-  delete pControllersOld;
+  pCtrl->markCompletedDeregistration();
 
   if (notifyAutoScan) {
     _notifyAutoScan();
   }
 
-  pCtrl->markCompletedDeregistration();
   BLEGC_LOGD("Controller deregistered");
 }
 
@@ -167,24 +165,32 @@ void BLEControllerRegistry::tryConnectController(const NimBLEAdvertisedDevice* p
 }
 BLEControllerRegistry::AllocationInfo BLEControllerRegistry::getAllocationInfo() const {
   AllocationInfo result;
-  for (auto* pCtrl : *_controllers.load()) {
+
+  configASSERT(xSemaphoreTake(_controllersMutex, portMAX_DELAY));
+  for (const auto* pCtrl : _controllers) {
     if (pCtrl->isAllocated()) {
       result.allocated++;
     } else {
       result.notAllocated++;
     }
   }
+  configASSERT(xSemaphoreGive(_controllersMutex));
+
   return result;
 }
 
-BLEAbstractController* BLEControllerRegistry::_findController(const NimBLEAddress address) const {
-  for (auto* pCtrl : *_controllers.load()) {
+BLEAbstractController* BLEControllerRegistry::_findController(const NimBLEAddress& address) const {
+  BLEAbstractController* result = nullptr;
+  configASSERT(xSemaphoreTake(_controllersMutex, portMAX_DELAY));
+  for (auto* pCtrl : _controllers) {
     if (pCtrl->getAddress() == address) {
-      return pCtrl;
+      result = pCtrl;
+      break;
     }
   }
+  configASSERT(xSemaphoreGive(_controllersMutex));
 
-  return nullptr;
+  return result;
 }
 
 BLEAbstractController* BLEControllerRegistry::_findAndAllocateController(
@@ -193,12 +199,14 @@ BLEAbstractController* BLEControllerRegistry::_findAndAllocateController(
 
   std::vector<BLEAbstractController*> suitableControllers;
 
-  for (auto* pCtrl : *_controllers.load()) {
+  configASSERT(xSemaphoreTake(_controllersMutex, portMAX_DELAY));
+  for (auto* pCtrl : _controllers) {
     if (pCtrl->isAllocated() || !pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
       continue;
     }
     suitableControllers.push_back(pCtrl);
   }
+  configASSERT(xSemaphoreGive(_controllersMutex));
 
   // allocate ctrl allocated last time
   for (auto* pCtrl : suitableControllers) {

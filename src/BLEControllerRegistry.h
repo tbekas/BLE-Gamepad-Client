@@ -47,7 +47,7 @@ class BLEControllerRegistry {
     explicit operator std::string() const;
   };
 
-  BLEAbstractController* _findController(NimBLEAddress address) const;
+  BLEAbstractController* _findController(const NimBLEAddress& address) const;
   BLEAbstractController* _findAndAllocateController(const NimBLEAdvertisedDevice* pAdvertisedDevice);
   void _sendClientEvent(const ClientEvent& msg) const;
   void _sendUserCallbackMsg(const BLEAbstractController* pCtrl) const;
@@ -56,10 +56,11 @@ class BLEControllerRegistry {
   void _sendUserCallbackMsg(const BLEUserCallback& msg) const;
   static void _clientEventConsumerFn(void* pvParameters);
 
+  std::vector<BLEAbstractController*> _controllers;
+  SemaphoreHandle_t _controllersMutex;
   TaskHandle_t& _autoScanTask;
   QueueHandle_t& _userCallbackQueue;
   QueueHandle_t _clientEventQueue;
   TaskHandle_t _clientEventConsumerTask;
   ClientCallbacksImpl _clientCallbacksImpl;
-  std::atomic<std::vector<BLEAbstractController*>*> _controllers;
 };
