@@ -4,7 +4,7 @@
 #include <functional>
 
 template <typename T>
-using OnUpdate = std::function<void(T& value)>;
+using OnValueChanged = std::function<void(T& value)>;
 
 template <typename T>
 class BLEValueReceiver {
@@ -19,10 +19,10 @@ class BLEValueReceiver {
   void read(T* event);
 
   /**
-   * @brief Sets the callback to be invoked when the controller sends a new event.
-   * @param callback Reference to the callback function.
+   * @brief Sets a callback that is invoked whenever the value changes.
+   * @param callback The function to call when a new value is received that differs from the previous one.
    */
-  void onUpdate(const OnUpdate<T>& callback);
+  void onValueChanged(const OnValueChanged<T>& callback);
 
  protected:
   bool init(NimBLERemoteCharacteristic* pChar);
@@ -37,6 +37,6 @@ class BLEValueReceiver {
   TaskHandle_t _callbackTask;
   SemaphoreHandle_t _storeMutex;
   Store _store;
-  OnUpdate<T> _onUpdateCallback;
-  bool _onUpdateCallbackSet;
+  OnValueChanged<T> _onValueChangedCallback;
+  bool _onValueChangedCallbackSet;
 };

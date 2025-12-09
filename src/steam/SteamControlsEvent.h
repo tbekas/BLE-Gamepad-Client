@@ -100,5 +100,7 @@ struct SteamControlsEvent final : BLEBaseEvent {
   /// @brief Steam button.
   bool steamButton{false};
 
-  BLEDecodeResult decode(uint8_t data[], size_t dataLen) override;
+  BLEDecodeResult decode(uint8_t data[], size_t dataLen);
+  bool operator==(const SteamControlsEvent& rhs) const;
+  bool operator!=(const SteamControlsEvent& rhs) const;
 };

@@ -118,3 +118,42 @@ BLEDecodeResult SteamControlsEvent::decode(uint8_t data[], size_t dataLen) {
 
   return BLEDecodeResult::Success;
 }
+
+bool SteamControlsEvent::operator==(const SteamControlsEvent& rhs) const {
+  // clang-format off
+  return
+    this->stickX == rhs.stickX &&
+    this->stickY == rhs.stickY &&
+    this->stickButton == rhs.stickButton &&
+    this->leftPadX == rhs.leftPadX &&
+    this->leftPadY == rhs.leftPadY &&
+    this->rightPadX == rhs.rightPadX &&
+    this->rightPadY == rhs.rightPadY &&
+    this->leftPadClick == rhs.leftPadClick &&
+    this->rightPadClick == rhs.rightPadClick &&
+    this->leftPadTouch == rhs.leftPadTouch &&
+    this->rightPadTouch == rhs.rightPadTouch &&
+    this->dpadUp == rhs.dpadUp &&
+    this->dpadDown == rhs.dpadDown &&
+    this->dpadLeft == rhs.dpadLeft &&
+    this->dpadRight == rhs.dpadRight &&
+    this->buttonA == rhs.buttonA &&
+    this->buttonB == rhs.buttonB &&
+    this->buttonX == rhs.buttonX &&
+    this->buttonY == rhs.buttonY &&
+    this->leftBumper == rhs.leftBumper &&
+    this->rightBumper == rhs.rightBumper &&
+    this->leftTrigger == rhs.leftTrigger &&
+    this->rightTrigger == rhs.rightTrigger &&
+    this->leftTriggerButton == rhs.leftTriggerButton &&
+    this->rightTriggerButton == rhs.rightTriggerButton &&
+    this->leftGripButton == rhs.leftGripButton &&
+    this->rightGripButton == rhs.rightGripButton &&
+    this->startButton == rhs.startButton &&
+    this->selectButton == rhs.selectButton &&
+    this->steamButton == rhs.steamButton;
+  // clang-format on
+}
+bool SteamControlsEvent::operator!=(const SteamControlsEvent& rhs) const {
+  return !(*this == rhs);
+}

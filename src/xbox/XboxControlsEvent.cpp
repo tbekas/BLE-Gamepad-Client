@@ -79,3 +79,34 @@ BLEDecodeResult XboxControlsEvent::decode(uint8_t data[], size_t dataLen) {
 
   return BLEDecodeResult::Success;
 }
+
+bool XboxControlsEvent::operator==(const XboxControlsEvent& rhs) const {
+  // clang-format off
+  return
+    this->leftStickX == rhs.leftStickX &&
+    this->leftStickY == rhs.leftStickY &&
+    this->rightStickX == rhs.rightStickX &&
+    this->rightStickY == rhs.rightStickY &&
+    this->leftStickButton == rhs.leftStickButton &&
+    this->rightStickButton == rhs.rightStickButton &&
+    this->dpadUp == rhs.dpadUp &&
+    this->dpadDown == rhs.dpadDown &&
+    this->dpadLeft == rhs.dpadLeft &&
+    this->dpadRight == rhs.dpadRight &&
+    this->buttonA == rhs.buttonA &&
+    this->buttonB == rhs.buttonB &&
+    this->buttonX == rhs.buttonX &&
+    this->buttonY == rhs.buttonY &&
+    this->leftBumper == rhs.leftBumper &&
+    this->rightBumper == rhs.rightBumper &&
+    this->leftTrigger == rhs.leftTrigger &&
+    this->rightTrigger == rhs.rightTrigger &&
+    this->shareButton == rhs.shareButton &&
+    this->menuButton == rhs.menuButton &&
+    this->viewButton == rhs.viewButton &&
+    this->xboxButton == rhs.xboxButton;
+  // clang-format on
+}
+bool XboxControlsEvent::operator!=(const XboxControlsEvent& rhs) const {
+  return !(*this == rhs);
+}
