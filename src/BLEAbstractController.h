@@ -28,8 +28,6 @@ class BLEAbstractController {
     Disconnected,
   };
 
-  const static NimBLEAddress _nullAddress;
-
   NimBLEClient* getClient() const;
   void setClient(NimBLEClient* pClient);
   bool tryAllocate(NimBLEAddress address);
@@ -50,8 +48,11 @@ class BLEAbstractController {
   virtual bool init(NimBLEClient* pClient) = 0;
   virtual bool deinit() = 0;
 
+  static uint64_t _encode(const NimBLEAddress& address);
+  static NimBLEAddress _decode(const uint64_t& address);
+
   std::atomic_bool _pendingDeregistration;
-  std::atomic<const NimBLEAddress*> _address;
+  std::atomic<uint64_t> _address;
   NimBLEClient* _pClient;
 
   ConnectionState _connectionState;

@@ -15,12 +15,18 @@ BLEAutoScan::BLEAutoScan(BLEControllerRegistry& controllerRegistry,
       _onScanStarted([]() {}),
       _onScanStopped([]() {}),
       _userCallbackQueue(userCallbackQueue) {
-  xTaskCreate(_startStopScanTaskFn, "_startStopScanTaskFn", 10000, this, 0, &_autoScanTask);
+  xTaskCreate(_autoScanTaskFn, "_autoScanTaskFn", 10000, this, 0, &_autoScanTask);
   configASSERT(_autoScanTask);
 
   auto* pScan = NimBLEDevice::getScan();
   pScan->setScanCallbacks(&_scanCallbacksImpl, false);
   pScan->setMaxResults(0);
+}
+BLEAutoScan::~BLEAutoScan() {
+  if (_autoScanTask != nullptr) {
+    vTaskDelete(_autoScanTask);
+    _autoScanTask = nullptr;
+  }
 }
 
 /**
@@ -116,7 +122,7 @@ void BLEAutoScan::_stopScan(NimBLEScan* pScan) {
   _sendUserCallbackMsg({BLEUserCallbackKind::ScanStopped});
 }
 
-void BLEAutoScan::_startStopScanTaskFn(void* pvParameters) {
+void BLEAutoScan::_autoScanTaskFn(void* pvParameters) {
   auto* self = static_cast<BLEAutoScan*>(pvParameters);
 
   while (true) {

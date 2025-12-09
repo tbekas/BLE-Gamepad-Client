@@ -4,13 +4,11 @@
 #include "BLEGamepadClient.h"
 #include "utils.h"
 
-const NimBLEAddress BLEAbstractController::_nullAddress = NimBLEAddress();
-
 BLEAbstractController::BLEAbstractController()
     : _pendingDeregistration(false),
-      _connectionState(ConnectionState::Disconnected),
-      _address(&_nullAddress),
+      _address(0),
       _pClient(nullptr),
+      _connectionState(ConnectionState::Disconnected),
       _lastAddress(NimBLEAddress()) {}
 
 void BLEAbstractController::begin() {
@@ -35,32 +33,43 @@ void BLEAbstractController::end() {
  * @return The relevant address based on the current connection state.
  */
 NimBLEAddress BLEAbstractController::getAddress() const {
-  return {*_address.load()};
+  return _decode(_address);
+}
+
+uint64_t BLEAbstractController::_encode(const NimBLEAddress& address) {
+  auto val = static_cast<uint64_t>(address);
+  *(reinterpret_cast<uint8_t*>(&val) + BLE_DEV_ADDR_LEN) = address.getType();
+  return val;
+}
+
+NimBLEAddress BLEAbstractController::_decode(const uint64_t& address) {
+  uint64_t val;
+  memcpy(&val, &address, BLE_DEV_ADDR_LEN);
+  uint8_t type = *(reinterpret_cast<const uint8_t*>(&address) + BLE_DEV_ADDR_LEN);
+  return {address, type };
 }
 
 bool BLEAbstractController::tryAllocate(const NimBLEAddress address) {
-  const auto* pAddressNew = new NimBLEAddress(address);
-  const auto* pAddressOld = _address.load();
+  auto addressNew = _encode(address);
+  auto addressOld = _address.load();
   do {
-    if (!pAddressOld->isNull()) {
-      delete pAddressNew;
+    if (addressOld != 0) {
       return false;
     }
-  } while (!_address.compare_exchange_weak(pAddressOld, pAddressNew));
+  } while (!_address.compare_exchange_weak(addressOld, addressNew));
 
   return true;
 }
 
 bool BLEAbstractController::tryDeallocate() {
-  const auto* pAddressOld = _address.load();
+  auto addressOld = _address.load();
   do {
-    if (pAddressOld->isNull()) {
+    if (addressOld == 0) {
       return false;
     }
-  } while (!_address.compare_exchange_weak(pAddressOld, &_nullAddress));
+  } while (!_address.compare_exchange_weak(addressOld, 0));
 
-  _lastAddress = NimBLEAddress(*pAddressOld);
-  delete pAddressOld;
+  _lastAddress = _decode(addressOld);
   return true;
 }
 
@@ -80,7 +89,7 @@ NimBLEAddress BLEAbstractController::getLastAddress() const {
 }
 
 bool BLEAbstractController::isAllocated() const {
-  return !_address.load()->isNull();
+  return _address != 0;
 }
 
 void BLEAbstractController::markCompletedDeregistration() {

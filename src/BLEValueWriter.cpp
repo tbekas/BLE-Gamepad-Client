@@ -26,9 +26,11 @@ template <typename T>
 BLEValueWriter<T>::~BLEValueWriter() {
   if (_sendDataTask != nullptr) {
     vTaskDelete(_sendDataTask);
+    _sendDataTask = nullptr;
   }
   if (_storeMutex != nullptr) {
     vSemaphoreDelete(_storeMutex);
+    _storeMutex = nullptr;
   }
 
   delete[] _store.pBuffer;

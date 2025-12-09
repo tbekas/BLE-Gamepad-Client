@@ -6,8 +6,9 @@
 class BLEUserCallbackRunner {
   public:
   BLEUserCallbackRunner(BLEAutoScan& autoScan, QueueHandle_t& userCallbackQueue);
+  ~BLEUserCallbackRunner();
  private:
-  static void _callbackQueueConsumerTaskFn(void* pvParameters);
+  static void _userCallbackQueueConsumerTaskFn(void* pvParameters);
 
   QueueHandle_t& _userCallbackQueue;
   TaskHandle_t _userCallbackQueueConsumerTask;
