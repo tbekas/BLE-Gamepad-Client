@@ -15,8 +15,8 @@ BLEValueReceiver<T>::BLEValueReceiver()
       _callbackTask(nullptr),
       _storeMutex(nullptr),
       _store(),
-      _onUpdateCallback(),
-      _onUpdateCallbackSet(false) {
+      _onValueChangedCallback(),
+      _onValueChangedCallbackSet(false) {
   _storeMutex = xSemaphoreCreateMutex();
   configASSERT(_storeMutex);
   xTaskCreate(_callbackTaskFn, "_callbackTask", 10000, this, 0, &_callbackTask);
@@ -75,9 +75,9 @@ void BLEValueReceiver<T>::read(T* event) {
 }
 
 template <typename T>
-void BLEValueReceiver<T>::onUpdate(const OnUpdate<T>& callback) {
-  _onUpdateCallback = callback;
-  _onUpdateCallbackSet = true;
+void BLEValueReceiver<T>::onValueChanged(const OnValueChanged<T>& callback) {
+  _onValueChangedCallback = callback;
+  _onValueChangedCallbackSet = true;
 }
 
 template <typename T>
@@ -90,7 +90,7 @@ void BLEValueReceiver<T>::_callbackTaskFn(void* pvParameters) {
     configASSERT(xSemaphoreTake(self->_storeMutex, portMAX_DELAY));
     auto eventCopy = self->_store.event;
     configASSERT(xSemaphoreGive(self->_storeMutex));
-    self->_onUpdateCallback(eventCopy);
+    self->_onValueChangedCallback(eventCopy);
   }
 }
 
@@ -112,12 +112,21 @@ void BLEValueReceiver<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
     memcpy(_store.event.data.get(), pData, dataLen);
 #endif
 
-  auto result = _store.event.decode(pData, dataLen);
+  BLEDecodeResult result;
+  bool runCallback;
+  if (_onValueChangedCallbackSet) {
+    auto eventCopy = _store.event;
+    result = _store.event.decode(pData, dataLen);
+    runCallback = eventCopy != _store.event;
+  } else {
+    result = _store.event.decode(pData, dataLen);
+    runCallback = false;
+  }
   configASSERT(xSemaphoreGive(_storeMutex));
 
   switch (result) {
     case BLEDecodeResult::Success:
-      if (_onUpdateCallbackSet) {
+      if (runCallback) {
         xTaskNotifyGive(_callbackTask);
       }
       break;

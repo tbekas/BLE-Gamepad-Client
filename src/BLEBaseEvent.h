@@ -12,8 +12,6 @@ struct BLEBaseEvent {
   /// @brief Peer address of the controller that send this event.
   NimBLEAddress controllerAddress{};
 
-  virtual BLEDecodeResult decode(uint8_t data[], size_t dataLen) = 0;
-
 #if CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA
   std::shared_ptr<uint8_t[]> data{nullptr};
   size_t dataLen{0};

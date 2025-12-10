@@ -75,5 +75,7 @@ struct XboxControlsEvent final : BLEBaseEvent {
   /// @brief Xbox button.
   bool xboxButton{false};
 
-  BLEDecodeResult decode(uint8_t data[], size_t dataLen) override;
+  BLEDecodeResult decode(uint8_t data[], size_t dataLen);
+  bool operator==(const XboxControlsEvent& rhs) const;
+  bool operator!=(const XboxControlsEvent& rhs) const;
 };

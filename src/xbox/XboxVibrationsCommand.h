@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include "BLEBaseCommand.h"
 
 struct XboxVibrationsCommand final : BLEBaseCommand {
@@ -30,5 +31,5 @@ struct XboxVibrationsCommand final : BLEBaseCommand {
   /// @brief Number of vibration-pause cycles. Defaults to 1 cycle.
   uint8_t cycles{1};
 
-  BLEEncodeResult encode(size_t& usedBytes, uint8_t buffer[], size_t bufferLen) override;
+  BLEEncodeResult encode(size_t& usedBytes, uint8_t buffer[], size_t bufferLen);
 };

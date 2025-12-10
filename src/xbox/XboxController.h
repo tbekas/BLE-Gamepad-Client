@@ -18,9 +18,9 @@ class XboxController final : public BLEBaseController<XboxController>,
   ~XboxController();
 
   using BLEValueReceiver<XboxControlsEvent>::read;
-  using BLEValueReceiver<XboxControlsEvent>::onUpdate;
+  using BLEValueReceiver<XboxControlsEvent>::onValueChanged;
   using BLEValueReceiver<XboxBatteryEvent>::read;
-  using BLEValueReceiver<XboxBatteryEvent>::onUpdate;
+  using BLEValueReceiver<XboxBatteryEvent>::onValueChanged;
 
  protected:
   bool isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) override;

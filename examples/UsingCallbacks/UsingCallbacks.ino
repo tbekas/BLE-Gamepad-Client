@@ -17,7 +17,7 @@ void onDisconnected(XboxController& ctrl) {
   Serial.printf("controller disconnected, address: %s\n", ctrl.getLastAddress().toString().c_str());
 }
 
-void onUpdate(XboxControlsEvent& e) {
+void onValueChanged(XboxControlsEvent& e) {
   Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
     e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);
 }
@@ -39,7 +39,7 @@ void setup(void) {
   controller.onConnectionFailed(onConnectionFailed);  // connection failed
   controller.onConnected(onConnected);                // connection succeded
   controller.onDisconnected(onDisconnected);          // disconnected
-  controller.onUpdate(onUpdate);                      // value updated
+  controller.onValueChanged(onValueChanged);          // value changed
 
   auto* pAutoScan = BLEGamepadClient::getAutoScan();
   pAutoScan->onScanStarted(onScanStarted);
