@@ -83,6 +83,7 @@ BLEDecodeResult XboxControlsEvent::decode(uint8_t data[], size_t dataLen) {
 bool XboxControlsEvent::operator==(const XboxControlsEvent& rhs) const {
   // clang-format off
   return
+    this->controllerAddress == rhs.controllerAddress &&
     this->leftStickX == rhs.leftStickX &&
     this->leftStickY == rhs.leftStickY &&
     this->rightStickX == rhs.rightStickX &&

@@ -122,6 +122,7 @@ BLEDecodeResult SteamControlsEvent::decode(uint8_t data[], size_t dataLen) {
 bool SteamControlsEvent::operator==(const SteamControlsEvent& rhs) const {
   // clang-format off
   return
+    this->controllerAddress == rhs.controllerAddress &&
     this->stickX == rhs.stickX &&
     this->stickY == rhs.stickY &&
     this->stickButton == rhs.stickButton &&

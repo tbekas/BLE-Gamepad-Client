@@ -15,7 +15,9 @@ BLEDecodeResult XboxBatteryEvent::decode(uint8_t data[], size_t dataLen) {
   return BLEDecodeResult::Success;
 }
 bool XboxBatteryEvent::operator==(const XboxBatteryEvent& rhs) const {
-  return this->level == rhs.level;
+  return
+    this->controllerAddress == rhs.controllerAddress &&
+    this->level == rhs.level;
 }
 bool XboxBatteryEvent::operator!=(const XboxBatteryEvent& rhs) const {
   return !(*this == rhs);

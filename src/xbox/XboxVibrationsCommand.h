@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include <cstddef>
 #include "BLEBaseCommand.h"
 
 struct XboxVibrationsCommand final : BLEBaseCommand {
