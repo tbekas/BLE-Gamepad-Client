@@ -1,7 +1,10 @@
 #include "BLEBaseController.h"
 
+#define LOG_LOCAL_LEVEL 6
+
 #include <NimBLEDevice.h>
 #include "BLEGamepadClient.h"
+#include "logger.h"
 #include "utils.h"
 
 BLEAbstractController::BLEAbstractController()
@@ -46,7 +49,7 @@ NimBLEAddress BLEAbstractController::_decode(const uint64_t& address) {
   uint64_t val;
   memcpy(&val, &address, BLE_DEV_ADDR_LEN);
   uint8_t type = *(reinterpret_cast<const uint8_t*>(&address) + BLE_DEV_ADDR_LEN);
-  return {address, type };
+  return {address, type};
 }
 
 bool BLEAbstractController::tryAllocate(const NimBLEAddress address) {
@@ -121,10 +124,7 @@ bool BLEAbstractController::hidInit(NimBLEClient* pClient) {
 
   std::vector<uint8_t> buffer;
   blegc::readReportMap(pClient, &buffer);
-#if CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA
   BLEGC_LOGD_BUFFER(buffer.data(), buffer.size());
-#endif
-
   return true;
 }
 
