@@ -1,6 +1,6 @@
 #pragma once
+#include <esp_log.h>
 #include "config.h"
-#include "esp_log.h"
 
 static auto* BLEGC_LOG_TAG = "blegc";
 

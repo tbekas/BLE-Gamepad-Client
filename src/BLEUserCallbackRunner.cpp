@@ -1,5 +1,7 @@
 #include "BLEUserCallbackRunner.h"
 
+#include "logger.h"
+
 BLEUserCallbackRunner::BLEUserCallbackRunner(BLEAutoScan& autoScan, QueueHandle_t& userCallbackQueue)
     : _userCallbackQueue(userCallbackQueue), _userCallbackQueueConsumerTask(nullptr), _autoScan(autoScan) {
   _userCallbackQueue = xQueueCreate(10, sizeof(BLEUserCallback));
