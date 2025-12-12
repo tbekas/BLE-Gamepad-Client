@@ -17,7 +17,7 @@ Available values:
 **Default**: `CORE_DEBUG_LEVEL` or `1` (ERROR) if `CORE_DEBUG_LEVEL` is not defined  
 <br/>
 
-`CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA`
+`CONFIG_BT_BLEGC_LOG_BUFFER_ENABLED`
 
 Enables storing or printing data transferred to or from the device, including HID reports and the HID report map.
 

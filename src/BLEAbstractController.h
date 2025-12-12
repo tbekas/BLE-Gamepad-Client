@@ -3,7 +3,7 @@
 #include <NimBLEDevice.h>
 #include <atomic>
 #include <memory>
-#include "utils.h"
+#include "BLEDeviceInfo.h"
 
 class BLEAbstractController {
  public:
@@ -48,14 +48,15 @@ class BLEAbstractController {
   virtual bool init(NimBLEClient* pClient) = 0;
   virtual bool deinit() = 0;
 
-  static uint64_t _encode(const NimBLEAddress& address);
-  static NimBLEAddress _decode(const uint64_t& address);
+  static uint64_t _encodeAddress(const NimBLEAddress& address);
+  static NimBLEAddress _decodeAddress(const uint64_t& address);
+  void _readDeviceInfo();
 
   std::atomic_bool _pendingDeregistration;
-  std::atomic<uint64_t> _address;
+  std::atomic_uint64_t _address;
   NimBLEClient* _pClient;
 
   ConnectionState _connectionState;
   NimBLEAddress _lastAddress;
-  blegc::BLEDeviceInfo _deviceInfo;
+  BLEDeviceInfo _deviceInfo;
 };

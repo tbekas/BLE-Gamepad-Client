@@ -3,18 +3,6 @@
 #include <nimconfig.h>
 #include <cstdio>
 
-#ifndef CONFIG_BT_BLEGC_LOG_LEVEL
-#if defined(CORE_DEBUG_LEVEL)
-#define CONFIG_BT_BLEGC_LOG_LEVEL CORE_DEBUG_LEVEL
-#else
-#define CONFIG_BT_BLEGC_LOG_LEVEL 1
-#endif
-#endif
-
-#ifndef CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA
-#define CONFIG_BT_BLEGC_ENABLE_DEBUG_DATA 0
-#endif
-
 #ifndef CONFIG_BT_BLEGC_WRITER_MAX_CAPACITY
 #define CONFIG_BT_BLEGC_WRITER_MAX_CAPACITY 1024
 #endif

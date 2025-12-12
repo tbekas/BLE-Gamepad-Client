@@ -68,6 +68,16 @@ void BLEValueWriter<T>::write(T& cmd) {
   }
 
   _store.used = result == BLEEncodeResult::Success ? used : 0;
+
+#if CONFIG_BT_BLEGC_LOG_BUFFER_ENABLED
+  if (cmd.reportDataCap < _store.used) {
+    cmd.reportData = std::make_shared<uint8_t[]>(_store.used);
+    cmd.reportDataCap = _store.used;
+  }
+
+  cmd.reportDataLen = _store.used;
+  memcpy(cmd.reportData.get(), _store.pBuffer, _store.used);
+#endif
   configASSERT(xSemaphoreGive(_storeMutex));
 
   switch (result) {

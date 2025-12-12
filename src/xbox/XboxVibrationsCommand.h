@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cstddef>
-#include "BLEBaseCommand.h"
+#include "BLEBaseValue.h"
 
-struct XboxVibrationsCommand final : BLEBaseCommand {
+struct XboxVibrationsCommand final : BLEBaseValue {
   /// @brief Power applied to the motor behind left trigger. Allowed values are between 0.0 and 1.0, where 1.0
   /// represents the full power.
   float leftTriggerMotor{0.0f};
