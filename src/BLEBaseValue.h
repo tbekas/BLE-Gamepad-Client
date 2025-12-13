@@ -9,7 +9,7 @@ enum class BLEDecodeResult : uint8_t { Success = 0, InvalidReport = 1, NotSuppor
 
 struct BLEBaseValue {
   virtual ~BLEBaseValue() = default;
-  /// @brief Peer address of the controller that send this event.
+  /// @brief Peer address of the controller that send this value or that this value is send to.
   NimBLEAddress controllerAddress{};
 
 #if CONFIG_BT_BLEGC_LOG_BUFFER_ENABLED

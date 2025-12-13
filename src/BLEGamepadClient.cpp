@@ -5,6 +5,7 @@
 #include "BLEControllerRegistry.h"
 #include "BLEUserCallbackRunner.h"
 #include "logger.h"
+#include "config.h"
 
 bool BLEGamepadClient::_initialized = false;
 TaskHandle_t BLEGamepadClient::_autoScanTask;
