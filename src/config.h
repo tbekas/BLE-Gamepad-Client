@@ -2,6 +2,7 @@
 
 #include <nimconfig.h>
 #include <cstdio>
+#include <Esp.h>
 
 #ifndef CONFIG_BT_BLEGC_WRITER_MAX_CAPACITY
 #define CONFIG_BT_BLEGC_WRITER_MAX_CAPACITY 1024
@@ -44,7 +45,7 @@
 #endif
 
 #ifndef CONFIG_BT_BLEGC_DEVICE_NAME
-#define CONFIG_BT_BLEGC_DEVICE_NAME "ESP32"
+#define CONFIG_BT_BLEGC_DEVICE_NAME ESP.getChipModel()
 #endif
 
 #ifndef CONFIG_BT_BLEGC_POWER_DBM
