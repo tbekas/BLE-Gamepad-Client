@@ -4,6 +4,7 @@
 #include "BLEControllerRegistry.h"
 #include "logger.h"
 #include "messages.h"
+#include "config.h"
 
 BLEAutoScan::BLEAutoScan(BLEControllerRegistry& controllerRegistry,
                          TaskHandle_t& autoScanTask,

@@ -37,19 +37,6 @@ constexpr uint16_t gamepadAppearance = appearance(0x00F, 0x04);
 constexpr uint16_t microsoftCompanyId = 0x0006;
 constexpr uint16_t valveCorporationCompanyId = 0x055D;
 
-struct BLEDeviceInfo {
-  std::string manufacturerName;
-  std::string modelName;
-  std::string serialNumber;
-  std::string firmwareRevision;
-  std::vector<uint8_t> pnpId;
-
-  explicit operator std::string() const {
-    return "BLEDeviceInfo manufacturerName: " + manufacturerName + ", modelName: " + modelName +
-           ", serialNumber: " + serialNumber + ", firmwareRevision: " + firmwareRevision;
-  }
-};
-
 bool isNull(const NimBLEUUID& uuid);
 
 std::string remoteSvcToStr(const NimBLERemoteService* pSvc);
@@ -82,8 +69,6 @@ NimBLERemoteCharacteristic* findWritableCharacteristic(NimBLEClient* pClient,
                                                               const NimBLEUUID& serviceUUID,
                                                               const NimBLEUUID& characteristicUUID,
                                                               uint8_t idx = 0);
-
-void readDeviceInfo(NimBLEClient* pClient, BLEDeviceInfo* pDeviceInfo);
 
 void readReportMap(NimBLEClient* pClient, std::vector<uint8_t>* pReportMap);
 

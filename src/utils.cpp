@@ -64,8 +64,7 @@ std::string remoteCharToStr(const NimBLERemoteCharacteristic* pChar) {
 
 bool discoverAttributes(NimBLEClient* pClient) {
   if (!pClient->discoverAttributes()) {
-    BLEGC_LOGE("Failed to discover attributes, address %s",
-               std::string(pClient->getPeerAddress()).c_str());
+    BLEGC_LOGE("Failed to discover attributes, address %s", std::string(pClient->getPeerAddress()).c_str());
     return false;
   }
 
@@ -81,10 +80,10 @@ bool discoverAttributes(NimBLEClient* pClient) {
 }
 
 NimBLERemoteCharacteristic* findCharacteristic(NimBLEClient* pClient,
-                                                      const NimBLEUUID& serviceUUID,
-                                                      const NimBLEUUID& characteristicUUID,
-                                                      const uint8_t properties,
-                                                      const uint8_t idx) {
+                                               const NimBLEUUID& serviceUUID,
+                                               const NimBLEUUID& characteristicUUID,
+                                               const uint8_t properties,
+                                               const uint8_t idx) {
   std::string propStr;
   writeProperties(propStr, properties, ", ");
   BLEGC_LOGD("Looking up for characteristic, service uuid: %s, characteristic uuid: %s, properties: [%s], idx: %d.",
@@ -124,51 +123,24 @@ NimBLERemoteCharacteristic* findCharacteristic(NimBLEClient* pClient,
 }
 
 NimBLERemoteCharacteristic* findNotifiableCharacteristic(NimBLEClient* pClient,
-                                                                const NimBLEUUID& serviceUUID,
-                                                                const NimBLEUUID& characteristicUUID,
-                                                                const uint8_t idx) {
+                                                         const NimBLEUUID& serviceUUID,
+                                                         const NimBLEUUID& characteristicUUID,
+                                                         const uint8_t idx) {
   return findCharacteristic(pClient, serviceUUID, characteristicUUID, BLE_GATT_CHR_PROP_NOTIFY, idx);
 }
 
 NimBLERemoteCharacteristic* findReadableCharacteristic(NimBLEClient* pClient,
-                                                              const NimBLEUUID& serviceUUID,
-                                                              const NimBLEUUID& characteristicUUID,
-                                                              const uint8_t idx) {
+                                                       const NimBLEUUID& serviceUUID,
+                                                       const NimBLEUUID& characteristicUUID,
+                                                       const uint8_t idx) {
   return findCharacteristic(pClient, serviceUUID, characteristicUUID, BLE_GATT_CHR_PROP_READ, idx);
 }
 
 NimBLERemoteCharacteristic* findWritableCharacteristic(NimBLEClient* pClient,
-                                                              const NimBLEUUID& serviceUUID,
-                                                              const NimBLEUUID& characteristicUUID,
-                                                              const uint8_t idx) {
+                                                       const NimBLEUUID& serviceUUID,
+                                                       const NimBLEUUID& characteristicUUID,
+                                                       const uint8_t idx) {
   return findCharacteristic(pClient, serviceUUID, characteristicUUID, BLE_GATT_CHR_PROP_WRITE, idx);
-}
-
-void readDeviceInfo(NimBLEClient* pClient, BLEDeviceInfo* pDeviceInfo) {
-  auto* pService = pClient->getService(deviceInfoSvcUUID);
-  if (!pService) {
-    BLEGC_LOGE("Service not found, service uuid: %s", std::string(NimBLEUUID(deviceInfoSvcUUID)).c_str());
-    return;
-  }
-
-  for (auto* pChar : pService->getCharacteristics(false)) {
-    if (!pChar->canRead()) {
-      BLEGC_LOGD("Skipping non-readable characteristic, uuid: %s", std::string(pChar->getUUID()).c_str());
-    }
-
-    const auto attValue = pChar->readValue();
-    if (pChar->getUUID() == manufacturerNameChrUUID) {
-      pDeviceInfo->manufacturerName.assign(attValue.c_str(), attValue.length());
-    } else if (pChar->getUUID() == modelNameChrUUID) {
-      pDeviceInfo->modelName.assign(attValue.c_str(), attValue.length());
-    } else if (pChar->getUUID() == serialNumberChrUUID) {
-      pDeviceInfo->serialNumber.assign(attValue.c_str(), attValue.length());
-    } else if (pChar->getUUID() == firmwareRevisionChrUUID) {
-      pDeviceInfo->firmwareRevision.assign(attValue.c_str(), attValue.length());
-    } else if (pChar->getUUID() == pnpIdChrUUID) {
-      pDeviceInfo->pnpId.assign(attValue.begin(), attValue.end());
-    }
-  }
 }
 
 void readReportMap(NimBLEClient* pClient, std::vector<uint8_t>* pReportMap) {
@@ -192,8 +164,8 @@ std::string getShortenedName(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
 uint16_t getManufacturerId(const NimBLEAdvertisedDevice* pAdvertisedDevice) {
   auto mfgData = pAdvertisedDevice->getManufacturerData();
   configASSERT(mfgData.size() >= 2);
-  uint16_t manufacturerId = (mfgData[1] << 8) + mfgData[0]; // low endian to native endian conversion
+  uint16_t manufacturerId = (mfgData[1] << 8) + mfgData[0];  // low endian to native endian conversion
   return manufacturerId;
 }
 
-}
+}  // namespace blegc

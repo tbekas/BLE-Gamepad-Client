@@ -1,32 +1,30 @@
 #pragma once
 #include <esp_log.h>
-#include "config.h"
+#include <cstdint>
+
+#ifndef CONFIG_BT_BLEGC_LOG_LEVEL
+#if defined(CORE_DEBUG_LEVEL)
+#define CONFIG_BT_BLEGC_LOG_LEVEL CORE_DEBUG_LEVEL
+#else
+#define CONFIG_BT_BLEGC_LOG_LEVEL 1
+#endif
+#endif
+
+#ifndef CONFIG_BT_BLEGC_LOG_BUFFER_ENABLED
+#define CONFIG_BT_BLEGC_LOG_BUFFER_ENABLED 0
+#endif
 
 static auto* BLEGC_LOG_TAG = "blegc";
 
 namespace blegc {
 
-static void setDefaultLogLevel() {
-#if CONFIG_BT_BLEGC_LOG_LEVEL == 0
-  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_NONE);
-#elif CONFIG_BT_BLEGC_LOG_LEVEL == 1
-  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_ERROR);
-#elif CONFIG_BT_BLEGC_LOG_LEVEL == 2
-  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_WARN);
-#elif CONFIG_BT_BLEGC_LOG_LEVEL == 3
-  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_INFO);
-#elif CONFIG_BT_BLEGC_LOG_LEVEL == 4
-  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_DEBUG);
-#elif CONFIG_BT_BLEGC_LOG_LEVEL == 5
-  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_VERBOSE);
-#elif CONFIG_BT_BLEGC_LOG_LEVEL >= 6
-  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_MAX);
-#endif
-}
+void setDefaultLogLevel();
 
-static void setLogLevelDebug() {
-  esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_DEBUG);
-}
+void setLogLevelDebug();
+
+void logBufferHex(esp_log_level_t level, const char* tag, const uint8_t *buf, std::size_t bufLen);
+
+void logBufferBin(esp_log_level_t level, const char* tag, const uint8_t *buf, std::size_t bufLen);
 
 }  // namespace blegc
 
@@ -35,4 +33,11 @@ static void setLogLevelDebug() {
 #define BLEGC_LOGI(format, ...) ESP_LOG_LEVEL(ESP_LOG_INFO, BLEGC_LOG_TAG, format, ## __VA_ARGS__)
 #define BLEGC_LOGW(format, ...) ESP_LOG_LEVEL(ESP_LOG_WARN, BLEGC_LOG_TAG, format, ## __VA_ARGS__)
 #define BLEGC_LOGE(format, ...) ESP_LOG_LEVEL(ESP_LOG_ERROR, BLEGC_LOG_TAG, format, ## __VA_ARGS__)
-#define BLEGC_LOGD_BUFFER(buf, bufLen) ESP_LOG_BUFFER_HEX_LEVEL(BLEGC_LOG_TAG, buf, bufLen, ESP_LOG_DEBUG)
+
+#if CONFIG_BT_BLEGC_LOG_BUFFER_ENABLED
+#define BLEGC_LOGD_BUFFER_HEX(buf, bufLen) blegc::logBufferHex(ESP_LOG_DEBUG, BLEGC_LOG_TAG, buf, bufLen)
+#define BLEGC_LOGD_BUFFER_BIN(buf, bufLen) blegc::logBufferBin(ESP_LOG_DEBUG, BLEGC_LOG_TAG, buf, bufLen)
+#else
+#define BLEGC_LOGD_BUFFER_HEX(buf, bufLen) (void)0
+#define BLEGC_LOGD_BUFFER_BIN(buf, bufLen) (void)0
+#endif
