@@ -55,7 +55,7 @@ Timeout (in milliseconds) for establishing a connection with a peer.
 `CONFIG_BT_BLEGC_DEVICE_NAME`
 
 Name advertised by the device.  
-**Default**: `"ESP32"`  
+**Default**: `ESP.getChipModel()`
 <br/>
 
 `CONFIG_BT_BLEGC_POWER_DBM`
