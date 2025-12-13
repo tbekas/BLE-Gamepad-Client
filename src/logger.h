@@ -1,5 +1,6 @@
 #pragma once
 #include <esp_log.h>
+#include <cstdint>
 
 #ifndef CONFIG_BT_BLEGC_LOG_LEVEL
 #if defined(CORE_DEBUG_LEVEL)
@@ -21,9 +22,9 @@ void setDefaultLogLevel();
 
 void setLogLevelDebug();
 
-void logBufferHex(esp_log_level_t level, const char* tag, const uint8_t *buf, size_t bufLen);
+void logBufferHex(esp_log_level_t level, const char* tag, const uint8_t *buf, std::size_t bufLen);
 
-void logBufferBin(esp_log_level_t level, const char* tag, const uint8_t *buf, size_t bufLen);
+void logBufferBin(esp_log_level_t level, const char* tag, const uint8_t *buf, std::size_t bufLen);
 
 }  // namespace blegc
 

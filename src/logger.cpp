@@ -1,7 +1,7 @@
 #include "logger.h"
 
 #include <esp_log.h>
-#include <cstdio>
+#include <cstdint>
 
 namespace blegc {
 
@@ -26,17 +26,17 @@ void setLogLevelDebug() {
   esp_log_level_set(BLEGC_LOG_TAG, ESP_LOG_DEBUG);
 }
 
-void logBufferHex(const esp_log_level_t level, const char* tag, const uint8_t* buf, size_t bufLen) {
+void logBufferHex(const esp_log_level_t level, const char* tag, const uint8_t* buf, std::size_t bufLen) {
   static const char hex[] = "0123456789abcdef";
-  constexpr size_t BYTES_PER_LINE = 16;
+  constexpr std::size_t BYTES_PER_LINE = 16;
 
   char line[BYTES_PER_LINE * 3 + 1];  // "xx xx ... " + '\0'
 
   while (bufLen > 0) {
-    size_t lineLen = bufLen < BYTES_PER_LINE ? bufLen : BYTES_PER_LINE;
+    std::size_t lineLen = bufLen < BYTES_PER_LINE ? bufLen : BYTES_PER_LINE;
     char* p = line;
 
-    for (size_t i = 0; i < lineLen; ++i) {
+    for (std::size_t i = 0; i < lineLen; ++i) {
       uint8_t v = buf[i];
       *p++ = hex[v >> 4];
       *p++ = hex[v & 0x0f];
@@ -52,10 +52,10 @@ void logBufferHex(const esp_log_level_t level, const char* tag, const uint8_t* b
   }
 }
 
-void logBufferBin(const esp_log_level_t level, const char* tag, const uint8_t* buf, const size_t bufLen) {
+void logBufferBin(const esp_log_level_t level, const char* tag, const uint8_t* buf, const std::size_t bufLen) {
   char line[9];  // 8 bits + '\0'
 
-  for (size_t i = 0; i < bufLen; ++i) {
+  for (std::size_t i = 0; i < bufLen; ++i) {
     const uint8_t v = buf[i];
 
     line[0] = (v & 0x80) ? '1' : '0';
