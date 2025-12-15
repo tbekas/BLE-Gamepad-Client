@@ -13,10 +13,10 @@ class BLEValueReceiver {
   ~BLEValueReceiver();
 
   /**
-   * @brief Read the latest event from the connected controller.
-   * @param[out] event Pointer to the event instance where the data will be written.
+   * @brief Read the latest value from the connected controller.
+   * @param[out] value Pointer to the value instance where the data will be written.
    */
-  void read(T* event);
+  void read(T* value);
 
   /**
    * @brief Sets a callback that is invoked whenever the value changes.
@@ -29,7 +29,7 @@ class BLEValueReceiver {
 
  private:
   struct Store {
-    T event{};
+    T value{};
   };
   static void _callbackTaskFn(void* pvParameters);
   void _handleNotify(NimBLERemoteCharacteristic* pChar, uint8_t* pData, size_t dataLen, bool isNotify);

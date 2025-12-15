@@ -18,11 +18,11 @@ struct BLEBaseValue {
   size_t reportDataCap{0};
 #endif
 
-  /// @brief Logs in a hexadecimal format the report data attached to this event. To use this function set the config
+  /// @brief Logs in a hexadecimal format the report data attached to this value. To use this function set the config
   /// param CONFIG_BT_BLEGC_LOG_BUFFER_ENABLED to 1.
   void logReportDataHex() const;
 
-  /// @brief Logs in a binary format the report data attached to this event. To use this function set the config
+  /// @brief Logs in a binary format the report data attached to this value. To use this function set the config
   /// param CONFIG_BT_BLEGC_LOG_BUFFER_ENABLED to 1.
   void logReportDataBin() const;
 };

@@ -1,4 +1,4 @@
-#include "XboxControlsEvent.h"
+#include "XboxControlsState.h"
 
 #include <NimBLEDevice.h>
 #include <bitset>
@@ -31,7 +31,7 @@ inline bool decodeButton(uint8_t byte, int bit) {
   return byte & 1 << bit;
 }
 
-BLEDecodeResult XboxControlsEvent::decode(uint8_t data[], size_t dataLen) {
+BLEDecodeResult XboxControlsState::decode(uint8_t data[], size_t dataLen) {
   if (dataLen != controlsDataLen) {
     return BLEDecodeResult::InvalidReport;
   }
@@ -80,7 +80,7 @@ BLEDecodeResult XboxControlsEvent::decode(uint8_t data[], size_t dataLen) {
   return BLEDecodeResult::Success;
 }
 
-bool XboxControlsEvent::operator==(const XboxControlsEvent& rhs) const {
+bool XboxControlsState::operator==(const XboxControlsState& rhs) const {
   // clang-format off
   return
     this->controllerAddress == rhs.controllerAddress &&
@@ -108,6 +108,6 @@ bool XboxControlsEvent::operator==(const XboxControlsEvent& rhs) const {
     this->xboxButton == rhs.xboxButton;
   // clang-format on
 }
-bool XboxControlsEvent::operator!=(const XboxControlsEvent& rhs) const {
+bool XboxControlsState::operator!=(const XboxControlsState& rhs) const {
   return !(*this == rhs);
 }

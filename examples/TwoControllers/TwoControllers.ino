@@ -11,22 +11,22 @@ void setup(void) {
 }
 
 void loop() {
-  XboxControlsEvent e;
+  XboxControlsState s;
 
   if (controller1.isConnected()) {
-    controller1.read(&e);
+    controller1.read(&s);
 
     Serial.printf("controller1 lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
-      e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);
+      s.leftStickX, s.leftStickY, s.rightStickX, s.rightStickY);
   } else {
     Serial.println("controller1 not connected");
   }
 
   if (controller2.isConnected()) {
-    controller2.read(&e);
+    controller2.read(&s);
 
     Serial.printf("controller2 lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
-      e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);
+      s.leftStickX, s.leftStickY, s.rightStickX, s.rightStickY);
   } else {
     Serial.println("controller2 not connected");
   }

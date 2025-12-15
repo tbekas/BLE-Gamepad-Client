@@ -2,7 +2,7 @@
 
 #include "BLEBaseValue.h"
 
-struct SteamControlsEvent final : BLEBaseValue {
+struct SteamControlsState final : BLEBaseValue {
   /// @brief Stick deflection along the X-axis. Takes values between -1.0 and 1.0. No deflection should yield 0.0,
   /// unless affected by stick drift. Positive values represent deflection to the right, and negative values to the
   /// left.
@@ -101,6 +101,6 @@ struct SteamControlsEvent final : BLEBaseValue {
   bool steamButton{false};
 
   BLEDecodeResult decode(uint8_t data[], size_t dataLen);
-  bool operator==(const SteamControlsEvent& rhs) const;
-  bool operator!=(const SteamControlsEvent& rhs) const;
+  bool operator==(const SteamControlsState& rhs) const;
+  bool operator!=(const SteamControlsState& rhs) const;
 };
