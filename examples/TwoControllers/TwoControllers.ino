@@ -1,8 +1,3 @@
-/**
- * More about connecting multiple controllers:
- * https://github.com/tbekas/BLE-Gamepad-Client/blob/main/docs/Connecting_multiple_controllers.md
- */
-
 #include <Arduino.h>
 #include <BLEGamepadClient.h>
 
