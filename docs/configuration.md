@@ -29,17 +29,74 @@ Available values:
 **Default**: `0` (disabled)  
 <br/>
 
-`CONFIG_BT_BLEGC_WRITER_MAX_CAPACITY`
+`CONFIG_BT_BLEGC_WRITER_BUFFER_MAX_CAPACITY`
 
 Maximum capacity, in bytes, of the internal buffer used to send data to the controller.  
 **Default**: 1024  
 <br/>
 
-`CONFIG_BT_BLEGC_SCAN_DURATION_MS`
+`CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_DURATION_MS`
 
-Duration (in milliseconds) of a single scan. The next scan starts automatically after the previous one ends.  
-Scanning stops once all initialized controllers are connected.  
-**Default**: `30000` (30 seconds)  
+Duration, in milliseconds, of the high-duty scan phase. The high-duty scan runs first and is automatically followed by a
+low-duty scan.  
+**Default**: `60000` (60 seconds)  
+<br/>
+
+`CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_INTERVAL_MS`
+
+Time, in milliseconds, between the start of two consecutive scan windows during the high-duty scan phase.  
+**Default**: `10` (10 millis)  
+<br/>
+
+`CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_WINDOW_MS`
+
+Duration, in milliseconds, of each scan window during the high-duty scan phase.  
+**Default**: `10` (10 millis)  
+<br/>
+
+`CONFIG_BT_BLEGC_HIGH_DUTY_SCAN_ACTIVE`
+
+Enables or disables active scanning during the high-duty scan phase. When active scanning is enabled, scan response is
+requested from advertisers.
+
+Available values:
+
+* `0` - disabled
+* `1` - enabled
+
+**Default**: `1` (enabled)  
+<br/>
+
+`CONFIG_BT_BLEGC_LOW_DUTY_SCAN_DURATION_MS`
+
+Duration, in milliseconds, of the low-duty scan phase. The low-duty scan starts immediately after the high-duty scan
+completes.  
+**Default**: `240000` (240 seconds)  
+<br/>
+
+`CONFIG_BT_BLEGC_LOW_DUTY_SCAN_INTERVAL_MS`
+
+Time, in milliseconds, between the start of two consecutive scan windows during the low-duty scan phase.  
+**Default**: `1280` (1280 millis)  
+<br/>
+
+`CONFIG_BT_BLEGC_LOW_DUTY_SCAN_WINDOW_MS`
+
+Duration, in milliseconds, of each scan window during the low-duty scan phase.  
+**Default**: `15` (15 millis)  
+<br/>
+
+`CONFIG_BT_BLEGC_LOW_DUTY_SCAN_ACTIVE`
+
+Enables or disables active scanning during the low-duty scan phase. When active scanning is enabled, scan response is
+requested from advertisers.
+
+Available values:
+
+* `0` - disabled
+* `1` - enabled
+
+**Default**: `0` (disabled)  
 <br/>
 
 `CONFIG_BT_BLEGC_CONN_TIMEOUT_MS`
@@ -61,7 +118,7 @@ Name advertised by the device.
 `CONFIG_BT_BLEGC_POWER_DBM`
 
 Transmission power in dBm.  
-**Default**: `3`  
+**Default**: `0`  
 <br/>
 
 `CONFIG_BT_BLEGC_SECURITY_IO_CAP`
