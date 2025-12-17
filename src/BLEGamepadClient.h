@@ -12,14 +12,14 @@ class BLEGamepadClient {
  public:
   BLEGamepadClient() = delete;
 
-  static void init(bool initBLE = true);
-  static void deleteBonds();
+  static void init(bool deleteBonds = true);
   static void enableDebugLog();
   static BLEAutoScan* getAutoScan();
 
   friend class BLEAbstractController;
 
  private:
+  static void _initSelf();
   static bool _initialized;
   static TaskHandle_t _autoScanTask;
   static QueueHandle_t _userCallbackQueue;

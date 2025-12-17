@@ -17,46 +17,45 @@ BLEUserCallbackRunner BLEGamepadClient::_userCallbackRunner(_autoScan, _userCall
 /**
  * @brief Initializes the library.
  *
- * This method is called automatically, so there is no need to invoke it explicitly in your application code.
+ * This method is called automatically; there is no need to invoke it explicitly in your application code.
  *
- * @param initBLE Specifies whether to initialize the NimBLE library.
+ * @param deleteBonds If true, deletes all stored bonding information.
  */
-void BLEGamepadClient::init(const bool initBLE) {
-  if (!_initialized) {
-    blegc::setDefaultLogLevel();
+void BLEGamepadClient::init(const bool deleteBonds) {
+  _initSelf();
 
-    _initialized = true;
-  }
-
-  if (initBLE && !NimBLEDevice::isInitialized()) {
+  if (!NimBLEDevice::isInitialized()) {
     BLEGC_LOGD("Initializing NimBLE");
     NimBLEDevice::init(CONFIG_BT_BLEGC_DEVICE_NAME);
     NimBLEDevice::setPower(CONFIG_BT_BLEGC_POWER_DBM);
     NimBLEDevice::setSecurityAuth(CONFIG_BT_BLEGC_SECURITY_AUTH);
     NimBLEDevice::setSecurityIOCap(CONFIG_BT_BLEGC_SECURITY_IO_CAP);
+
+    if (deleteBonds) {
+      NimBLEDevice::deleteAllBonds();
+    }
   }
-}
-
-/**
- * @brief Deletes all stored bonding information.
- */
-void BLEGamepadClient::deleteBonds() {
-  init();
-
-  NimBLEDevice::deleteAllBonds();
 }
 
 /**
  * @brief Enables debug-level logging.
  */
 void BLEGamepadClient::enableDebugLog() {
-  init(false);
+  _initSelf();
 
   blegc::setLogLevelDebug();
 }
 
 BLEAutoScan* BLEGamepadClient::getAutoScan() {
-  init(false);
+  _initSelf();
 
   return &_autoScan;
+}
+
+void BLEGamepadClient::_initSelf() {
+  if (!_initialized) {
+    blegc::setDefaultLogLevel();
+
+    _initialized = true;
+  }
 }
