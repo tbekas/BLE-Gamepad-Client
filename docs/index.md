@@ -15,7 +15,7 @@ the [lib_deps](https://docs.platformio.org/en/latest/projectconf/sections/env/op
 of [platformio.ini](https://docs.platformio.org/en/latest/projectconf/index.html) file.
 
 ```yaml
-tbekas/BLE-Gamepad-Client@^0.10.0
+tbekas/BLE-Gamepad-Client@^0.11.0
 ```
 
 ## Example usage
