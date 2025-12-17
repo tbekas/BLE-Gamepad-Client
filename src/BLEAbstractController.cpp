@@ -113,10 +113,6 @@ bool BLEAbstractController::isPendingDeregistration() const {
 }
 
 bool BLEAbstractController::hidInit(NimBLEClient* pClient) {
-  if (!blegc::discoverAttributes(pClient)) {
-    return false;
-  }
-
   _readDeviceInfo();
   BLEGC_LOGD("%s", std::string(_deviceInfo).c_str());
 

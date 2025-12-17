@@ -68,14 +68,12 @@ bool discoverAttributes(NimBLEClient* pClient) {
     return false;
   }
 
-#if CONFIG_BT_BLEGC_LOG_LEVEL >= 4
   for (auto& pService : pClient->getServices(false)) {
     BLEGC_LOGD("Discovered %s", remoteSvcToStr(pService).c_str());
     for (auto& pChar : pService->getCharacteristics(false)) {
       BLEGC_LOGD("Discovered %s", remoteCharToStr(pChar).c_str());
     }
   }
-#endif
   return true;
 }
 
@@ -98,7 +96,12 @@ NimBLERemoteCharacteristic* findCharacteristic(NimBLEClient* pClient,
 
   unsigned int _idx = idx;
 
-  for (auto* pChar : pService->getCharacteristics(false)) {
+  auto characteristics = pService->getCharacteristics(false);
+  if (characteristics.empty()) {
+    characteristics = pService->getCharacteristics(true);
+  }
+
+  for (auto* pChar : characteristics) {
     if (!isNull(characteristicUUID) && characteristicUUID != pChar->getUUID()) {
       continue;
     }
