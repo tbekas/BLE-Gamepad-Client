@@ -4,11 +4,11 @@
 #include <string>
 #include "BLEBaseController.h"
 #include "BLEValueReceiver.h"
-#include "SteamControlsEvent.h"
+#include "SteamControlsState.h"
 
 class SteamController;
 
-class SteamController final : public BLEBaseController<SteamController>, public BLEValueReceiver<SteamControlsEvent> {
+class SteamController final : public BLEBaseController<SteamController>, public BLEValueReceiver<SteamControlsState> {
  public:
   SteamController();
   ~SteamController() override = default;

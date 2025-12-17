@@ -4,10 +4,10 @@
 #include <bitset>
 #include <functional>
 #include "logger.h"
-#include "steam/SteamControlsEvent.h"
+#include "steam/SteamControlsState.h"
 #include "utils.h"
-#include "xbox/XboxBatteryEvent.h"
-#include "xbox/XboxControlsEvent.h"
+#include "xbox/XboxBatteryState.h"
+#include "xbox/XboxControlsState.h"
 
 template <typename T>
 BLEValueReceiver<T>::BLEValueReceiver()
@@ -62,15 +62,15 @@ bool BLEValueReceiver<T>::init(NimBLERemoteCharacteristic* pChar) {
 
   auto* pClient = pChar->getClient();
   if (pClient) {
-    _store.event.controllerAddress = pClient->getPeerAddress();
+    _store.value.controllerAddress = pClient->getPeerAddress();
   }
   return true;
 }
 
 template <typename T>
-void BLEValueReceiver<T>::read(T* event) {
+void BLEValueReceiver<T>::read(T* value) {
   configASSERT(xSemaphoreTake(_storeMutex, portMAX_DELAY));
-  *event = _store.event;
+  *value = _store.value;
   configASSERT(xSemaphoreGive(_storeMutex));
 }
 
@@ -88,9 +88,9 @@ void BLEValueReceiver<T>::_callbackTaskFn(void* pvParameters) {
     ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 
     configASSERT(xSemaphoreTake(self->_storeMutex, portMAX_DELAY));
-    auto eventCopy = self->_store.event;
+    auto valueCopy = self->_store.value;
     configASSERT(xSemaphoreGive(self->_storeMutex));
-    self->_onValueChangedCallback(eventCopy);
+    self->_onValueChangedCallback(valueCopy);
   }
 }
 
@@ -105,23 +105,23 @@ void BLEValueReceiver<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
   BLEDecodeResult result;
   bool runCallback;
   if (_onValueChangedCallbackSet) {
-    auto eventCopy = _store.event;
-    result = _store.event.decode(pData, dataLen);
-    runCallback = eventCopy != _store.event;
+    auto valueCopy = _store.value;
+    result = _store.value.decode(pData, dataLen);
+    runCallback = valueCopy != _store.value;
   } else {
-    result = _store.event.decode(pData, dataLen);
+    result = _store.value.decode(pData, dataLen);
     runCallback = false;
   }
 
 #if CONFIG_BT_BLEGC_LOG_BUFFER_ENABLED
   if (result == BLEDecodeResult::Success) {
-    if (_store.event.reportDataCap < dataLen) {
-      _store.event.reportData = std::make_shared<uint8_t[]>(dataLen);
-      _store.event.reportDataCap = dataLen;
+    if (_store.value.reportDataCap < dataLen) {
+      _store.value.reportData = std::make_shared<uint8_t[]>(dataLen);
+      _store.value.reportDataCap = dataLen;
     }
 
-    _store.event.reportDataLen = dataLen;
-    memcpy(_store.event.reportData.get(), pData, dataLen);
+    _store.value.reportDataLen = dataLen;
+    memcpy(_store.value.reportData.get(), pData, dataLen);
   }
 #endif
   configASSERT(xSemaphoreGive(_storeMutex));
@@ -141,6 +141,6 @@ void BLEValueReceiver<T>::_handleNotify(NimBLERemoteCharacteristic* pChar,
   }
 }
 
-template class BLEValueReceiver<XboxControlsEvent>;
-template class BLEValueReceiver<XboxBatteryEvent>;
-template class BLEValueReceiver<SteamControlsEvent>;
+template class BLEValueReceiver<XboxControlsState>;
+template class BLEValueReceiver<XboxBatteryState>;
+template class BLEValueReceiver<SteamControlsState>;

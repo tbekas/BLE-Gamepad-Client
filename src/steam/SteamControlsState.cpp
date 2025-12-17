@@ -1,4 +1,4 @@
-#include "SteamControlsEvent.h"
+#include "SteamControlsState.h"
 
 #include <NimBLEDevice.h>
 #include <bitset>
@@ -44,7 +44,7 @@ inline float decodeTrigger(const uint8_t b) {
   return static_cast<float>(b) / UINT8_MAX;
 }
 
-BLEDecodeResult SteamControlsEvent::decode(uint8_t data[], size_t dataLen) {
+BLEDecodeResult SteamControlsState::decode(uint8_t data[], size_t dataLen) {
   if (dataLen != controlsDataLen) {
     return BLEDecodeResult::InvalidReport;
   }
@@ -119,7 +119,7 @@ BLEDecodeResult SteamControlsEvent::decode(uint8_t data[], size_t dataLen) {
   return BLEDecodeResult::Success;
 }
 
-bool SteamControlsEvent::operator==(const SteamControlsEvent& rhs) const {
+bool SteamControlsState::operator==(const SteamControlsState& rhs) const {
   // clang-format off
   return
     this->controllerAddress == rhs.controllerAddress &&
@@ -155,6 +155,6 @@ bool SteamControlsEvent::operator==(const SteamControlsEvent& rhs) const {
     this->steamButton == rhs.steamButton;
   // clang-format on
 }
-bool SteamControlsEvent::operator!=(const SteamControlsEvent& rhs) const {
+bool SteamControlsState::operator!=(const SteamControlsState& rhs) const {
   return !(*this == rhs);
 }

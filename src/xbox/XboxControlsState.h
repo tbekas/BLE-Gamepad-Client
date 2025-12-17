@@ -2,7 +2,7 @@
 
 #include "BLEBaseValue.h"
 
-struct XboxControlsEvent final : BLEBaseValue {
+struct XboxControlsState final : BLEBaseValue {
   /// @brief Left stick deflection along the X-axis. Takes values between -1.0 and 1.0. No deflection should yield 0.0,
   /// unless affected by stick drift. Positive values represent deflection to the right, and negative values to the
   /// left.
@@ -76,6 +76,6 @@ struct XboxControlsEvent final : BLEBaseValue {
   bool xboxButton{false};
 
   BLEDecodeResult decode(uint8_t data[], size_t dataLen);
-  bool operator==(const XboxControlsEvent& rhs) const;
-  bool operator!=(const XboxControlsEvent& rhs) const;
+  bool operator==(const XboxControlsState& rhs) const;
+  bool operator!=(const XboxControlsState& rhs) const;
 };

@@ -36,11 +36,11 @@ void setup(void) {
 
 void loop() {
   if (controller.isConnected()) {
-    XboxControlsEvent e;
-    controller.read(&e);
+    XboxControlsState s;
+    controller.read(&s);
 
     Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
-      e.leftStickX, e.leftStickY, e.rightStickX, e.rightStickY);
+      s.leftStickX, s.leftStickY, s.rightStickX, s.rightStickY);
   } else {
     Serial.println("controller not connected");
   }
@@ -70,7 +70,7 @@ Install BLE firmware using these instructions: [Steam Controller BLE](https://he
 #### Classes
 
 * `SteamController`
-* `SteamControlsEvent`
+* `SteamControlsState`
 
 ### Xbox One Wireless Controller (models 1697 and 1708 - 2 buttons)
 
@@ -89,8 +89,8 @@ instructions: [Update your Xbox Wireless Controller](https://support.xbox.com/en
 #### Classes
 
 * `XboxController`
-* `XboxControlsEvent`
-* `XboxBatteryEvent`
+* `XboxControlsState`
+* `XboxBatteryState`
 * `XboxVibrationsCommand`
 
 ### Xbox Series S/X Wireless Controller (model 1914 - 3 buttons)
@@ -110,8 +110,8 @@ it: [Update your Xbox Wireless Controller](https://support.xbox.com/en-US/help/h
 #### Classes
 
 * `XboxController`
-* `XboxControlsEvent`
-* `XboxBatteryEvent`
+* `XboxControlsState`
+* `XboxBatteryState`
 * `XboxVibrationsCommand`
 
 ## Acknowledgments

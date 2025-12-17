@@ -17,7 +17,7 @@ Install BLE firmware using these instructions: [Steam Controller BLE](https://he
 #### Classes
 
 * `SteamController`
-* `SteamControlsEvent`
+* `SteamControlsState`
 
 ### Xbox One Wireless Controller (models 1697 and 1708 - 2 buttons)
 
@@ -36,8 +36,8 @@ instructions: [Update your Xbox Wireless Controller](https://support.xbox.com/en
 #### Classes
 
 * `XboxController`
-* `XboxControlsEvent`
-* `XboxBatteryEvent`
+* `XboxControlsState`
+* `XboxBatteryState`
 * `XboxVibrationsCommand`
 
 ### Xbox Series S/X Wireless Controller (model 1914 - 3 buttons)
@@ -57,6 +57,6 @@ it: [Update your Xbox Wireless Controller](https://support.xbox.com/en-US/help/h
 #### Classes
 
 * `XboxController`
-* `XboxControlsEvent`
-* `XboxBatteryEvent`
+* `XboxControlsState`
+* `XboxBatteryState`
 * `XboxVibrationsCommand`

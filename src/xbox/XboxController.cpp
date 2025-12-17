@@ -53,6 +53,6 @@ bool XboxController::init(NimBLEClient* pClient) {
   auto* pBatteryChar = findNotifiableCharacteristic(pClient, batterySvcUUID, batteryLevelCharUUID);
   auto* pVibrationsChar = findWritableCharacteristic(pClient, hidSvcUUID, inputReportChrUUID);
 
-  return BLEValueReceiver<XboxControlsEvent>::init(pControlsChar) &&
-         BLEValueReceiver<XboxBatteryEvent>::init(pBatteryChar) && BLEValueWriter::init(pVibrationsChar);
+  return BLEValueReceiver<XboxControlsState>::init(pControlsChar) &&
+         BLEValueReceiver<XboxBatteryState>::init(pBatteryChar) && BLEValueWriter::init(pVibrationsChar);
 }
