@@ -24,6 +24,6 @@ class XboxController final : public BLEBaseController<XboxController>,
 
  protected:
   bool isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) override;
-  bool init(NimBLEClient* pClient) override;
+  bool init() override;
   bool deinit() override;
 };

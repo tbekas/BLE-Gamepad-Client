@@ -112,12 +112,12 @@ bool BLEAbstractController::isPendingDeregistration() const {
   return _pendingDeregistration;
 }
 
-bool BLEAbstractController::hidInit(NimBLEClient* pClient) {
+bool BLEAbstractController::hidInit() {
   _readDeviceInfo();
   BLEGC_LOGD("%s", std::string(_deviceInfo).c_str());
 
   std::vector<uint8_t> buffer;
-  blegc::readReportMap(pClient, &buffer);
+  blegc::readReportMap(_pClient, &buffer);
   BLEGC_LOGD_BUFFER_HEX(buffer.data(), buffer.size());
   return true;
 }
@@ -129,7 +129,12 @@ void BLEAbstractController::_readDeviceInfo() {
     return;
   }
 
-  for (auto* pChar : pService->getCharacteristics(false)) {
+  auto characteristics = pService->getCharacteristics(false);
+  if (characteristics.empty()) {
+    characteristics = pService->getCharacteristics(true);
+  }
+
+  for (auto* pChar : characteristics) {
     if (!pChar->canRead()) {
       BLEGC_LOGD("Skipping non-readable characteristic, uuid: %s", std::string(pChar->getUUID()).c_str());
     }

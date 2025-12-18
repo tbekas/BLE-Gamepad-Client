@@ -15,6 +15,6 @@ class SteamController final : public BLEBaseController<SteamController>, public 
 
  protected:
   bool isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) override;
-  bool init(NimBLEClient* pClient) override;
+  bool init() override;
   bool deinit() override;
 };
