@@ -45,8 +45,8 @@ bool SteamController::isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevic
   return pAdvertisedDevice->haveName() && pAdvertisedDevice->getName() == "SteamController";
 }
 
-bool SteamController::init(NimBLEClient* pClient) {
-  const auto* pSettingsChar = findWritableCharacteristic(pClient, settingsSvcUUID, settingsCharUUID);
+bool SteamController::init() {
+  const auto* pSettingsChar = findWritableCharacteristic(_pClient, settingsSvcUUID, settingsCharUUID);
   if (!pSettingsChar) {
     return false;
   }
@@ -59,7 +59,7 @@ bool SteamController::init(NimBLEClient* pClient) {
     return false;
   }
 
-  auto* pControlsChar = findNotifiableCharacteristic(pClient, hidSvcUUID, inputReportChrUUID, 2);
+  auto* pControlsChar = findNotifiableCharacteristic(_pClient, hidSvcUUID, inputReportChrUUID, 2);
 
   return BLEValueReceiver::init(pControlsChar);
 }

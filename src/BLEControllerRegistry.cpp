@@ -288,7 +288,7 @@ void BLEControllerRegistry::_clientEventConsumerFn(void* pvParameters) {
         }
 
         auto retryCount = 2;
-        while (!(pCtrl->hidInit(pCtrl->getClient()) && pCtrl->init(pCtrl->getClient())) && --retryCount) {
+        while (!(pCtrl->hidInit() && pCtrl->init()) && --retryCount) {
         }
 
         if (retryCount == 0) {

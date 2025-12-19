@@ -38,14 +38,14 @@ class BLEAbstractController {
   void markConnected();
   void markDisconnected();
   bool isPendingDeregistration() const;
-  bool hidInit(NimBLEClient* pClient);
+  bool hidInit();
 
   virtual void callOnConnecting() = 0;
   virtual void callOnConnectionFailed() = 0;
   virtual void callOnConnected() = 0;
   virtual void callOnDisconnected() = 0;
   virtual bool isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) = 0;
-  virtual bool init(NimBLEClient* pClient) = 0;
+  virtual bool init() = 0;
   virtual bool deinit() = 0;
 
   static uint64_t _encodeAddress(const NimBLEAddress& address);
