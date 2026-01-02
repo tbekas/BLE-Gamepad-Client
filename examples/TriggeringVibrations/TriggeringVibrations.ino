@@ -15,7 +15,7 @@ void loop() {
     XboxVibrationsCommand cmd;
 
     switch (i % 4) {
-      case 0: cmd.rightMotor = 1.0f; break; // 1.0f = max power for the motor
+      case 0: cmd.rightMotor = 1.0f; break; // 1.0f = 100% power on the motor
       case 1: cmd.leftMotor = 1.0f; break;
       case 2: cmd.leftTriggerMotor = 1.0f; break;
       case 3: cmd.rightTriggerMotor = 1.0f; break;
