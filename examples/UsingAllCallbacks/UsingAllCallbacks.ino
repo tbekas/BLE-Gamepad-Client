@@ -20,7 +20,7 @@
 
 BLEAutoScan *pAutoScan = BLEGamepadClient::getAutoScan();
 
-XboxController xboxController;
+XboxController controller;
 
 TaskHandle_t blinkLedTask;
 
@@ -64,12 +64,12 @@ void setup(void) {
   pAutoScan->onScanStarted(onScanStarted);
   pAutoScan->onScanStopped(onScanStopped);
 
-  xboxController.begin();
-  xboxController.onConnecting(onConnecting);
-  xboxController.onConnectionFailed(onConnectionFailed);
-  xboxController.onConnected(onConnected);
-  xboxController.onDisconnected(onDisconnected);
-  xboxController.onValueChanged(onValueChanged);
+  controller.begin();
+  controller.onConnecting(onConnecting);
+  controller.onConnectionFailed(onConnectionFailed);
+  controller.onConnected(onConnected);
+  controller.onDisconnected(onDisconnected);
+  controller.onValueChanged(onValueChanged);
 }
 
 void loop() { delay(100); }
