@@ -10,7 +10,7 @@ template <typename T>
 class BLEValueReceiver {
  public:
   BLEValueReceiver();
-  ~BLEValueReceiver();
+  virtual ~BLEValueReceiver();
 
   /**
    * @brief Read the latest value from the connected controller.
