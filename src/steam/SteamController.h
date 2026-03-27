@@ -11,7 +11,7 @@ class SteamController;
 class SteamController final : public BLEBaseController<SteamController>, public BLEValueReceiver<SteamControlsState> {
  public:
   SteamController();
-  ~SteamController() override = default;
+  ~SteamController() override;
 
  protected:
   bool isSupported(const NimBLEAdvertisedDevice* pAdvertisedDevice) override;
