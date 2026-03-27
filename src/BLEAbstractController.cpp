@@ -5,12 +5,13 @@
 #include "logger.h"
 #include "utils.h"
 
-BLEAbstractController::BLEAbstractController()
+BLEAbstractController::BLEAbstractController(const NimBLEAddress& allowedAddress)
     : _pendingDeregistration(false),
       _address(0),
       _pClient(nullptr),
       _connectionState(ConnectionState::Disconnected),
-      _lastAddress(NimBLEAddress()) {}
+      _lastAddress(NimBLEAddress()),
+      _allowedAddress(allowedAddress){}
 
 void BLEAbstractController::begin() {
   BLEGamepadClient::init();
@@ -87,6 +88,10 @@ bool BLEAbstractController::isConnecting() const {
 
 NimBLEAddress BLEAbstractController::getLastAddress() const {
   return _lastAddress;
+}
+
+NimBLEAddress BLEAbstractController::getAllowedAddress() const {
+  return _allowedAddress;
 }
 
 bool BLEAbstractController::isAllocated() const {

@@ -15,6 +15,7 @@ class XboxController final : public BLEBaseController<XboxController>,
                              public BLEValueWriter<XboxVibrationsCommand> {
  public:
   XboxController();
+  XboxController(const NimBLEAddress& allowedAddress);
   ~XboxController();
 
   using BLEValueReceiver<XboxControlsState>::read;

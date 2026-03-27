@@ -201,7 +201,9 @@ BLEAbstractController* BLEControllerRegistry::_findAndAllocateController(
 
   configASSERT(xSemaphoreTake(_controllersMutex, portMAX_DELAY));
   for (auto* pCtrl : _controllers) {
-    if (pCtrl->isAllocated() || !pCtrl->isSupported(pAdvertisedDevice) || pCtrl->isPendingDeregistration()) {
+    if (pCtrl->isAllocated() || pCtrl->isPendingDeregistration() ||
+      (!pCtrl->getAllowedAddress().isNull() && pCtrl->getAllowedAddress() != address) ||
+      !pCtrl->isSupported(pAdvertisedDevice)) {
       continue;
     }
     suitableControllers.push_back(pCtrl);

@@ -8,12 +8,13 @@
 class BLEAbstractController {
  public:
   virtual ~BLEAbstractController() = default;
-  explicit BLEAbstractController();
+  explicit BLEAbstractController(const NimBLEAddress& allowedAddress);
 
   void begin();
   void end();
   NimBLEAddress getAddress() const;
   NimBLEAddress getLastAddress() const;
+  NimBLEAddress getAllowedAddress() const;
   bool isConnected() const;
   bool isConnecting() const;
   void disconnect();
@@ -58,5 +59,6 @@ class BLEAbstractController {
 
   ConnectionState _connectionState;
   NimBLEAddress _lastAddress;
+  NimBLEAddress _allowedAddress;
   BLEDeviceInfo _deviceInfo;
 };
