@@ -24,7 +24,7 @@ void loop() {
     cmd.durationMs = 500;
     controller.write(cmd);
 
-    Serial.printf("rm: %.2f, lm: %.2f, ltm: %.2f, rtm: %.2f\n",
+    Serial.printf("rmotor: %.2f, lmotor: %.2f, ltmotor: %.2f, rtmotor: %.2f\n",
       cmd.rightMotor, cmd.leftMotor, cmd.leftTriggerMotor, cmd.rightTriggerMotor);
   } else {
     Serial.println("controller not connected");

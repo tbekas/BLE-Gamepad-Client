@@ -11,10 +11,11 @@ jobs:
     strategy:
       matrix:
         example:
-          - examples/ReadingControlsInLoop
-          - examples/ReadingControlsUsingCallback
-          - examples/TriggeringVibrations
-          - examples/UsingAllCallbacks
+          - examples/Xbox_ReadingControls
+          - examples/Xbox_TriggeringVibrations
+          - examples/Xbox_UsingCallbacks
+          - examples/Steam_ReadingControls
+          - examples/Steam_UsingCallbacks
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
