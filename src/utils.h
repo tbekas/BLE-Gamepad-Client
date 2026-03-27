@@ -5,6 +5,9 @@
 
 namespace blegc {
 
+constexpr uint8_t addrTypePublic = 0x00;
+constexpr uint8_t addrTypeRandom = 0x01;
+
 constexpr uint16_t appearance(const uint16_t category, const uint8_t subcategory) {
   return category <<  6 | subcategory;
 }

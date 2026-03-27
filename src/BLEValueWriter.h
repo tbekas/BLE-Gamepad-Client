@@ -6,7 +6,7 @@ template <typename T>
 class BLEValueWriter {
  public:
   BLEValueWriter();
-  ~BLEValueWriter();
+  virtual ~BLEValueWriter();
 
  /**
   * @brief Send the command to the connected controller.

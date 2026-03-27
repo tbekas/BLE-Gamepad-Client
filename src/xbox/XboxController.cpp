@@ -9,6 +9,7 @@
 using namespace blegc;
 
 XboxController::XboxController(const NimBLEAddress& allowedAddress) : BLEBaseController(allowedAddress) {}
+XboxController::XboxController(const std::string& allowedAddress) : XboxController(NimBLEAddress(allowedAddress, addrTypePublic)){}
 XboxController::XboxController() : XboxController(NimBLEAddress()) {}
 XboxController::~XboxController() = default;
 
