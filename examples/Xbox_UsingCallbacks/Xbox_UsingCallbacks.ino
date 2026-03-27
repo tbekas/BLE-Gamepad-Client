@@ -1,5 +1,5 @@
 /*
-* This program demonstrates how to use callbacks to change the state of an RGB LED.
+* This program demonstrates how to use callbacks. Some callbacks are changing the state of an RGB LED.
  *
  * scanning   -> blink the LED
  * connecting -> blink the LED more rapidly
@@ -54,7 +54,7 @@ void onDisconnected(XboxController &ctrl) {
 }
 
 void onValueChanged(XboxControlsState &s) {
-  Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
+  Serial.printf("lstick: %.2f,%.2f, rstick: %.2f,%.2f\n",
     s.leftStickX, s.leftStickY, s.rightStickX, s.rightStickY);
 }
 

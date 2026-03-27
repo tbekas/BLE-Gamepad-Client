@@ -13,7 +13,7 @@ void loop() {
     XboxControlsState s;
     controller.read(&s);
 
-    Serial.printf("lx: %.2f, ly: %.2f, rx: %.2f, ry: %.2f\n",
+    Serial.printf("lstick: %.2f,%.2f, rstick: %.2f,%.2f\n",
       s.leftStickX, s.leftStickY, s.rightStickX, s.rightStickY);
   } else {
     Serial.println("controller not connected");

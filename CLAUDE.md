@@ -21,7 +21,7 @@ board = esp32dev
 build_unflags = -std=gnu++14
 ```
 
-CI (`build.yml`) tests four examples across three boards: `esp32dev`, `esp32s3`, `esp32c3`. Docs are built with MkDocs + Material (`mkdocs==1.6.1`, `mkdocs-material==9.7.0`). Arduino Lint runs on every PR.
+CI (`build.yml`) tests five examples across three boards: `esp32dev`, `esp32s3`, `esp32c3`. Docs are built with MkDocs + Material (`mkdocs==1.6.1`, `mkdocs-material==9.7.0`). Arduino Lint runs on every PR.
 
 ## Architecture
 
@@ -107,7 +107,7 @@ All state and command structs extend `BLEBaseValue`:
    template class BLEValueReceiver<YourControlsState>;
    ```
 5. Export the controller header from `src/BLEGamepadClient.h`.
-6. Add the example to the CI build matrix in `.github/workflows/build.yml`.
+6. Add a `<Name>_ReadingControls` example and include it in the CI build matrix in `.github/workflows/build.yml`. All examples are prefixed with the controller name (e.g. `Xbox_`, `Steam_`).
 
 If the controller supports write (e.g. vibrations), also extend `BLEValueWriter<CommandType>` and add a corresponding `*Command` struct with `encode()`.
 

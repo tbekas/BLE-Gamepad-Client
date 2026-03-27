@@ -3,7 +3,6 @@ site_url: https://tbekas.github.io/BLE-Gamepad-Client/
 repo_url: https://github.com/tbekas/BLE-Gamepad-Client
 nav:
   - Home: index.md
-  - Controllers: controllers.md
   - Configuration: configuration.md
   - Auto Scan: auto_scan.md
 theme:
