@@ -5,9 +5,15 @@
 
 template <typename T>
 class BLEBaseController : public BLEAbstractController {
-public:
-  explicit BLEBaseController()
-      : _onConnecting([](T&) {}), _onConnectionFailed([](T&) {}), _onConnected([](T&) {}), _onDisconnected([](T&) {}) {}
+ public:
+  explicit BLEBaseController(const NimBLEAddress& allowedAddress)
+      : BLEAbstractController(allowedAddress),
+        _onConnecting([](T&) {}),
+        _onConnectionFailed([](T&) {}),
+        _onConnected([](T&) {}),
+        _onDisconnected([](T&) {}) {}
+
+  explicit BLEBaseController() : BLEBaseController(NimBLEAddress()) {}
 
   void onConnecting(const std::function<void(T&)>& callback) { _onConnecting = callback; }
 
@@ -25,13 +31,13 @@ public:
    */
   void onDisconnected(const std::function<void(T&)>& callback) { _onDisconnected = callback; }
 
-protected:
+ protected:
   void callOnConnecting() override { _onConnecting(*static_cast<T*>(this)); }
   void callOnConnectionFailed() override { _onConnectionFailed(*static_cast<T*>(this)); }
   void callOnConnected() override { _onConnected(*static_cast<T*>(this)); }
   void callOnDisconnected() override { _onDisconnected(*static_cast<T*>(this)); }
 
-private:
+ private:
   std::function<void(T&)> _onConnecting;
   std::function<void(T&)> _onConnectionFailed;
   std::function<void(T&)> _onConnected;
