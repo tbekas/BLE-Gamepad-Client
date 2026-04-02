@@ -10,11 +10,11 @@ inline uint8_t encodeMotorEnable(float power, int bit) {
 }
 
 inline uint8_t encodeMotorPower(float power) {
-  return static_cast<uint8_t>(max(min(power, 1.0f), 0.0f) * 100.0f);
+  return static_cast<uint8_t>(std::max(std::min(power, 1.0f), 0.0f) * 100.0f);
 }
 
 inline uint8_t encodeDuration(uint32_t durationMs) {
-  return static_cast<uint8_t>(min(durationMs, static_cast<uint32_t>(2550)) / 10);
+  return static_cast<uint8_t>(std::min(durationMs, static_cast<uint32_t>(2550)) / 10);
 }
 
 BLEEncodeResult XboxVibrationsCommand::encode(size_t& usedBytes, uint8_t buffer[], size_t bufferLen) {
