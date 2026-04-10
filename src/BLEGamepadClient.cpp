@@ -8,6 +8,7 @@
 #include "config.h"
 
 bool BLEGamepadClient::_initialized = false;
+bool BLEGamepadClient::_autoScanInitialized = false;
 TaskHandle_t BLEGamepadClient::_autoScanTask;
 QueueHandle_t BLEGamepadClient::_userCallbackQueue;
 BLEControllerRegistry BLEGamepadClient::_controllerRegistry(_autoScanTask, _userCallbackQueue);
@@ -24,7 +25,9 @@ BLEUserCallbackRunner BLEGamepadClient::_userCallbackRunner(_autoScan, _userCall
 void BLEGamepadClient::init(const bool deleteBonds) {
   _initSelf();
 
-  if (!NimBLEDevice::isInitialized()) {
+  const bool nimbleWasAlreadyInitialized = NimBLEDevice::isInitialized();
+
+  if (!nimbleWasAlreadyInitialized) {
     BLEGC_LOGD("Initializing NimBLE");
     NimBLEDevice::init(CONFIG_BT_BLEGC_DEVICE_NAME);
     NimBLEDevice::setPower(CONFIG_BT_BLEGC_POWER_DBM);
@@ -34,6 +37,11 @@ void BLEGamepadClient::init(const bool deleteBonds) {
     if (deleteBonds) {
       NimBLEDevice::deleteAllBonds();
     }
+  }
+
+  if (!_autoScanInitialized) {
+    _autoScan.init();
+    _autoScanInitialized = true;
   }
 }
 

@@ -18,7 +18,9 @@ BLEAutoScan::BLEAutoScan(BLEControllerRegistry& controllerRegistry,
       _userCallbackQueue(userCallbackQueue) {
   xTaskCreate(_autoScanTaskFn, "_autoScanTaskFn", 10000, this, 0, &_autoScanTask);
   configASSERT(_autoScanTask);
+}
 
+void BLEAutoScan::init() {
   auto* pScan = NimBLEDevice::getScan();
   pScan->setScanCallbacks(&_scanCallbacksImpl, false);
   pScan->setMaxResults(0);
