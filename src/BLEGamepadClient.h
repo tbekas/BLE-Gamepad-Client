@@ -21,6 +21,7 @@ class BLEGamepadClient {
  private:
   static void _initSelf();
   static bool _initialized;
+  static bool _autoScanInitialized;
   static TaskHandle_t _autoScanTask;
   static QueueHandle_t _userCallbackQueue;
   static BLEAutoScan _autoScan;

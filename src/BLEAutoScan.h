@@ -10,6 +10,7 @@ class BLEAutoScan {
               QueueHandle_t& userCallbackQueue);
   ~BLEAutoScan();
 
+  void init();
   void enable();
   void disable();
   bool isEnabled() const;
